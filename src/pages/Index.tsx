@@ -25,6 +25,7 @@ const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb
 const NAV = [
   { id: 'home', label: 'Главная' },
   { id: 'services', label: 'Услуги' },
+  { id: 'prices', label: 'Цены' },
   { id: 'shop', label: 'Магазин' },
   { id: 'portfolio', label: 'Портфолио' },
   { id: 'articles', label: 'Статьи' },
@@ -65,6 +66,57 @@ const PORTFOLIO = [
   { title: 'Тропический палюдариум', tag: 'Палюдариум', icon: 'Waves' },
   { title: 'Пустынный террариум', tag: 'Террариум', icon: 'Turtle' },
   { title: 'Акваскейп «Лес»', tag: 'Аквариум', icon: 'Sprout' },
+];
+
+const PRICES = [
+  {
+    icon: 'Fish',
+    title: 'Оформление аквариума',
+    desc: 'Дизайн, декор, растения, грунт — под ключ. Пресные и морские системы.',
+    from: '5 000',
+    unit: 'за работу',
+    tags: ['Пресный', 'Морской'],
+  },
+  {
+    icon: 'Turtle',
+    title: 'Оформление террариума',
+    desc: 'Создание живого биотопа под конкретный вид рептилий, амфибий или пауков.',
+    from: '4 000',
+    unit: 'за работу',
+    tags: ['Тропик', 'Пустыня'],
+  },
+  {
+    icon: 'Sprout',
+    title: 'Флорариум / Палюдариум',
+    desc: 'Стеклянные сады с живыми растениями, мхами и водопадами.',
+    from: '6 000',
+    unit: 'за работу',
+    tags: ['Флорариум', 'Палюдариум'],
+  },
+  {
+    icon: 'Wrench',
+    title: 'Обслуживание',
+    desc: 'Регулярный уход: чистка, подмена воды, контроль параметров, корм.',
+    from: '1 500',
+    unit: 'за визит',
+    tags: ['Разовый', 'Договор'],
+  },
+  {
+    icon: 'Truck',
+    title: 'Перевозка',
+    desc: 'Бережная транспортировка аквариумов и террариумов с обитателями.',
+    from: '2 000',
+    unit: 'за выезд',
+    tags: ['По городу', 'МО'],
+  },
+  {
+    icon: 'Star',
+    title: 'Консультация',
+    desc: 'Подбор оборудования, животных, параметров воды — онлайн или на выезде.',
+    from: '500',
+    unit: 'онлайн',
+    tags: ['Онлайн', 'Выезд'],
+  },
 ];
 
 const FAQ = [
@@ -200,6 +252,44 @@ const Index = () => {
               <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
             </Card>
           ))}
+        </div>
+      </section>
+
+      {/* Prices */}
+      <section id="prices" className="py-24 bg-muted/50">
+        <div className="container px-4 md:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <Badge variant="secondary" className="mb-4">Цены</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Стоимость услуг</h2>
+            <p className="mt-4 text-muted-foreground">Итоговая цена зависит от объёма и сложности — уточним на консультации.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {PRICES.map((p) => (
+              <Card key={p.title} className="p-7 flex flex-col hover-scale border-border hover:border-primary/30 transition-colors">
+                <span className="grid place-items-center w-14 h-14 rounded-xl bg-primary/10 text-primary mb-5">
+                  <Icon name={p.icon} size={28} />
+                </span>
+                <h3 className="font-display text-2xl font-semibold text-primary mb-2">{p.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">{p.desc}</p>
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {p.tags.map((t) => (
+                    <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
+                  ))}
+                </div>
+                <div className="flex items-end justify-between border-t border-border pt-5">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">от</p>
+                    <p className="font-display text-3xl font-bold text-primary leading-none">{p.from} <span className="text-base font-sans font-normal">₽</span></p>
+                    <p className="text-xs text-muted-foreground mt-1">{p.unit}</p>
+                  </div>
+                  <Button size="sm" onClick={() => scrollTo('contacts')}>Заказать</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <p className="text-center text-sm text-muted-foreground mt-10">
+            Цены указаны ориентировочно. Точный расчёт — после обсуждения вашего проекта.
+          </p>
         </div>
       </section>
 
