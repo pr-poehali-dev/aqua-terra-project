@@ -20,6 +20,7 @@ const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e
 const PRODUCTS_URL = 'https://functions.poehali.dev/31fd2710-461b-4a20-9d16-02264d66dd19';
 const SERVICES_URL = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
 const PORTFOLIO_URL = 'https://functions.poehali.dev/86ea5a33-361e-443c-8816-3050029776df';
+const PROMO_URL = 'https://functions.poehali.dev/34b026bd-3d35-40ea-bc8d-90855ba968d3';
 
 interface PortfolioItem {
   id: number; title: string; tag: string; description: string;
@@ -176,12 +177,6 @@ function CartOrderForm({ onSubmit, sending }: { onSubmit: (contact: string) => v
   );
 }
 
-const PROMOS: Record<string, number> = {
-  'AQUA10': 10,
-  'TERRA15': 15,
-  'AQUASCALE20': 20,
-};
-
 const Index = () => {
   const { toast } = useToast();
   const cart = useCart();
@@ -193,6 +188,7 @@ const Index = () => {
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
   const [form, setForm] = useState({ name: '', contact: '', message: '' });
   const [sending, setSending] = useState(false);
   const [orderSending, setOrderSending] = useState(false);
@@ -210,15 +206,29 @@ const Index = () => {
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
 
-  const applyPromo = () => {
+  const applyPromo = async () => {
     const code = promoCode.trim().toUpperCase();
-    if (PROMOS[code]) {
-      setPromoDiscount(PROMOS[code]);
-      setPromoError('');
-      toast({ title: `Промокод применён! Скидка ${PROMOS[code]}%` });
-    } else {
-      setPromoError('Промокод не найден');
-      setPromoDiscount(0);
+    if (!code) return;
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      const res = await fetch(`${PROMO_URL}?action=apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPromoDiscount(data.discount);
+        toast({ title: `Промокод применён! Скидка ${data.discount}%` });
+      } else {
+        setPromoError(data.error || 'Промокод не найден');
+        setPromoDiscount(0);
+      }
+    } catch {
+      setPromoError('Ошибка проверки промокода');
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -1059,10 +1069,19 @@ const Index = () => {
                     className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal"
                     placeholder="Введите код"
                   />
-                  <Button size="sm" variant="outline" onClick={applyPromo}>Применить</Button>
+                  <Button size="sm" variant="outline" onClick={applyPromo} disabled={promoLoading || promoDiscount > 0}>
+                    {promoLoading ? <Icon name="Loader" size={14} className="animate-spin" /> : 'Применить'}
+                  </Button>
                 </div>
                 {promoError && <p className="text-xs text-destructive mt-1">{promoError}</p>}
-                {promoDiscount > 0 && <p className="text-xs text-secondary font-semibold mt-1">✓ Скидка {promoDiscount}% применена</p>}
+                {promoDiscount > 0 && (
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-secondary font-semibold">✓ Скидка {promoDiscount}% применена</p>
+                    <button className="text-xs text-muted-foreground hover:text-destructive transition-colors" onClick={() => { setPromoDiscount(0); setPromoCode(''); }}>
+                      Сбросить
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Total */}

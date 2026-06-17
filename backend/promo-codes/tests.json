@@ -1,0 +1,7 @@
+{
+  "tests": [
+    {"name": "OPTIONS preflight", "method": "OPTIONS", "path": "/", "expectedStatus": 200},
+    {"name": "GET without token returns 401", "method": "GET", "path": "/", "expectedStatus": 401},
+    {"name": "Apply nonexistent code returns 404", "method": "POST", "path": "/?action=apply", "body": {"code": "NOTEXIST"}, "expectedStatus": 404}
+  ]
+}
