@@ -265,17 +265,28 @@ const Index = () => {
           <div className="gradient-deep p-10 md:p-12 text-white">
             <h2 className="font-display text-4xl font-bold mb-4">Свяжитесь с нами</h2>
             <p className="text-white/80 mb-8">Расскажите о задаче — подберём решение под ваш интерьер и бюджет.</p>
+            <p className="text-white/70 text-sm mb-5 -mt-4">Алексей Мосягин</p>
             <ul className="space-y-4 text-white/90">
-              <li className="flex items-center gap-3"><Icon name="Phone" size={20} /> +7 (000) 000-00-00</li>
-              <li className="flex items-center gap-3"><Icon name="Mail" size={20} /> hello@aquaterra.ru</li>
-              <li className="flex items-center gap-3"><Icon name="MapPin" size={20} /> Москва, выезд по городу</li>
+              <li className="flex items-center gap-3">
+                <Icon name="Phone" size={20} />
+                <a href="tel:+79055337226" className="hover:text-white transition-colors">+7 905 533 7226</a>
+              </li>
+              <li className="flex items-center gap-3">
+                <Icon name="Mail" size={20} />
+                <a href="mailto:aquascale@mail.ru" className="hover:text-white transition-colors">aquascale@mail.ru</a>
+              </li>
+              <li className="flex items-start gap-3">
+                <Icon name="MapPin" size={20} className="mt-0.5 shrink-0" />
+                <span>Московская обл., г. Звенигород,<br />ул. Садовая, д. 2</span>
+              </li>
             </ul>
             <div className="flex gap-3 mt-8">
-              {['Send', 'MessageCircle', 'Instagram'].map((ic) => (
-                <span key={ic} className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer">
-                  <Icon name={ic} size={20} />
-                </span>
-              ))}
+              <a href="https://t.me/aquascale" target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                <Icon name="Send" size={20} />
+              </a>
+              <a href="https://wa.me/79055337226" target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+                <Icon name="MessageCircle" size={20} />
+              </a>
             </div>
           </div>
           <form className="p-10 md:p-12 space-y-4" onSubmit={submitLead}>
