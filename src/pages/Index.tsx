@@ -3,6 +3,7 @@ import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import Bubbles from '@/components/Bubbles';
 import WaveDivider from '@/components/WaveDivider';
+import DecoIcons from '@/components/DecoIcons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -367,29 +368,42 @@ const Index = () => {
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 container px-4 md:px-6 relative">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <Badge variant="secondary" className="mb-4">Услуги</Badge>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Что мы делаем</h2>
-          <p className="mt-4 text-muted-foreground">От идеи до готовой экосистемы — берём на себя весь процесс.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
-            <Card key={s.title} className="p-7 hover-scale border-border hover:border-secondary/50 transition-colors">
-              <span className="grid place-items-center w-14 h-14 rounded-xl bg-secondary/10 text-secondary mb-5">
-                <Icon name={s.icon} size={28} />
-              </span>
-              <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{s.description}</p>
-            </Card>
-          ))}
+      <section id="services" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
+        <DecoIcons items={[
+          { emoji: '🐠', top: '8%',  left: '2%',   size: 36, dur: 7,  delay: 0,   swim: true },
+          { emoji: '🌿', top: '15%', right: '3%',  size: 28, dur: 9,  delay: 1.5 },
+          { emoji: '🐡', bottom: '10%', left: '1%', size: 30, dur: 8, delay: 3,   swim: true },
+          { emoji: '🪸', bottom: '5%', right: '2%', size: 32, dur: 11, delay: 0.5 },
+        ]} />
+        <div className="container relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <Badge variant="secondary" className="mb-4">Услуги</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Что мы делаем</h2>
+            <p className="mt-4 text-muted-foreground">От идеи до готовой экосистемы — берём на себя весь процесс.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
+              <div key={s.title} className="glass-card rounded-2xl p-7 hover-scale transition-all duration-300 hover:shadow-lg">
+                <span className="grid place-items-center w-14 h-14 rounded-xl bg-secondary/15 text-secondary mb-5">
+                  <Icon name={s.icon} size={28} />
+                </span>
+                <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{s.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Prices */}
-      <section id="prices" className="relative bg-muted/50">
+      <section id="prices" className="relative bg-muted/50 overflow-hidden">
+        <DecoIcons items={[
+          { emoji: '🐟', top: '10%', right: '2%', size: 30, dur: 9,  delay: 0.5, swim: true },
+          { emoji: '💧', top: '20%', left: '1%',  size: 24, dur: 7,  delay: 2 },
+          { emoji: '🐠', bottom: '12%', left: '2%', size: 28, dur: 11, delay: 1, swim: true },
+        ]} />
         <WaveDivider fill="hsl(var(--muted) / 0.5)" flip className="mt-0" />
-        <div className="container px-4 md:px-6 py-16">
+        <div className="container px-4 md:px-6 py-16 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <Badge variant="secondary" className="mb-4">Цены</Badge>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Стоимость услуг</h2>
@@ -397,7 +411,7 @@ const Index = () => {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
-              <Card key={s.id ?? s.title} className="p-7 flex flex-col hover-scale border-border hover:border-primary/30 transition-colors">
+              <div key={s.id ?? s.title} className="glass-card rounded-2xl p-7 flex flex-col hover-scale transition-all duration-300 hover:shadow-xl">
                 <span className="grid place-items-center w-14 h-14 rounded-xl bg-primary/10 text-primary mb-5">
                   <Icon name={s.icon} size={28} />
                 </span>
@@ -418,7 +432,7 @@ const Index = () => {
                   </div>
                   <Button size="sm" onClick={() => scrollTo('contacts')}>Заказать</Button>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
           <p className="text-center text-sm text-muted-foreground mt-10">
@@ -429,8 +443,13 @@ const Index = () => {
       </section>
 
       {/* Shop */}
-      <section id="shop" className="pb-24 bg-background">
-        <div className="container px-4 md:px-6">
+      <section id="shop" className="pb-24 bg-background relative overflow-hidden">
+        <DecoIcons items={[
+          { emoji: '🐠', top: '5%',    left: '1%',  size: 32, dur: 9,  delay: 1, swim: true },
+          { emoji: '🦐', top: '8%',    right: '2%', size: 24, dur: 7,  delay: 0 },
+          { emoji: '🌿', bottom: '6%', right: '1%', size: 28, dur: 11, delay: 2 },
+        ]} />
+        <div className="container px-4 md:px-6 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <Badge variant="secondary" className="mb-4">Магазин</Badge>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Каталог</h2>
@@ -455,7 +474,7 @@ const Index = () => {
           )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((p) => (
-              <Card key={p.id} className="overflow-hidden hover-scale group cursor-pointer" onClick={() => setSelectedProduct(p)}>
+              <div key={p.id} className="glass-card rounded-2xl overflow-hidden hover-scale group cursor-pointer" onClick={() => setSelectedProduct(p)}>
                 <div className="aspect-[4/3] gradient-deep grid place-items-center text-white/90 relative overflow-hidden">
                   {p.photo_url
                     ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover absolute inset-0" />
@@ -477,7 +496,7 @@ const Index = () => {
                     <Icon name="ShoppingCart" size={18} />
                   </Button>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
 
@@ -512,57 +531,72 @@ const Index = () => {
       </section>
 
       {/* Portfolio */}
-      <section id="portfolio" className="py-24 container px-4 md:px-6">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <Badge variant="secondary" className="mb-4">Портфолио</Badge>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Наши работы</h2>
-          <p className="mt-4 text-muted-foreground">Реализованные проекты разной сложности и стилистики.</p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {PORTFOLIO.map((p) => (
-            <div key={p.title} className="group relative aspect-[3/4] rounded-2xl overflow-hidden gradient-deep cursor-pointer">
-              <div className="absolute inset-0 grid place-items-center opacity-30 group-hover:opacity-50 transition-opacity">
-                <Icon name={p.icon} size={64} className="text-white" />
+      <section id="portfolio" className="py-24 px-4 md:px-6 relative bg-leaves overflow-hidden">
+        <DecoIcons items={[
+          { emoji: '🌱', top: '5%',    right: '4%',  size: 32, dur: 10, delay: 0 },
+          { emoji: '🦎', bottom: '8%', left: '3%',   size: 30, dur: 8,  delay: 2 },
+          { emoji: '🪴', top: '10%',   left: '2%',   size: 28, dur: 12, delay: 1 },
+          { emoji: '🐢', bottom: '5%', right: '3%',  size: 26, dur: 9,  delay: 3 },
+        ]} />
+        <div className="container relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <Badge variant="secondary" className="mb-4">Портфолио</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Наши работы</h2>
+            <p className="mt-4 text-muted-foreground">Реализованные проекты разной сложности и стилистики.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {PORTFOLIO.map((p) => (
+              <div key={p.title} className="group relative aspect-[3/4] rounded-2xl overflow-hidden gradient-deep cursor-pointer">
+                <div className="absolute inset-0 grid place-items-center opacity-30 group-hover:opacity-50 transition-opacity">
+                  <Icon name={p.icon} size={64} className="text-white" />
+                </div>
+                <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/60 to-transparent">
+                  <Badge className="bg-sand text-primary hover:bg-sand mb-2">{p.tag}</Badge>
+                  <h3 className="font-display text-xl font-semibold text-white">{p.title}</h3>
+                </div>
               </div>
-              <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/60 to-transparent">
-                <Badge className="bg-sand text-primary hover:bg-sand mb-2">{p.tag}</Badge>
-                <h3 className="font-display text-xl font-semibold text-white">{p.title}</h3>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Articles */}
-      <section id="articles" className="py-24 container px-4 md:px-6">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <Badge variant="secondary" className="mb-4">Статьи</Badge>
-          <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Полезные материалы</h2>
-          <p className="mt-4 text-muted-foreground">Советы по уходу, обустройству и содержанию живых систем.</p>
-        </div>
-        {articles.length === 0 ? (
-          <p className="text-center text-muted-foreground">Статьи скоро появятся.</p>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((a) => (
-              <Card key={a.id} className="overflow-hidden hover-scale group cursor-pointer" onClick={() => openArticle(a.slug)}>
-                <div className="aspect-[16/9] gradient-deep grid place-items-center text-white/40">
-                  {a.cover_url
-                    ? <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
-                    : <Icon name="BookOpen" size={48} />}
-                </div>
-                <div className="p-5">
-                  <Badge variant="outline" className="text-xs mb-3">{a.category}</Badge>
-                  <h3 className="font-display text-xl font-semibold text-primary mb-2 leading-snug">{a.title}</h3>
-                  <p className="text-muted-foreground text-sm line-clamp-2">{a.excerpt}</p>
-                  <span className="inline-flex items-center gap-1 text-secondary text-sm font-medium mt-4">
-                    Читать <Icon name="ArrowRight" size={14} />
-                  </span>
-                </div>
-              </Card>
-            ))}
+      <section id="articles" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
+        <DecoIcons items={[
+          { emoji: '🐙', top: '6%',    right: '3%', size: 28, dur: 10, delay: 0 },
+          { emoji: '🌊', bottom: '8%', left: '2%',  size: 26, dur: 8,  delay: 1.5 },
+          { emoji: '🐚', bottom: '5%', right: '4%', size: 24, dur: 12, delay: 3 },
+        ]} />
+        <div className="container relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <Badge variant="secondary" className="mb-4">Статьи</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Полезные материалы</h2>
+            <p className="mt-4 text-muted-foreground">Советы по уходу, обустройству и содержанию живых систем.</p>
           </div>
-        )}
+          {articles.length === 0 ? (
+            <p className="text-center text-muted-foreground">Статьи скоро появятся.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((a) => (
+                <div key={a.id} className="glass-card rounded-2xl overflow-hidden hover-scale group cursor-pointer" onClick={() => openArticle(a.slug)}>
+                  <div className="aspect-[16/9] gradient-deep grid place-items-center text-white/40">
+                    {a.cover_url
+                      ? <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
+                      : <Icon name="BookOpen" size={48} />}
+                  </div>
+                  <div className="p-5">
+                    <Badge variant="outline" className="text-xs mb-3">{a.category}</Badge>
+                    <h3 className="font-display text-xl font-semibold text-primary mb-2 leading-snug">{a.title}</h3>
+                    <p className="text-muted-foreground text-sm line-clamp-2">{a.excerpt}</p>
+                    <span className="inline-flex items-center gap-1 text-secondary text-sm font-medium mt-4">
+                      Читать <Icon name="ArrowRight" size={14} />
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Article modal */}
