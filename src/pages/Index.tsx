@@ -21,6 +21,7 @@ interface Product {
   tag: string;
   icon: string;
   photo_url: string | null;
+  description: string;
 }
 
 interface Article {
@@ -221,6 +222,7 @@ const Index = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<(Article & { content?: string }) | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
@@ -482,7 +484,7 @@ const Index = () => {
           )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((p) => (
-              <Card key={p.id} className="overflow-hidden hover-scale group">
+              <Card key={p.id} className="overflow-hidden hover-scale group cursor-pointer" onClick={() => setSelectedProduct(p)}>
                 <div className="aspect-[4/3] gradient-deep grid place-items-center text-white/90 relative overflow-hidden">
                   {p.photo_url
                     ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover absolute inset-0" />
@@ -499,7 +501,7 @@ const Index = () => {
                     size="icon"
                     variant="secondary"
                     className="shrink-0"
-                    onClick={() => cart.add({ name: p.name, price: `${p.price}`, icon: p.icon, tag: p.tag })}
+                    onClick={(e) => { e.stopPropagation(); cart.add({ name: p.name, price: `${p.price}`, icon: p.icon, tag: p.tag }); }}
                   >
                     <Icon name="ShoppingCart" size={18} />
                   </Button>
@@ -507,6 +509,34 @@ const Index = () => {
               </Card>
             ))}
           </div>
+
+          {/* Product modal */}
+          {selectedProduct && (
+            <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSelectedProduct(null)}>
+              <Card className="w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="aspect-video gradient-deep relative overflow-hidden">
+                  {selectedProduct.photo_url
+                    ? <img src={selectedProduct.photo_url} alt={selectedProduct.name} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full grid place-items-center text-white/60"><Icon name={selectedProduct.icon} size={72} /></div>
+                  }
+                  <button onClick={() => setSelectedProduct(null)} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 grid place-items-center text-white transition-colors">
+                    <Icon name="X" size={18} />
+                  </button>
+                  <Badge className="absolute top-3 left-3 bg-sand text-primary hover:bg-sand">{selectedProduct.tag}</Badge>
+                </div>
+                <div className="p-6">
+                  <h2 className="font-display text-2xl font-bold text-primary mb-1">{selectedProduct.name}</h2>
+                  <p className="text-secondary text-2xl font-bold mb-4">{selectedProduct.price.toLocaleString('ru')} ₽</p>
+                  {selectedProduct.description && (
+                    <p className="text-muted-foreground text-sm leading-relaxed mb-5 whitespace-pre-line">{selectedProduct.description}</p>
+                  )}
+                  <Button className="w-full" size="lg" onClick={() => { cart.add({ name: selectedProduct.name, price: `${selectedProduct.price}`, icon: selectedProduct.icon, tag: selectedProduct.tag }); setSelectedProduct(null); }}>
+                    <Icon name="ShoppingCart" size={18} className="mr-2" /> В корзину
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
         </div>
       </section>
 

@@ -16,13 +16,13 @@ interface Article {
 }
 interface Product {
   id: number; name: string; price: number; category: string;
-  tag: string; icon: string; photo_url: string | null; in_stock: boolean;
+  tag: string; icon: string; photo_url: string | null; in_stock: boolean; description: string;
 }
 
 const ARTICLE_CATS = ['Аквариумы', 'Террариумы', 'Флорариумы', 'Экзотика', 'Корма', 'Общее'];
 const PRODUCT_CATS = [{ id: 'animals', label: 'Животные' }, { id: 'food', label: 'Корма' }, { id: 'supplies', label: 'Материалы' }];
 const ICONS = ['Fish', 'Turtle', 'Bug', 'Wheat', 'Package', 'Lightbulb', 'Settings', 'Sprout', 'Waves'];
-const EMPTY_PRODUCT: Omit<Product, 'id'> = { name: '', price: 0, category: 'animals', tag: '', icon: 'Package', photo_url: null, in_stock: true };
+const EMPTY_PRODUCT: Omit<Product, 'id'> = { name: '', price: 0, category: 'animals', tag: '', icon: 'Package', photo_url: null, in_stock: true, description: '' };
 const EMPTY_ARTICLE: Omit<Article, 'id' | 'slug' | 'created_at'> = { title: '', excerpt: '', content: '', category: 'Аквариумы', cover_url: null, published: false };
 
 export default function Admin() {
@@ -227,6 +227,12 @@ export default function Admin() {
                     {ICONS.map((i) => <option key={i}>{i}</option>)}
                   </select>
                 </div>
+              </div>
+              <div className="col-span-2">
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">Описание товара</label>
+                <textarea rows={4} value={editingProduct.description || ''} onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm"
+                  placeholder="Подробное описание: возраст, размер, особенности ухода…" />
               </div>
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="stock" checked={!!editingProduct.in_stock} onChange={(e) => setEditingProduct({ ...editingProduct, in_stock: e.target.checked })} className="w-4 h-4 accent-primary" />

@@ -30,20 +30,20 @@ def handler(event: dict, context) -> dict:
 
     if cat and cat != 'all':
         cur.execute(
-            "SELECT id, name, price, category, tag, icon, photo_url FROM products "
+            "SELECT id, name, price, category, tag, icon, photo_url, description FROM products "
             "WHERE in_stock = true AND category = %s ORDER BY created_at DESC",
             (cat,)
         )
     else:
         cur.execute(
-            "SELECT id, name, price, category, tag, icon, photo_url FROM products "
+            "SELECT id, name, price, category, tag, icon, photo_url, description FROM products "
             "WHERE in_stock = true ORDER BY created_at DESC"
         )
 
     rows = cur.fetchall()
     conn.close()
 
-    keys = ['id', 'name', 'price', 'category', 'tag', 'icon', 'photo_url']
+    keys = ['id', 'name', 'price', 'category', 'tag', 'icon', 'photo_url', 'description']
     products = [dict(zip(keys, row)) for row in rows]
 
     return {

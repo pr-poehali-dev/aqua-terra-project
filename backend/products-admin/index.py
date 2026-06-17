@@ -53,10 +53,10 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor()
 
     if method == 'GET':
-        cur.execute("SELECT id, name, price, category, tag, icon, photo_url, in_stock, created_at FROM products ORDER BY created_at DESC")
+        cur.execute("SELECT id, name, price, category, tag, icon, photo_url, in_stock, description, created_at FROM products ORDER BY created_at DESC")
         rows = cur.fetchall()
         conn.close()
-        keys = ['id', 'name', 'price', 'category', 'tag', 'icon', 'photo_url', 'in_stock', 'created_at']
+        keys = ['id', 'name', 'price', 'category', 'tag', 'icon', 'photo_url', 'in_stock', 'description', 'created_at']
         products = []
         for row in rows:
             p = dict(zip(keys, row))
@@ -98,9 +98,10 @@ def handler(event: dict, context) -> dict:
             conn.close()
             return {'statusCode': 400, 'headers': {**cors, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': 'name required'})}
         cur.execute(
-            "INSERT INTO products (name, price, category, tag, icon, photo_url, in_stock) VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+            "INSERT INTO products (name, price, category, tag, icon, photo_url, in_stock, description) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
             (name, int(data.get('price', 0)), data.get('category', 'animals'),
-             data.get('tag', ''), data.get('icon', 'Package'), data.get('photo_url'), data.get('in_stock', True))
+             data.get('tag', ''), data.get('icon', 'Package'), data.get('photo_url'),
+             data.get('in_stock', True), data.get('description', ''))
         )
         new_id = cur.fetchone()[0]
         conn.commit()
@@ -115,8 +116,9 @@ def handler(event: dict, context) -> dict:
     if method == 'PUT':
         data = json.loads(event.get('body') or '{}')
         cur.execute(
-            "UPDATE products SET name=%s, price=%s, category=%s, tag=%s, icon=%s, in_stock=%s WHERE id=%s",
-            (data.get('name'), int(data.get('price', 0)), data.get('category'), data.get('tag'), data.get('icon'), data.get('in_stock', True), product_id)
+            "UPDATE products SET name=%s, price=%s, category=%s, tag=%s, icon=%s, in_stock=%s, description=%s WHERE id=%s",
+            (data.get('name'), int(data.get('price', 0)), data.get('category'), data.get('tag'),
+             data.get('icon'), data.get('in_stock', True), data.get('description', ''), product_id)
         )
         conn.commit()
         conn.close()
