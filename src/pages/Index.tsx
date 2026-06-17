@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/hooks/use-cart';
 
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
@@ -179,12 +181,32 @@ const scrollTo = (id: string) => {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 };
 
+function CartOrderForm({ onSubmit, sending }: { onSubmit: (contact: string) => void; sending: boolean }) {
+  const [contact, setContact] = useState('');
+  return (
+    <div className="space-y-3">
+      <input
+        value={contact}
+        onChange={(e) => setContact(e.target.value)}
+        placeholder="Телефон или Telegram для связи"
+        className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+      />
+      <Button className="w-full" size="lg" disabled={sending} onClick={() => onSubmit(contact)}>
+        {sending ? 'Отправляем…' : 'Оформить заказ'}
+      </Button>
+      <p className="text-xs text-muted-foreground text-center">Мы свяжемся для подтверждения и оплаты</p>
+    </div>
+  );
+}
+
 const Index = () => {
   const { toast } = useToast();
+  const cart = useCart();
   const [cat, setCat] = useState('all');
   const [menuOpen, setMenuOpen] = useState(false);
   const [form, setForm] = useState({ name: '', contact: '', message: '' });
   const [sending, setSending] = useState(false);
+  const [orderSending, setOrderSending] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<(Article & { content?: string }) | null>(null);
   const [quizStep, setQuizStep] = useState(0);
@@ -243,6 +265,31 @@ const Index = () => {
     }
   };
 
+  const submitOrder = async (contact: string) => {
+    if (!contact.trim()) {
+      toast({ title: 'Введите телефон или Telegram для связи', variant: 'destructive' });
+      return;
+    }
+    setOrderSending(true);
+    const itemsList = cart.items.map((i) => `• ${i.name} × ${i.qty} = ${(i.priceNum * i.qty).toLocaleString('ru')} ₽`).join('\n');
+    const message = `🛒 Заказ из корзины\n\nКонтакт: ${contact}\n\nТовары:\n${itemsList}\n\nИтого: ${cart.total.toLocaleString('ru')} ₽`;
+    try {
+      const res = await fetch(LEAD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Заказ из корзины', contact, message }),
+      });
+      if (!res.ok) throw new Error();
+      toast({ title: 'Заказ отправлен!', description: 'Мы свяжемся с вами для подтверждения.' });
+      cart.clear();
+      cart.setOpen(false);
+    } catch {
+      toast({ title: 'Не удалось отправить', description: 'Напишите нам напрямую.', variant: 'destructive' });
+    } finally {
+      setOrderSending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
@@ -258,10 +305,23 @@ const Index = () => {
               </button>
             ))}
           </nav>
-          <Button onClick={() => scrollTo('contacts')} className="hidden md:inline-flex">Связаться</Button>
-          <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-            <Icon name={menuOpen ? 'X' : 'Menu'} size={26} />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => scrollTo('contacts')} className="hidden md:inline-flex">Связаться</Button>
+            <button
+              onClick={() => cart.setOpen(true)}
+              className="relative grid place-items-center w-11 h-11 rounded-xl border border-border hover:bg-muted transition-colors"
+            >
+              <Icon name="ShoppingCart" size={22} />
+              {cart.count > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 bg-secondary text-white text-xs font-bold rounded-full grid place-items-center">
+                  {cart.count}
+                </span>
+              )}
+            </button>
+            <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+              <Icon name={menuOpen ? 'X' : 'Menu'} size={26} />
+            </button>
+          </div>
         </div>
         {menuOpen && (
           <nav className="md:hidden flex flex-col gap-1 px-4 pb-4 border-t border-border bg-background">
@@ -416,7 +476,12 @@ const Index = () => {
                     <h3 className="font-semibold text-primary">{p.name}</h3>
                     <p className="text-secondary font-bold mt-1">{p.price}</p>
                   </div>
-                  <Button size="icon" variant="secondary" className="shrink-0">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="shrink-0"
+                    onClick={() => cart.add({ name: p.name, price: p.price, icon: p.icon, tag: p.tag })}
+                  >
                     <Icon name="ShoppingCart" size={18} />
                   </Button>
                 </div>
@@ -649,6 +714,64 @@ const Index = () => {
           </Card>
         </div>
       </section>
+
+      {/* Cart Sheet */}
+      <Sheet open={cart.open} onOpenChange={cart.setOpen}>
+        <SheetContent className="w-full sm:max-w-md flex flex-col">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2 font-display text-2xl text-primary">
+              <Icon name="ShoppingCart" size={22} /> Корзина
+              {cart.count > 0 && <Badge variant="secondary">{cart.count}</Badge>}
+            </SheetTitle>
+          </SheetHeader>
+
+          {cart.items.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Icon name="ShoppingCart" size={48} className="opacity-20" />
+              <p className="text-sm">Корзина пуста</p>
+              <Button variant="outline" size="sm" onClick={() => { cart.setOpen(false); scrollTo('shop'); }}>
+                Перейти в магазин
+              </Button>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col gap-4 overflow-y-auto py-4">
+              {/* Items */}
+              <div className="space-y-3">
+                {cart.items.map((item) => (
+                  <div key={item.name} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                    <div className="grid place-items-center w-12 h-12 rounded-lg gradient-deep text-white shrink-0">
+                      <Icon name={item.icon} size={22} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-primary truncate">{item.name}</p>
+                      <p className="text-secondary text-sm font-bold">{item.priceNum.toLocaleString('ru')} ₽</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => cart.change(item.name, item.qty - 1)} className="w-7 h-7 rounded-lg border border-border hover:bg-muted flex items-center justify-center text-sm font-bold">−</button>
+                      <span className="w-6 text-center text-sm font-semibold">{item.qty}</span>
+                      <button onClick={() => cart.change(item.name, item.qty + 1)} className="w-7 h-7 rounded-lg border border-border hover:bg-muted flex items-center justify-center text-sm font-bold">+</button>
+                    </div>
+                    <button onClick={() => cart.remove(item.name)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                      <Icon name="X" size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total */}
+              <div className="border-t border-border pt-4 mt-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-medium text-muted-foreground">Итого:</span>
+                  <span className="font-display text-2xl font-bold text-primary">{cart.total.toLocaleString('ru')} ₽</span>
+                </div>
+
+                {/* Contact for order */}
+                <CartOrderForm onSubmit={submitOrder} sending={orderSending} />
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Footer */}
       <footer className="border-t border-border py-10">
