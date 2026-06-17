@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+import Logo from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
 
 const ADMIN_URL = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
@@ -80,9 +81,8 @@ export default function Admin() {
     return (
       <div className="min-h-screen gradient-deep flex items-center justify-center p-4">
         <Card className="p-8 w-full max-w-sm">
-          <div className="flex items-center gap-2 mb-6">
-            <Icon name="Fish" size={22} className="text-primary" />
-            <span className="font-display text-xl font-bold text-primary">Панель управления</span>
+          <div className="mb-6">
+            <Logo size="md" />
           </div>
           <p className="text-muted-foreground text-sm mb-4">Введите пароль для входа</p>
           <input
@@ -104,12 +104,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="grid place-items-center w-8 h-8 rounded-lg gradient-deep text-white">
-            <Icon name="Fish" size={18} />
-          </span>
-          <span className="font-display text-xl font-bold text-primary">Статьи</span>
-        </div>
+        <Logo size="sm" />
         <div className="flex gap-2">
           <Button onClick={() => setEditing({ ...EMPTY })} size="sm">
             <Icon name="Plus" size={16} className="mr-1" /> Новая статья

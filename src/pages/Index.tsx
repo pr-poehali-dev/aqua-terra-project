@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
+import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -126,11 +127,8 @@ const Index = () => {
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="container flex items-center justify-between h-16 px-4 md:px-6">
-          <button onClick={() => scrollTo('home')} className="flex items-center gap-2">
-            <span className="grid place-items-center w-9 h-9 rounded-lg gradient-deep text-white">
-              <Icon name="Fish" size={20} />
-            </span>
-            <span className="font-display text-2xl font-bold text-primary">АкваТеррариум</span>
+          <button onClick={() => scrollTo('home')}>
+            <Logo size="sm" />
           </button>
           <nav className="hidden md:flex items-center gap-7">
             {NAV.map((n) => (
@@ -161,7 +159,10 @@ const Index = () => {
         <div className="absolute inset-0 gradient-deep opacity-80" />
         <div className="container relative z-10 px-4 md:px-6 py-20">
           <div className="max-w-3xl animate-fade-in">
-            <Badge className="bg-sand text-primary hover:bg-sand mb-6 text-sm">Аквариумы · Террариумы · Экзотика</Badge>
+            <div className="mb-6">
+              <Logo size="lg" className="mb-4" />
+              <Badge className="bg-sand text-primary hover:bg-sand text-sm">Аквариумы · Террариумы · Экзотика</Badge>
+            </div>
             <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-[1.05] text-balance">
               Живая природа<br />в вашем доме
             </h1>
@@ -397,11 +398,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-10">
         <div className="container px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span className="grid place-items-center w-7 h-7 rounded-md gradient-deep text-white"><Icon name="Fish" size={16} /></span>
-            <span className="font-display text-lg font-bold text-primary">АкваТеррариум</span>
-          </div>
-          <p>© 2026 АкваТеррариум. Живая природа в вашем доме.</p>
+          <Logo size="sm" />
+          <p>© 2026 AquaScale — АкваТерра Студия. Живая природа в вашем доме.</p>
         </div>
       </footer>
     </div>
