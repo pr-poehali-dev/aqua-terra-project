@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useToast } from '@/hooks/use-toast';
+
+const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 
 const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb2af31a9/files/e5f0d30d-ddcd-4698-9e7c-61167861b392.jpg';
 
@@ -63,9 +66,35 @@ const scrollTo = (id: string) => {
 };
 
 const Index = () => {
+  const { toast } = useToast();
   const [cat, setCat] = useState('all');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', contact: '', message: '' });
+  const [sending, setSending] = useState(false);
   const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.cat === cat);
+
+  const submitLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.contact.trim()) {
+      toast({ title: 'Заполните имя и контакт', variant: 'destructive' });
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await fetch(LEAD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error();
+      toast({ title: 'Заявка отправлена!', description: 'Мы свяжемся с вами в ближайшее время.' });
+      setForm({ name: '', contact: '', message: '' });
+    } catch {
+      toast({ title: 'Не удалось отправить', description: 'Попробуйте позже или напишите нам напрямую.', variant: 'destructive' });
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -249,11 +278,29 @@ const Index = () => {
               ))}
             </div>
           </div>
-          <form className="p-10 md:p-12 space-y-4" onSubmit={(e) => e.preventDefault()}>
-            <input className="w-full h-12 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Ваше имя" />
-            <input className="w-full h-12 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Телефон или email" />
-            <textarea rows={4} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none" placeholder="Опишите задачу" />
-            <Button size="lg" className="w-full">Отправить заявку</Button>
+          <form className="p-10 md:p-12 space-y-4" onSubmit={submitLead}>
+            <input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full h-12 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Ваше имя"
+            />
+            <input
+              value={form.contact}
+              onChange={(e) => setForm({ ...form, contact: e.target.value })}
+              className="w-full h-12 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Телефон или email"
+            />
+            <textarea
+              rows={4}
+              value={form.message}
+              onChange={(e) => setForm({ ...form, message: e.target.value })}
+              className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              placeholder="Опишите задачу"
+            />
+            <Button size="lg" type="submit" disabled={sending} className="w-full">
+              {sending ? 'Отправляем…' : 'Отправить заявку'}
+            </Button>
           </form>
         </Card>
       </section>
