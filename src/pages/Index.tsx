@@ -11,6 +11,17 @@ import { useCart } from '@/hooks/use-cart';
 
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
+const PRODUCTS_URL = 'https://functions.poehali.dev/31fd2710-461b-4a20-9d16-02264d66dd19';
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  category: string;
+  tag: string;
+  icon: string;
+  photo_url: string | null;
+}
 
 interface Article {
   id: number;
@@ -209,6 +220,7 @@ const Index = () => {
   const [orderSending, setOrderSending] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<(Article & { content?: string }) | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
@@ -229,10 +241,11 @@ const Index = () => {
     setQuizScores({ aqua: 0, terra: 0, flora: 0 });
     setQuizResult(null);
   };
-  const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.cat === cat);
+  const filtered = cat === 'all' ? products : products.filter((p) => p.category === cat);
 
   useEffect(() => {
     fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
+    fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
   }, []);
 
   const openArticle = async (slug: string) => {
@@ -464,23 +477,29 @@ const Index = () => {
               </button>
             ))}
           </div>
+          {filtered.length === 0 && (
+            <p className="text-center text-muted-foreground py-10">Товары загружаются…</p>
+          )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((p) => (
-              <Card key={p.name} className="overflow-hidden hover-scale group">
-                <div className="aspect-[4/3] gradient-deep grid place-items-center text-white/90 relative">
-                  <Icon name={p.icon} size={56} className="group-hover:animate-float" />
-                  <Badge className="absolute top-3 left-3 bg-sand text-primary hover:bg-sand">{p.tag}</Badge>
+              <Card key={p.id} className="overflow-hidden hover-scale group">
+                <div className="aspect-[4/3] gradient-deep grid place-items-center text-white/90 relative overflow-hidden">
+                  {p.photo_url
+                    ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover absolute inset-0" />
+                    : <Icon name={p.icon} size={56} className="group-hover:animate-float" />
+                  }
+                  <Badge className="absolute top-3 left-3 bg-sand text-primary hover:bg-sand z-10">{p.tag}</Badge>
                 </div>
                 <div className="p-5 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="font-semibold text-primary">{p.name}</h3>
-                    <p className="text-secondary font-bold mt-1">{p.price}</p>
+                    <p className="text-secondary font-bold mt-1">{p.price.toLocaleString('ru')} ₽</p>
                   </div>
                   <Button
                     size="icon"
                     variant="secondary"
                     className="shrink-0"
-                    onClick={() => cart.add({ name: p.name, price: p.price, icon: p.icon, tag: p.tag })}
+                    onClick={() => cart.add({ name: p.name, price: `${p.price}`, icon: p.icon, tag: p.tag })}
                   >
                     <Icon name="ShoppingCart" size={18} />
                   </Button>
