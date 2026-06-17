@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import Bubbles from '@/components/Bubbles';
@@ -6,6 +6,8 @@ import WaveDivider from '@/components/WaveDivider';
 import DecoIcons from '@/components/DecoIcons';
 import StatCounter from '@/components/StatCounter';
 import WaterCursor from '@/components/WaterCursor';
+import Plankton from '@/components/Plankton';
+import MagneticCard from '@/components/MagneticCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -201,6 +203,7 @@ const Index = () => {
   const [lightboxItem, setLightboxItem] = useState<PortfolioItem | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  const heroImgRef = useRef<HTMLImageElement>(null);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
@@ -271,7 +274,13 @@ const Index = () => {
     fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
     fetch(PORTFOLIO_URL).then((r) => r.json()).then(setPortfolioItems).catch(() => {});
     fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
-    const onScroll = () => setScrollY(window.scrollY);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrollY(y);
+      if (heroImgRef.current) {
+        heroImgRef.current.style.transform = `translateY(${y * 0.35}px)`;
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -472,9 +481,16 @@ const Index = () => {
 
       {/* Hero */}
       <section id="home" className="relative pt-20 min-h-[92vh] flex items-center overflow-hidden">
-        <img src={HERO_IMG} alt="Аквариум" className="absolute inset-0 w-full h-full object-cover" />
+        <img
+          ref={heroImgRef}
+          src={HERO_IMG}
+          alt="Аквариум"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ willChange: 'transform', transformOrigin: 'center top', height: '130%', top: '-15%' }}
+        />
         <div className="absolute inset-0 gradient-deep opacity-80" />
         <Bubbles />
+        <Plankton />
         <div className="container relative z-10 px-4 md:px-6 py-20">
           <div className="max-w-3xl animate-fade-in">
             <div className="mb-6">
@@ -558,13 +574,15 @@ const Index = () => {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
-              <div key={s.title} className="glass-card rounded-2xl p-7 hover-scale transition-all duration-300 hover:shadow-lg">
-                <span className="grid place-items-center w-14 h-14 rounded-xl bg-secondary/15 text-secondary mb-5">
-                  <Icon name={s.icon} size={28} />
-                </span>
-                <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{s.description}</p>
-              </div>
+              <MagneticCard key={s.title} strength={8}>
+                <div className="glass-card rounded-2xl p-7 transition-all duration-300 hover:shadow-xl h-full">
+                  <span className="grid place-items-center w-14 h-14 rounded-xl bg-secondary/15 text-secondary mb-5">
+                    <Icon name={s.icon} size={28} />
+                  </span>
+                  <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{s.description}</p>
+                </div>
+              </MagneticCard>
             ))}
           </div>
         </div>
