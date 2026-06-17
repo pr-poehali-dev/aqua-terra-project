@@ -160,7 +160,7 @@ const Index = () => {
         <div className="container relative z-10 px-4 md:px-6 py-20">
           <div className="max-w-3xl animate-fade-in">
             <div className="mb-6">
-              <Logo size="lg" className="mb-5" />
+              <Logo size="lg" light className="mb-5" />
               <Badge className="bg-white/95 text-primary hover:bg-white border-0 text-sm font-semibold px-4 py-1.5 shadow-md">
                 Аквариумы · Террариумы · Экзотика
               </Badge>

@@ -3,6 +3,7 @@ const LOGO_URL = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'full' | 'icon';
+  light?: boolean;
   className?: string;
 }
 
@@ -12,7 +13,7 @@ const sizes = {
   lg: { img: 72, text: 'text-4xl', sub: 'text-sm' },
 };
 
-export default function Logo({ size = 'md', variant = 'full', className = '' }: LogoProps) {
+export default function Logo({ size = 'md', variant = 'full', light = false, className = '' }: LogoProps) {
   const s = sizes[size];
   return (
     <div className={`flex items-center gap-3 ${className}`}>
@@ -21,13 +22,17 @@ export default function Logo({ size = 'md', variant = 'full', className = '' }: 
         alt="AquaScale логотип"
         width={s.img}
         height={s.img}
-        className="rounded-full object-cover ring-2 ring-primary/30 shadow-md"
-        style={{ width: s.img, height: s.img, minWidth: s.img }}
+        className="rounded-full object-cover ring-2 shadow-md"
+        style={{ width: s.img, height: s.img, minWidth: s.img, boxShadow: light ? '0 0 0 2px rgba(255,255,255,0.4)' : undefined }}
       />
       {variant === 'full' && (
         <div className="leading-none">
-          <span className={`font-display font-bold text-primary ${s.text}`}>AquaScale</span>
-          <span className={`block font-medium tracking-widest text-muted-foreground uppercase mt-1 ${s.sub}`}>АкваТерра Студия</span>
+          <span className={`font-display font-bold drop-shadow-sm ${s.text} ${light ? 'text-white' : 'text-primary'}`}>
+            AquaScale
+          </span>
+          <span className={`block font-semibold tracking-widest uppercase mt-1 drop-shadow-sm ${s.sub} ${light ? 'text-white/90' : 'text-muted-foreground'}`}>
+            АкваТерра Студия
+          </span>
         </div>
       )}
     </div>
