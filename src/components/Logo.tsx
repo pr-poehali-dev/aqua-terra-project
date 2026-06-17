@@ -1,4 +1,4 @@
-const LOGO_URL = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb2af31a9/bucket/e1e5ec71-22c9-4c77-83b9-bc488ec04cf5.png';
+const LOGO_URL = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb2af31a9/files/e5a6448a-22cb-4b61-b4a0-28eb7c461a6c.jpg';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
