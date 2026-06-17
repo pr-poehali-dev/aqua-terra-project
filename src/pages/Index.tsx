@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
+import Bubbles from '@/components/Bubbles';
+import WaveDivider from '@/components/WaveDivider';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -312,6 +314,7 @@ const Index = () => {
       <section id="home" className="relative pt-20 min-h-[92vh] flex items-center overflow-hidden">
         <img src={HERO_IMG} alt="Аквариум" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 gradient-deep opacity-80" />
+        <Bubbles />
         <div className="container relative z-10 px-4 md:px-6 py-20">
           <div className="max-w-3xl animate-fade-in">
             <div className="mb-6">
@@ -337,10 +340,15 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Wave bottom */}
+        <div className="absolute bottom-0 inset-x-0 z-10 pointer-events-none">
+          <WaveDivider fill="hsl(var(--background))" />
+        </div>
+
         {/* Quiz promo button */}
         <button
           onClick={() => scrollTo('quiz')}
-          className="absolute bottom-10 right-6 md:right-12 z-20 group animate-wiggle"
+          className="absolute bottom-14 right-6 md:right-12 z-20 group animate-wiggle"
           aria-label="Пройти тест и получить скидку"
         >
           {/* pulse rings */}
@@ -359,7 +367,7 @@ const Index = () => {
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 container px-4 md:px-6">
+      <section id="services" className="py-24 container px-4 md:px-6 relative">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <Badge variant="secondary" className="mb-4">Услуги</Badge>
           <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Что мы делаем</h2>
@@ -379,8 +387,9 @@ const Index = () => {
       </section>
 
       {/* Prices */}
-      <section id="prices" className="py-24 bg-muted/50">
-        <div className="container px-4 md:px-6">
+      <section id="prices" className="relative bg-muted/50">
+        <WaveDivider fill="hsl(var(--muted) / 0.5)" flip className="mt-0" />
+        <div className="container px-4 md:px-6 py-16">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <Badge variant="secondary" className="mb-4">Цены</Badge>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Стоимость услуг</h2>
@@ -416,10 +425,11 @@ const Index = () => {
             Цены указаны ориентировочно. Точный расчёт — после обсуждения вашего проекта.
           </p>
         </div>
+        <WaveDivider fill="hsl(var(--background))" />
       </section>
 
       {/* Shop */}
-      <section id="shop" className="py-24 bg-muted/50">
+      <section id="shop" className="pb-24 bg-background">
         <div className="container px-4 md:px-6">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <Badge variant="secondary" className="mb-4">Магазин</Badge>
@@ -578,8 +588,9 @@ const Index = () => {
         </div>
       )}
 
-      <section id="faq" className="py-24 bg-muted/50">
-        <div className="container px-4 md:px-6 max-w-3xl">
+      <section id="faq" className="relative bg-muted/50">
+        <WaveDivider fill="hsl(var(--muted) / 0.5)" flip />
+        <div className="container px-4 md:px-6 max-w-3xl py-16">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4">FAQ</Badge>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Частые вопросы</h2>
@@ -593,6 +604,7 @@ const Index = () => {
             ))}
           </Accordion>
         </div>
+        <WaveDivider fill="hsl(var(--background))" />
       </section>
 
       {/* Contacts */}

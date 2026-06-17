@@ -100,6 +100,15 @@ export default {
 					'0%': { transform: 'scale(1)', opacity: '0.8' },
 					'70%': { transform: 'scale(1.15)', opacity: '0' },
 					'100%': { transform: 'scale(1.15)', opacity: '0' }
+				},
+				'bubble': {
+					'0%': { transform: 'translateY(0) scale(1)', opacity: '0.7' },
+					'50%': { opacity: '0.4', transform: 'translateY(-45%) scale(1.05)' },
+					'100%': { transform: 'translateY(-100vh) scale(0.8)', opacity: '0' }
+				},
+				'sway': {
+					'0%, 100%': { transform: 'translateX(0)' },
+					'50%': { transform: 'translateX(12px)' }
 				}
 			},
 			animation: {
@@ -108,7 +117,9 @@ export default {
 				'fade-in': 'fade-in 0.7s ease-out forwards',
 				'float': 'float 6s ease-in-out infinite',
 				'wiggle': 'wiggle 3s ease-in-out infinite',
-				'pulse-ring': 'pulse-ring 2s ease-out infinite'
+				'pulse-ring': 'pulse-ring 2s ease-out infinite',
+				'bubble': 'bubble linear infinite',
+				'sway': 'sway ease-in-out infinite'
 			}
 		}
 	},
