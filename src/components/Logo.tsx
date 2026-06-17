@@ -7,27 +7,27 @@ interface LogoProps {
 }
 
 const sizes = {
-  sm: { img: 28, text: 'text-lg' },
-  md: { img: 36, text: 'text-2xl' },
-  lg: { img: 52, text: 'text-3xl' },
+  sm: { img: 42, text: 'text-xl', sub: 'text-[11px]' },
+  md: { img: 52, text: 'text-2xl', sub: 'text-xs' },
+  lg: { img: 72, text: 'text-4xl', sub: 'text-sm' },
 };
 
 export default function Logo({ size = 'md', variant = 'full', className = '' }: LogoProps) {
   const s = sizes[size];
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-3 ${className}`}>
       <img
         src={LOGO_URL}
         alt="AquaScale логотип"
         width={s.img}
         height={s.img}
-        className="rounded-full object-cover ring-2 ring-primary/20"
-        style={{ width: s.img, height: s.img }}
+        className="rounded-full object-cover ring-2 ring-primary/30 shadow-md"
+        style={{ width: s.img, height: s.img, minWidth: s.img }}
       />
       {variant === 'full' && (
         <div className="leading-none">
           <span className={`font-display font-bold text-primary ${s.text}`}>AquaScale</span>
-          <span className="block text-[10px] font-medium tracking-widest text-muted-foreground uppercase mt-0.5">АкваТерра Студия</span>
+          <span className={`block font-medium tracking-widest text-muted-foreground uppercase mt-1 ${s.sub}`}>АкваТерра Студия</span>
         </div>
       )}
     </div>

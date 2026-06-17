@@ -126,7 +126,7 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
-        <div className="container flex items-center justify-between h-16 px-4 md:px-6">
+        <div className="container flex items-center justify-between h-20 px-4 md:px-6">
           <button onClick={() => scrollTo('home')}>
             <Logo size="sm" />
           </button>
@@ -154,14 +154,16 @@ const Index = () => {
       </header>
 
       {/* Hero */}
-      <section id="home" className="relative pt-16 min-h-[92vh] flex items-center overflow-hidden">
+      <section id="home" className="relative pt-20 min-h-[92vh] flex items-center overflow-hidden">
         <img src={HERO_IMG} alt="Аквариум" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 gradient-deep opacity-80" />
         <div className="container relative z-10 px-4 md:px-6 py-20">
           <div className="max-w-3xl animate-fade-in">
             <div className="mb-6">
-              <Logo size="lg" className="mb-4" />
-              <Badge className="bg-sand text-primary hover:bg-sand text-sm">Аквариумы · Террариумы · Экзотика</Badge>
+              <Logo size="lg" className="mb-5" />
+              <Badge className="bg-white/95 text-primary hover:bg-white border-0 text-sm font-semibold px-4 py-1.5 shadow-md">
+                Аквариумы · Террариумы · Экзотика
+              </Badge>
             </div>
             <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-[1.05] text-balance">
               Живая природа<br />в вашем доме
