@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
+import RichEditor from '@/components/RichEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
@@ -428,9 +429,11 @@ export default function Admin() {
                   className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none" placeholder="Пара предложений для превью" />
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground mb-1 block">Текст статьи</label>
-                <textarea rows={12} value={editingArticle.content || ''} onChange={(e) => setEditingArticle({ ...editingArticle, content: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono text-sm" placeholder="Текст статьи..." />
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">Текст статьи</label>
+                <RichEditor
+                  value={editingArticle.content || ''}
+                  onChange={(html) => setEditingArticle({ ...editingArticle, content: html })}
+                />
               </div>
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="pub" checked={!!editingArticle.published} onChange={(e) => setEditingArticle({ ...editingArticle, published: e.target.checked })} className="w-4 h-4 accent-primary" />

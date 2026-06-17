@@ -178,6 +178,7 @@ const Index = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoaded, setServicesLoaded] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
@@ -204,13 +205,15 @@ const Index = () => {
     fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
     fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
     fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const openArticle = async (slug: string) => {
     const res = await fetch(`${ARTICLES_URL}?slug=${slug}`);
     const data = await res.json();
     setSelectedArticle(data);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const submitLead = async (e: React.FormEvent) => {
@@ -566,9 +569,10 @@ const Index = () => {
                   <Icon name="X" size={22} />
                 </button>
               </div>
-              <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
-                {selectedArticle.content}
-              </div>
+              <div
+                className="prose prose-sm max-w-none text-foreground leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: selectedArticle.content || '' }}
+              />
             </div>
           </Card>
         </div>
@@ -779,6 +783,26 @@ const Index = () => {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Scroll buttons */}
+      {scrollY > 300 && (
+        <div className="fixed bottom-6 left-6 z-40 flex flex-col gap-2">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="w-11 h-11 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-transform grid place-items-center"
+            title="Наверх"
+          >
+            <Icon name="ArrowUp" size={20} />
+          </button>
+          <button
+            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+            className="w-11 h-11 rounded-full bg-card border border-border text-muted-foreground shadow-lg hover:scale-110 hover:text-primary transition-all grid place-items-center"
+            title="Вниз"
+          >
+            <Icon name="ArrowDown" size={20} />
+          </button>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-border py-10">
