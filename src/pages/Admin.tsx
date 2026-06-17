@@ -11,6 +11,7 @@ const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-ee
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
 const SERVICES_ADMIN = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
 const PORTFOLIO_ADMIN = 'https://functions.poehali.dev/86ea5a33-361e-443c-8816-3050029776df';
+const ANALYTICS_URL = 'https://functions.poehali.dev/30d12584-4095-41be-a486-9b95e926ce56';
 
 interface Article {
   id: number; title: string; slug: string; excerpt: string;
@@ -38,12 +39,24 @@ const EMPTY_ARTICLE: Omit<Article, 'id' | 'slug' | 'created_at'> = { title: '', 
 const EMPTY_SERVICE: Omit<Service, 'id'> = { icon: 'Wrench', title: '', description: '', price_from: 0, price_unit: 'за работу', tags: [], sort_order: 99, active: true };
 const EMPTY_PORTFOLIO: Omit<PortfolioItem, 'id'> = { title: '', tag: '', description: '', icon: 'Fish', photo_url: null, sort_order: 99, active: true };
 
+interface Lead {
+  id: number; name: string; contact: string; message: string;
+  source: string; read: boolean; created_at: string;
+}
+interface Stats {
+  total_leads: number; unread: number; leads_30d: number; leads_7d: number;
+  chart: { day: string; count: number }[];
+  products_count: number; articles_count: number; portfolio_count: number;
+}
+
 export default function Admin() {
   const { toast } = useToast();
   const [token, setToken] = useState('');
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'products' | 'portfolio' | 'services' | 'articles'>('products');
+  const [tab, setTab] = useState<'analytics' | 'products' | 'portfolio' | 'services' | 'articles'>('analytics');
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
 
   // Articles
   const [articles, setArticles] = useState<Article[]>([]);
@@ -73,19 +86,38 @@ export default function Admin() {
 
   const login = async () => {
     setLoading(true);
-    const [ra, rp, rs, rport] = await Promise.all([
+    const [ra, rp, rs, rport, rstat, rleads] = await Promise.all([
       fetch(ARTICLES_ADMIN, { headers }),
       fetch(PRODUCTS_ADMIN, { headers }),
       fetch(`${SERVICES_ADMIN}?admin=1`, { headers }),
       fetch(`${PORTFOLIO_ADMIN}?admin=1`, { headers }),
+      fetch(`${ANALYTICS_URL}?type=stats`, { headers }),
+      fetch(`${ANALYTICS_URL}?type=leads`, { headers }),
     ]);
     if (ra.status === 401) { toast({ title: 'Неверный пароль', variant: 'destructive' }); setLoading(false); return; }
     setArticles(await ra.json());
     setProducts(await rp.json());
     setSvcList(await rs.json());
     setPortfolio(await rport.json());
+    setStats(await rstat.json());
+    setLeads(await rleads.json());
     setAuthed(true);
     setLoading(false);
+  };
+
+  const loadAnalytics = async () => {
+    const [rs, rl] = await Promise.all([
+      fetch(`${ANALYTICS_URL}?type=stats`, { headers }),
+      fetch(`${ANALYTICS_URL}?type=leads`, { headers }),
+    ]);
+    setStats(await rs.json());
+    setLeads(await rl.json());
+  };
+
+  const markRead = async (id: number) => {
+    await fetch(`${ANALYTICS_URL}?id=${id}`, { method: 'PUT', headers });
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, read: true } : l));
+    setStats(prev => prev ? { ...prev, unread: Math.max(0, prev.unread - 1) } : prev);
   };
 
   const loadArticles = () => fetch(ARTICLES_ADMIN, { headers }).then(r => r.json()).then(setArticles);
@@ -244,7 +276,7 @@ export default function Admin() {
             else setEditingArticle({ ...EMPTY_ARTICLE });
           }} size="sm">
             <Icon name="Plus" size={16} className="mr-1" />
-            {tab === 'products' ? 'Новый товар' : tab === 'portfolio' ? 'Новая работа' : tab === 'services' ? 'Новая услуга' : 'Новая статья'}
+            {tab === 'analytics' ? '' : tab === 'products' ? 'Новый товар' : tab === 'portfolio' ? 'Новая работа' : tab === 'services' ? 'Новая услуга' : 'Новая статья'}
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.location.href = '/'}>
             <Icon name="ArrowLeft" size={16} className="mr-1" /> На сайт
@@ -255,16 +287,104 @@ export default function Admin() {
       {/* Tabs */}
       <div className="border-b border-border bg-background">
         <div className="container px-4 md:px-6 flex gap-0">
-          {([['products','🛍 Товары'], ['portfolio','🖼 Портфолио'], ['services','💰 Услуги и цены'], ['articles','📝 Статьи']] as const).map(([t, label]) => (
+          {([['analytics','📊 Аналитика'], ['products','🛍 Товары'], ['portfolio','🖼 Портфолио'], ['services','💰 Услуги'], ['articles','📝 Статьи']] as const).map(([t, label]) => (
             <button key={t} onClick={() => { setTab(t); setEditingProduct(null); setEditingPort(null); setEditingSvc(null); setEditingArticle(null); }}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'}`}>
+              className={`relative px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'}`}>
               {label}
+              {t === 'analytics' && stats && stats.unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full grid place-items-center">{stats.unread}</span>
+              )}
             </button>
           ))}
         </div>
       </div>
 
       <main className="container py-8 px-4 md:px-6">
+
+        {/* ===== ANALYTICS ===== */}
+        {tab === 'analytics' && (
+          <div className="max-w-5xl mx-auto space-y-8">
+            {/* Stats grid */}
+            {stats && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Всего заявок', value: stats.total_leads, icon: 'Mail', color: 'text-primary' },
+                  { label: 'Непрочитанных', value: stats.unread, icon: 'BellRing', color: stats.unread > 0 ? 'text-red-500' : 'text-primary' },
+                  { label: 'За 7 дней', value: stats.leads_7d, icon: 'TrendingUp', color: 'text-secondary' },
+                  { label: 'За 30 дней', value: stats.leads_30d, icon: 'Calendar', color: 'text-secondary' },
+                ].map((s) => (
+                  <Card key={s.label} className="p-5 text-center">
+                    <Icon name={s.icon} size={22} className={`mx-auto mb-2 ${s.color}`} />
+                    <p className={`font-display text-4xl font-bold ${s.color}`}>{s.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Site stats */}
+            {stats && (
+              <Card className="p-5">
+                <h3 className="font-semibold text-primary mb-4">Контент сайта</h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div><p className="font-display text-3xl font-bold text-primary">{stats.products_count}</p><p className="text-xs text-muted-foreground mt-1">Товаров в наличии</p></div>
+                  <div><p className="font-display text-3xl font-bold text-primary">{stats.articles_count}</p><p className="text-xs text-muted-foreground mt-1">Статей опубликовано</p></div>
+                  <div><p className="font-display text-3xl font-bold text-primary">{stats.portfolio_count}</p><p className="text-xs text-muted-foreground mt-1">Работ в портфолио</p></div>
+                </div>
+              </Card>
+            )}
+
+            {/* Chart */}
+            {stats && stats.chart.length > 0 && (
+              <Card className="p-5">
+                <h3 className="font-semibold text-primary mb-4">Заявки за 30 дней</h3>
+                <div className="flex items-end gap-1 h-24">
+                  {(() => {
+                    const max = Math.max(...stats.chart.map(d => d.count), 1);
+                    return stats.chart.map((d) => (
+                      <div key={d.day} className="flex-1 flex flex-col items-center gap-1 group" title={`${d.day}: ${d.count}`}>
+                        <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100">{d.count}</span>
+                        <div className="w-full rounded-t bg-primary/70 hover:bg-primary transition-colors" style={{ height: `${(d.count / max) * 80}px`, minHeight: 2 }} />
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </Card>
+            )}
+
+            {/* Leads list */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-primary">Заявки</h3>
+                <Button variant="outline" size="sm" onClick={loadAnalytics}><Icon name="RefreshCw" size={14} className="mr-1" />Обновить</Button>
+              </div>
+              <div className="space-y-3">
+                {leads.length === 0 && <p className="text-center text-muted-foreground py-10">Заявок пока нет</p>}
+                {leads.map((l) => (
+                  <Card key={l.id} className={`p-4 flex items-start gap-4 transition-colors ${!l.read ? 'border-primary/40 bg-primary/5' : ''}`}>
+                    <div className="grid place-items-center w-10 h-10 rounded-xl shrink-0" style={{ background: l.source === 'cart' ? 'hsl(152 38% 38% / 0.15)' : 'hsl(200 70% 24% / 0.1)' }}>
+                      <Icon name={l.source === 'cart' ? 'ShoppingCart' : 'Mail'} size={18} className={l.source === 'cart' ? 'text-secondary' : 'text-primary'} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-semibold text-primary text-sm">{l.name}</p>
+                        {!l.read && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
+                        <span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleString('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p className="text-sm text-secondary font-medium">{l.contact}</p>
+                      {l.message && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{l.message}</p>}
+                    </div>
+                    {!l.read && (
+                      <Button size="sm" variant="outline" className="shrink-0" onClick={() => markRead(l.id)}>
+                        <Icon name="Check" size={14} className="mr-1" /> Прочитано
+                      </Button>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ===== PRODUCTS ===== */}
         {tab === 'products' && (

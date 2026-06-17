@@ -189,6 +189,8 @@ const Index = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoaded, setServicesLoaded] = useState(false);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+  const [lightboxItem, setLightboxItem] = useState<PortfolioItem | null>(null);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
   const [scrollY, setScrollY] = useState(0);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
@@ -310,13 +312,30 @@ const Index = () => {
           </div>
         </div>
         {menuOpen && (
-          <nav className="md:hidden flex flex-col gap-1 px-4 pb-4 border-t border-border bg-background">
-            {NAV.map((n) => (
-              <button key={n.id} onClick={() => { scrollTo(n.id); setMenuOpen(false); }} className="text-left py-2 text-sm font-medium text-muted-foreground hover:text-primary">
-                {n.label}
-              </button>
-            ))}
-          </nav>
+          <div className="md:hidden fixed inset-0 top-20 z-40 bg-background/95 backdrop-blur-md flex flex-col">
+            <nav className="flex flex-col px-6 pt-6 pb-8 gap-1 flex-1">
+              {NAV.map((n, i) => (
+                <button
+                  key={n.id}
+                  onClick={() => { scrollTo(n.id); setMenuOpen(false); }}
+                  className="flex items-center justify-between py-4 border-b border-border/50 text-left group"
+                  style={{ animationDelay: `${i * 40}ms` }}
+                >
+                  <span className="font-display text-2xl font-semibold text-primary group-hover:text-secondary transition-colors">{n.label}</span>
+                  <Icon name="ArrowRight" size={18} className="text-muted-foreground group-hover:text-secondary group-hover:translate-x-1 transition-all" />
+                </button>
+              ))}
+            </nav>
+            <div className="px-6 pb-8 space-y-3">
+              <a href="tel:+79055337226" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors">
+                <Icon name="Phone" size={18} /> +7 905 533 7226
+              </a>
+              <a href="https://t.me/aquascale" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors">
+                <Icon name="Send" size={18} /> Telegram
+              </a>
+              <Button className="w-full mt-2" onClick={() => { scrollTo('contacts'); setMenuOpen(false); }}>Оставить заявку</Button>
+            </div>
+          </div>
         )}
       </header>
 
@@ -576,8 +595,12 @@ const Index = () => {
             <p className="text-center text-muted-foreground py-10">Работы скоро появятся.</p>
           )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {portfolioItems.map((p) => (
-              <div key={p.id} className="group relative aspect-[3/4] rounded-2xl overflow-hidden gradient-deep cursor-pointer">
+            {portfolioItems.map((p, idx) => (
+              <div
+                key={p.id}
+                className="group relative aspect-[3/4] rounded-2xl overflow-hidden gradient-deep cursor-pointer"
+                onClick={() => { setLightboxItem(p); setLightboxIdx(idx); }}
+              >
                 {p.photo_url
                   ? <img src={p.photo_url} alt={p.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   : <div className="absolute inset-0 grid place-items-center opacity-30 group-hover:opacity-50 transition-opacity">
@@ -585,18 +608,66 @@ const Index = () => {
                     </div>
                 }
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm grid place-items-center">
+                    <Icon name="ZoomIn" size={22} className="text-white" />
+                  </span>
+                </div>
                 <div className="absolute inset-x-0 bottom-0 p-5">
                   <Badge className="bg-sand text-primary hover:bg-sand mb-2">{p.tag}</Badge>
                   <h3 className="font-display text-xl font-semibold text-white">{p.title}</h3>
-                  {p.description && (
-                    <p className="text-white/70 text-xs mt-1 line-clamp-2">{p.description}</p>
-                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Portfolio Lightbox */}
+      {lightboxItem && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxItem(null)}
+        >
+          <button className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center text-white transition-colors z-10" onClick={() => setLightboxItem(null)}>
+            <Icon name="X" size={22} />
+          </button>
+          {/* Prev */}
+          {portfolioItems.length > 1 && (
+            <button className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center text-white transition-colors z-10"
+              onClick={(e) => { e.stopPropagation(); const prev = (lightboxIdx - 1 + portfolioItems.length) % portfolioItems.length; setLightboxIdx(prev); setLightboxItem(portfolioItems[prev]); }}>
+              <Icon name="ChevronLeft" size={24} />
+            </button>
+          )}
+          {/* Next */}
+          {portfolioItems.length > 1 && (
+            <button className="absolute right-16 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 grid place-items-center text-white transition-colors z-10"
+              onClick={(e) => { e.stopPropagation(); const next = (lightboxIdx + 1) % portfolioItems.length; setLightboxIdx(next); setLightboxItem(portfolioItems[next]); }}>
+              <Icon name="ChevronRight" size={24} />
+            </button>
+          )}
+          <div className="flex flex-col md:flex-row gap-0 max-w-5xl w-full max-h-[90vh] rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="md:w-2/3 bg-black flex-shrink-0">
+              {lightboxItem.photo_url
+                ? <img src={lightboxItem.photo_url} alt={lightboxItem.title} className="w-full h-full object-contain max-h-[70vh] md:max-h-[90vh]" />
+                : <div className="w-full h-64 md:h-full gradient-deep grid place-items-center"><Icon name={lightboxItem.icon} size={80} className="text-white/50" /></div>
+              }
+            </div>
+            <div className="md:w-1/3 bg-card p-6 md:p-8 flex flex-col">
+              <Badge className="bg-sand text-primary hover:bg-sand self-start mb-4">{lightboxItem.tag}</Badge>
+              <h2 className="font-display text-3xl font-bold text-primary mb-4">{lightboxItem.title}</h2>
+              {lightboxItem.description && (
+                <div className="text-muted-foreground text-sm leading-relaxed flex-1 overflow-y-auto prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: lightboxItem.description }} />
+              )}
+              <Button className="mt-6 w-full" onClick={() => { setLightboxItem(null); scrollTo('contacts'); }}>
+                Заказать похожий проект
+              </Button>
+              <p className="text-center text-xs text-muted-foreground mt-3">{lightboxIdx + 1} / {portfolioItems.length}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Articles */}
       <section id="articles" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
