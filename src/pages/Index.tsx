@@ -4,6 +4,7 @@ import Logo from '@/components/Logo';
 import Bubbles from '@/components/Bubbles';
 import WaveDivider from '@/components/WaveDivider';
 import DecoIcons from '@/components/DecoIcons';
+import StatCounter from '@/components/StatCounter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -365,6 +366,22 @@ const Index = () => {
             </span>
           </div>
         </button>
+      </section>
+
+      {/* Stats */}
+      <section className="py-14 bg-background">
+        <div className="container px-4 md:px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { value: 15, suffix: ' лет', label: 'Опыта в деле' },
+              { value: 200, suffix: '+', label: 'Проектов выполнено' },
+              { value: 500, suffix: '+', label: 'Довольных клиентов' },
+              { value: 50, suffix: '+', label: 'Видов животных' },
+            ].map((s, i) => (
+              <StatCounter key={i} {...s} />
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Services */}
