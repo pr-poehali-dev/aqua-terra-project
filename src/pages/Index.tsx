@@ -17,6 +17,12 @@ const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
 const PRODUCTS_URL = 'https://functions.poehali.dev/31fd2710-461b-4a20-9d16-02264d66dd19';
 const SERVICES_URL = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
+const PORTFOLIO_URL = 'https://functions.poehali.dev/86ea5a33-361e-443c-8816-3050029776df';
+
+interface PortfolioItem {
+  id: number; title: string; tag: string; description: string;
+  icon: string; photo_url: string | null; sort_order: number; active: boolean;
+}
 
 interface Service {
   id: number;
@@ -182,6 +188,7 @@ const Index = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoaded, setServicesLoaded] = useState(false);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [scrollY, setScrollY] = useState(0);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
@@ -208,6 +215,7 @@ const Index = () => {
   useEffect(() => {
     fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
     fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
+    fetch(PORTFOLIO_URL).then((r) => r.json()).then(setPortfolioItems).catch(() => {});
     fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
     const onScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -564,15 +572,25 @@ const Index = () => {
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Наши работы</h2>
             <p className="mt-4 text-muted-foreground">Реализованные проекты разной сложности и стилистики.</p>
           </div>
+          {portfolioItems.length === 0 && (
+            <p className="text-center text-muted-foreground py-10">Работы скоро появятся.</p>
+          )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {PORTFOLIO.map((p) => (
-              <div key={p.title} className="group relative aspect-[3/4] rounded-2xl overflow-hidden gradient-deep cursor-pointer">
-                <div className="absolute inset-0 grid place-items-center opacity-30 group-hover:opacity-50 transition-opacity">
-                  <Icon name={p.icon} size={64} className="text-white" />
-                </div>
-                <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/60 to-transparent">
+            {portfolioItems.map((p) => (
+              <div key={p.id} className="group relative aspect-[3/4] rounded-2xl overflow-hidden gradient-deep cursor-pointer">
+                {p.photo_url
+                  ? <img src={p.photo_url} alt={p.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  : <div className="absolute inset-0 grid place-items-center opacity-30 group-hover:opacity-50 transition-opacity">
+                      <Icon name={p.icon} size={64} className="text-white" />
+                    </div>
+                }
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5">
                   <Badge className="bg-sand text-primary hover:bg-sand mb-2">{p.tag}</Badge>
                   <h3 className="font-display text-xl font-semibold text-white">{p.title}</h3>
+                  {p.description && (
+                    <p className="text-white/70 text-xs mt-1 line-clamp-2">{p.description}</p>
+                  )}
                 </div>
               </div>
             ))}

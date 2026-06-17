@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
 const SERVICES_ADMIN = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
+const PORTFOLIO_ADMIN = 'https://functions.poehali.dev/86ea5a33-361e-443c-8816-3050029776df';
 
 interface Article {
   id: number; title: string; slug: string; excerpt: string;
@@ -24,20 +25,25 @@ interface Service {
   id: number; icon: string; title: string; description: string;
   price_from: number; price_unit: string; tags: string[]; sort_order: number; active: boolean;
 }
+interface PortfolioItem {
+  id: number; title: string; tag: string; description: string;
+  icon: string; photo_url: string | null; sort_order: number; active: boolean;
+}
 
 const ARTICLE_CATS = ['Аквариумы', 'Террариумы', 'Флорариумы', 'Экзотика', 'Корма', 'Общее'];
 const PRODUCT_CATS = [{ id: 'animals', label: 'Животные' }, { id: 'food', label: 'Корма' }, { id: 'supplies', label: 'Материалы' }];
-const ICONS = ['Fish', 'Turtle', 'Bug', 'Wheat', 'Package', 'Lightbulb', 'Settings', 'Sprout', 'Waves', 'Wrench', 'Truck', 'Star', 'Waves'];
+const ICONS = ['Fish', 'Turtle', 'Bug', 'Wheat', 'Package', 'Lightbulb', 'Settings', 'Sprout', 'Waves', 'Wrench', 'Truck', 'Star'];
 const EMPTY_PRODUCT: Omit<Product, 'id'> = { name: '', price: 0, category: 'animals', tag: '', icon: 'Package', photo_url: null, in_stock: true, description: '' };
 const EMPTY_ARTICLE: Omit<Article, 'id' | 'slug' | 'created_at'> = { title: '', excerpt: '', content: '', category: 'Аквариумы', cover_url: null, published: false };
 const EMPTY_SERVICE: Omit<Service, 'id'> = { icon: 'Wrench', title: '', description: '', price_from: 0, price_unit: 'за работу', tags: [], sort_order: 99, active: true };
+const EMPTY_PORTFOLIO: Omit<PortfolioItem, 'id'> = { title: '', tag: '', description: '', icon: 'Fish', photo_url: null, sort_order: 99, active: true };
 
 export default function Admin() {
   const { toast } = useToast();
   const [token, setToken] = useState('');
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'products' | 'services' | 'articles'>('products');
+  const [tab, setTab] = useState<'products' | 'portfolio' | 'services' | 'articles'>('products');
 
   // Articles
   const [articles, setArticles] = useState<Article[]>([]);
@@ -56,19 +62,28 @@ export default function Admin() {
   const [editingSvc, setEditingSvc] = useState<Partial<Service> | null>(null);
   const [savingSvc, setSavingSvc] = useState(false);
 
+  // Portfolio
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
+  const [editingPort, setEditingPort] = useState<Partial<PortfolioItem> | null>(null);
+  const [savingPort, setSavingPort] = useState(false);
+  const [uploadingPortPhoto, setUploadingPortPhoto] = useState(false);
+  const portFileRef = useRef<HTMLInputElement>(null);
+
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token };
 
   const login = async () => {
     setLoading(true);
-    const [ra, rp, rs] = await Promise.all([
+    const [ra, rp, rs, rport] = await Promise.all([
       fetch(ARTICLES_ADMIN, { headers }),
       fetch(PRODUCTS_ADMIN, { headers }),
       fetch(`${SERVICES_ADMIN}?admin=1`, { headers }),
+      fetch(`${PORTFOLIO_ADMIN}?admin=1`, { headers }),
     ]);
     if (ra.status === 401) { toast({ title: 'Неверный пароль', variant: 'destructive' }); setLoading(false); return; }
     setArticles(await ra.json());
     setProducts(await rp.json());
     setSvcList(await rs.json());
+    setPortfolio(await rport.json());
     setAuthed(true);
     setLoading(false);
   };
@@ -76,6 +91,47 @@ export default function Admin() {
   const loadArticles = () => fetch(ARTICLES_ADMIN, { headers }).then(r => r.json()).then(setArticles);
   const loadProducts = () => fetch(PRODUCTS_ADMIN, { headers }).then(r => r.json()).then(setProducts);
   const loadServices = () => fetch(`${SERVICES_ADMIN}?admin=1`, { headers }).then(r => r.json()).then(setSvcList);
+  const loadPortfolio = () => fetch(`${PORTFOLIO_ADMIN}?admin=1`, { headers }).then(r => r.json()).then(setPortfolio);
+
+  // --- Portfolio ---
+  const savePort = async () => {
+    if (!editingPort) return;
+    setSavingPort(true);
+    const isNew = !editingPort.id;
+    const url = isNew ? PORTFOLIO_ADMIN : `${PORTFOLIO_ADMIN}?id=${editingPort.id}`;
+    const res = await fetch(url, { method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(editingPort) });
+    if (res.ok) { toast({ title: isNew ? 'Работа добавлена!' : 'Сохранено!' }); setEditingPort(null); loadPortfolio(); }
+    else toast({ title: 'Ошибка', variant: 'destructive' });
+    setSavingPort(false);
+  };
+  const removePort = async (id: number) => {
+    if (!confirm('Удалить работу из портфолио?')) return;
+    await fetch(`${PORTFOLIO_ADMIN}?id=${id}`, { method: 'DELETE', headers });
+    loadPortfolio();
+  };
+  const togglePortActive = async (p: PortfolioItem) => {
+    await fetch(`${PORTFOLIO_ADMIN}?id=${p.id}`, { method: 'PUT', headers, body: JSON.stringify({ ...p, active: !p.active }) });
+    loadPortfolio();
+  };
+  const uploadPortPhoto = async (file: File, id: number) => {
+    setUploadingPortPhoto(true);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string).split(',')[1];
+      const res = await fetch(`${PORTFOLIO_ADMIN}/upload?id=${id}`, {
+        method: 'POST', headers, body: JSON.stringify({ photo_base64: base64, ext }),
+      });
+      if (res.ok) {
+        const { photo_url } = await res.json();
+        setEditingPort((prev) => prev ? { ...prev, photo_url } : prev);
+        toast({ title: 'Фото загружено!' });
+        loadPortfolio();
+      } else toast({ title: 'Ошибка загрузки', variant: 'destructive' });
+      setUploadingPortPhoto(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // --- Services ---
   const saveSvc = async () => {
@@ -183,11 +239,12 @@ export default function Admin() {
         <div className="flex gap-2">
           <Button onClick={() => {
             if (tab === 'products') setEditingProduct({ ...EMPTY_PRODUCT });
+            else if (tab === 'portfolio') setEditingPort({ ...EMPTY_PORTFOLIO });
             else if (tab === 'services') setEditingSvc({ ...EMPTY_SERVICE });
             else setEditingArticle({ ...EMPTY_ARTICLE });
           }} size="sm">
             <Icon name="Plus" size={16} className="mr-1" />
-            {tab === 'products' ? 'Новый товар' : tab === 'services' ? 'Новая услуга' : 'Новая статья'}
+            {tab === 'products' ? 'Новый товар' : tab === 'portfolio' ? 'Новая работа' : tab === 'services' ? 'Новая услуга' : 'Новая статья'}
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.location.href = '/'}>
             <Icon name="ArrowLeft" size={16} className="mr-1" /> На сайт
@@ -198,8 +255,8 @@ export default function Admin() {
       {/* Tabs */}
       <div className="border-b border-border bg-background">
         <div className="container px-4 md:px-6 flex gap-0">
-          {([['products','🛍 Товары'], ['services','💰 Услуги и цены'], ['articles','📝 Статьи']] as const).map(([t, label]) => (
-            <button key={t} onClick={() => { setTab(t); setEditingProduct(null); setEditingSvc(null); setEditingArticle(null); }}
+          {([['products','🛍 Товары'], ['portfolio','🖼 Портфолио'], ['services','💰 Услуги и цены'], ['articles','📝 Статьи']] as const).map(([t, label]) => (
+            <button key={t} onClick={() => { setTab(t); setEditingProduct(null); setEditingPort(null); setEditingSvc(null); setEditingArticle(null); }}
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'}`}>
               {label}
             </button>
@@ -312,6 +369,109 @@ export default function Admin() {
                       <Icon name="Pencil" size={16} />
                     </Button>
                     <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeProduct(p.id)}>
+                      <Icon name="Trash2" size={16} />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* ===== PORTFOLIO ===== */}
+        {tab === 'portfolio' && (
+          editingPort ? (
+            <Card className="p-6 max-w-2xl mx-auto space-y-4">
+              <h2 className="font-display text-2xl font-bold text-primary">{editingPort.id ? 'Редактировать работу' : 'Новая работа'}</h2>
+
+              {/* Photo upload */}
+              {editingPort.id && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">Фото работы</label>
+                  <div className="flex items-center gap-4">
+                    {editingPort.photo_url
+                      ? <img src={editingPort.photo_url} alt="фото" className="w-28 h-20 object-cover rounded-xl border border-border" />
+                      : <div className="w-28 h-20 rounded-xl gradient-deep grid place-items-center text-white/60"><Icon name={editingPort.icon || 'Fish'} size={32} /></div>
+                    }
+                    <div>
+                      <input ref={portFileRef} type="file" accept="image/*" className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f && editingPort.id) uploadPortPhoto(f, editingPort.id); }} />
+                      <Button variant="outline" size="sm" disabled={uploadingPortPhoto} onClick={() => portFileRef.current?.click()}>
+                        <Icon name="Upload" size={16} className="mr-1" /> {uploadingPortPhoto ? 'Загружаем…' : 'Загрузить фото'}
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP — рекомендуем 3:4</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {!editingPort.id && (
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-4 py-2">💡 После сохранения можно загрузить фото</p>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Название *</label>
+                  <input value={editingPort.title || ''} onChange={(e) => setEditingPort({ ...editingPort, title: e.target.value })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Морской риф 300л" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Тег</label>
+                  <input value={editingPort.tag || ''} onChange={(e) => setEditingPort({ ...editingPort, tag: e.target.value })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Аквариум, Террариум…" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Иконка (если нет фото)</label>
+                  <select value={editingPort.icon || 'Fish'} onChange={(e) => setEditingPort({ ...editingPort, icon: e.target.value })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
+                    {ICONS.map((i) => <option key={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Порядок</label>
+                  <input type="number" value={editingPort.sort_order ?? 99} onChange={(e) => setEditingPort({ ...editingPort, sort_order: parseInt(e.target.value) || 99 })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">Описание работы</label>
+                  <RichEditor value={editingPort.description || ''} onChange={(html) => setEditingPort({ ...editingPort, description: html })} />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="portActive" checked={!!editingPort.active} onChange={(e) => setEditingPort({ ...editingPort, active: e.target.checked })} className="w-4 h-4 accent-primary" />
+                <label htmlFor="portActive" className="text-sm font-medium">Показывать на сайте</label>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button onClick={savePort} disabled={savingPort}>{savingPort ? 'Сохраняем…' : 'Сохранить'}</Button>
+                <Button variant="outline" onClick={() => setEditingPort(null)}>Отмена</Button>
+              </div>
+            </Card>
+          ) : (
+            <div className="space-y-3 max-w-4xl mx-auto">
+              {portfolio.length === 0 && <p className="text-center text-muted-foreground py-16">Работ пока нет. Нажмите «Новая работа».</p>}
+              {portfolio.map((p) => (
+                <Card key={p.id} className="p-4 flex items-center gap-4">
+                  <div className="w-20 h-14 rounded-xl overflow-hidden shrink-0">
+                    {p.photo_url
+                      ? <img src={p.photo_url} alt={p.title} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full gradient-deep grid place-items-center text-white/80"><Icon name={p.icon} size={22} /></div>
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="font-semibold text-primary truncate">{p.title}</h3>
+                      <Badge variant={p.active ? 'default' : 'secondary'} className="text-xs shrink-0">{p.active ? 'Показывается' : 'Скрыта'}</Badge>
+                      {p.tag && <Badge variant="outline" className="text-xs shrink-0">{p.tag}</Badge>}
+                    </div>
+                    {p.description && <p className="text-muted-foreground text-xs line-clamp-1" dangerouslySetInnerHTML={{ __html: p.description }} />}
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button size="icon" variant="ghost" onClick={() => togglePortActive(p)}>
+                      <Icon name={p.active ? 'EyeOff' : 'Eye'} size={16} />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => setEditingPort(p)}>
+                      <Icon name="Pencil" size={16} />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removePort(p.id)}>
                       <Icon name="Trash2" size={16} />
                     </Button>
                   </div>
