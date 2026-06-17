@@ -6,30 +6,23 @@ export default function WaterCursor() {
   const [click, setClick] = useState(false);
 
   useEffect(() => {
-    let rafId: number;
-
     const move = (e: MouseEvent) => {
-      // Мгновенно — без rAF и без задержки
       if (cursorRef.current) {
-        cursorRef.current.style.transform =
-          `translate(${e.clientX}px, ${e.clientY}px)`;
+        cursorRef.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
       }
       const el = document.elementFromPoint(e.clientX, e.clientY);
       setHover(!!el?.closest('button, a, [role=button], input, textarea, select, label'));
     };
-
     const down = () => setClick(true);
     const up   = () => setClick(false);
 
     document.addEventListener('mousemove', move, { passive: true });
     document.addEventListener('mousedown', down);
     document.addEventListener('mouseup', up);
-
     return () => {
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mousedown', down);
       document.removeEventListener('mouseup', up);
-      cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -41,27 +34,30 @@ export default function WaterCursor() {
         className="pointer-events-none fixed top-0 left-0 z-[9999]"
         style={{ willChange: 'transform' }}
       >
-        {/* Внешнее кольцо — CSS transition, мгновенный scale */}
-        <div style={{
-          position: 'absolute',
-          width: hover ? 36 : 32,
-          height: hover ? 36 : 32,
-          borderRadius: '50%',
-          border: `1px solid ${hover ? 'hsl(var(--secondary))' : 'hsl(var(--primary) / 0.5)'}`,
-          transform: `translate(-50%, -50%) scale(${click ? 0.7 : 1})`,
-          transition: 'width 0.15s ease, height 0.15s ease, border-color 0.15s ease, transform 0.1s ease',
-          boxShadow: hover ? '0 0 0 1px hsl(var(--secondary) / 0.15)' : 'none',
-        }} />
-        {/* Центральная точка */}
-        <div style={{
-          position: 'absolute',
-          width: hover ? 5 : 4,
-          height: hover ? 5 : 4,
-          borderRadius: '50%',
-          background: hover ? 'hsl(var(--secondary))' : 'hsl(var(--primary))',
-          transform: `translate(-50%, -50%) scale(${click ? 1.6 : 1})`,
-          transition: 'background 0.15s ease, transform 0.1s ease, width 0.15s ease, height 0.15s ease',
-        }} />
+        <svg
+          width="20"
+          height="24"
+          viewBox="0 0 20 24"
+          fill="none"
+          style={{
+            display: 'block',
+            transform: `scale(${click ? 0.86 : hover ? 1.1 : 1})`,
+            transition: 'transform 0.12s ease, filter 0.15s ease',
+            filter: hover
+              ? 'drop-shadow(0 2px 8px hsl(var(--secondary) / 0.6))'
+              : 'drop-shadow(0 1px 4px rgba(0,0,0,0.4))',
+          }}
+        >
+          <path
+            d="M2 1.5L2 18.5L7 13.5L10 20.5L12.5 19.5L9.5 12.5L16.5 12.5L2 1.5Z"
+            fill={hover ? 'hsl(var(--secondary))' : 'hsl(var(--foreground))'}
+            stroke="hsl(var(--background))"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            style={{ transition: 'fill 0.15s ease' }}
+          />
+        </svg>
       </div>
     </>
   );
