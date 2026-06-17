@@ -55,45 +55,51 @@
   }
 
   .dark {
-    --background: 210 45% 7%;
-    --foreground: 40 38% 94%;
+    /* Глубокий тёмно-синий фон, как ночное море */
+    --background: 218 35% 9%;
+    --foreground: 210 30% 92%;
 
-    --card: 210 40% 10%;
-    --card-foreground: 40 38% 94%;
+    /* Карточки чуть светлее фона — хорошо видны */
+    --card: 218 30% 13%;
+    --card-foreground: 210 30% 92%;
 
-    --popover: 210 40% 10%;
-    --popover-foreground: 40 38% 94%;
+    --popover: 218 30% 13%;
+    --popover-foreground: 210 30% 92%;
 
-    --primary: 192 70% 62%;
-    --primary-foreground: 210 45% 7%;
+    /* Бирюзовый primary — яркий, хорошо читается на тёмном */
+    --primary: 188 75% 55%;
+    --primary-foreground: 218 35% 9%;
 
-    --secondary: 152 45% 48%;
-    --secondary-foreground: 210 45% 7%;
+    /* Зелёный secondary — насыщеннее для тёмного */
+    --secondary: 152 50% 45%;
+    --secondary-foreground: 218 35% 9%;
 
-    --muted: 210 35% 15%;
-    --muted-foreground: 200 20% 58%;
+    /* Muted — заметно отличается от фона */
+    --muted: 218 25% 18%;
+    --muted-foreground: 210 20% 65%;
 
-    --accent: 36 54% 55%;
-    --accent-foreground: 210 45% 7%;
+    --accent: 36 60% 52%;
+    --accent-foreground: 218 35% 9%;
 
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 40 38% 94%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 210 30% 92%;
 
-    --border: 210 30% 18%;
-    --input: 210 30% 18%;
-    --ring: 192 70% 62%;
+    /* Граница хорошо видна */
+    --border: 218 25% 22%;
+    --input: 218 25% 22%;
+    --ring: 188 75% 55%;
 
-    --sand: 36 40% 32%;
-    --aqua: 192 70% 45%;
+    --sand: 36 50% 42%;
+    --aqua: 188 75% 55%;
 
-    --sidebar-background: 210 45% 7%;
-    --sidebar-foreground: 40 38% 94%;
-    --sidebar-primary: 192 70% 62%;
-    --sidebar-primary-foreground: 210 45% 7%;
-    --sidebar-accent: 210 35% 15%;
-    --sidebar-accent-foreground: 40 38% 94%;
-    --sidebar-border: 210 30% 18%;
-    --sidebar-ring: 192 70% 62%;
+    --sidebar-background: 218 35% 9%;
+    --sidebar-foreground: 210 30% 92%;
+    --sidebar-primary: 188 75% 55%;
+    --sidebar-primary-foreground: 218 35% 9%;
+    --sidebar-accent: 218 25% 18%;
+    --sidebar-accent-foreground: 210 30% 92%;
+    --sidebar-border: 218 25% 22%;
+    --sidebar-ring: 188 75% 55%;
   }
 }
 

@@ -5,7 +5,6 @@ import Bubbles from '@/components/Bubbles';
 import WaveDivider from '@/components/WaveDivider';
 import DecoIcons from '@/components/DecoIcons';
 import StatCounter from '@/components/StatCounter';
-import WaterCursor from '@/components/WaterCursor';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +67,6 @@ const NAV = [
   { id: 'shop', label: 'Магазин' },
   { id: 'portfolio', label: 'Портфолио' },
   { id: 'articles', label: 'Статьи' },
-  { id: 'quiz', label: '🎁 Тест' },
   { id: 'faq', label: 'FAQ' },
   { id: 'contacts', label: 'Контакты' },
 ];
@@ -333,8 +331,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <WaterCursor />
-
       {/* Search overlay */}
       {searchOpen && (
         <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 px-4" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
