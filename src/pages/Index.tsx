@@ -370,10 +370,10 @@ const Index = () => {
       {/* Services */}
       <section id="services" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
         <DecoIcons items={[
-          { emoji: '🐠', top: '8%',  left: '2%',   size: 36, dur: 7,  delay: 0,   swim: true },
-          { emoji: '🌿', top: '15%', right: '3%',  size: 28, dur: 9,  delay: 1.5 },
-          { emoji: '🐡', bottom: '10%', left: '1%', size: 30, dur: 8, delay: 3,   swim: true },
-          { emoji: '🪸', bottom: '5%', right: '2%', size: 32, dur: 11, delay: 0.5 },
+          { emoji: '🐠', top: '8%',    left: '2%',  size: 36, dur: 7,  delay: 0,   swim: true },
+          { emoji: '🦎', top: '12%',   right: '3%', size: 34, dur: 9,  delay: 1.5 },
+          { emoji: '🐢', bottom: '10%',left: '1%',  size: 32, dur: 8,  delay: 3 },
+          { emoji: '🌿', bottom: '5%', right: '2%', size: 30, dur: 11, delay: 0.5 },
         ]} />
         <div className="container relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -398,9 +398,10 @@ const Index = () => {
       {/* Prices */}
       <section id="prices" className="relative bg-muted/50 overflow-hidden">
         <DecoIcons items={[
-          { emoji: '🐟', top: '10%', right: '2%', size: 30, dur: 9,  delay: 0.5, swim: true },
-          { emoji: '💧', top: '20%', left: '1%',  size: 24, dur: 7,  delay: 2 },
-          { emoji: '🐠', bottom: '12%', left: '2%', size: 28, dur: 11, delay: 1, swim: true },
+          { emoji: '🦎', top: '10%',   right: '2%',  size: 32, dur: 9,  delay: 0.5 },
+          { emoji: '🐠', top: '18%',   left: '1%',   size: 28, dur: 7,  delay: 2,  swim: true },
+          { emoji: '🦋', bottom: '12%',left: '2%',   size: 26, dur: 11, delay: 1 },
+          { emoji: '🐍', bottom: '8%', right: '3%',  size: 30, dur: 8,  delay: 3 },
         ]} />
         <WaveDivider fill="hsl(var(--muted) / 0.5)" flip className="mt-0" />
         <div className="container px-4 md:px-6 py-16 relative z-10">
@@ -445,9 +446,10 @@ const Index = () => {
       {/* Shop */}
       <section id="shop" className="pb-24 bg-background relative overflow-hidden">
         <DecoIcons items={[
-          { emoji: '🐠', top: '5%',    left: '1%',  size: 32, dur: 9,  delay: 1, swim: true },
-          { emoji: '🦐', top: '8%',    right: '2%', size: 24, dur: 7,  delay: 0 },
-          { emoji: '🌿', bottom: '6%', right: '1%', size: 28, dur: 11, delay: 2 },
+          { emoji: '🐠', top: '5%',    left: '1%',   size: 32, dur: 9,  delay: 1, swim: true },
+          { emoji: '🦎', top: '8%',    right: '2%',  size: 30, dur: 7,  delay: 0 },
+          { emoji: '🐢', bottom: '6%', right: '1%',  size: 28, dur: 11, delay: 2 },
+          { emoji: '🕷️', bottom: '8%', left: '2%',  size: 26, dur: 8,  delay: 3 },
         ]} />
         <div className="container px-4 md:px-6 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -533,10 +535,11 @@ const Index = () => {
       {/* Portfolio */}
       <section id="portfolio" className="py-24 px-4 md:px-6 relative bg-leaves overflow-hidden">
         <DecoIcons items={[
-          { emoji: '🌱', top: '5%',    right: '4%',  size: 32, dur: 10, delay: 0 },
-          { emoji: '🦎', bottom: '8%', left: '3%',   size: 30, dur: 8,  delay: 2 },
-          { emoji: '🪴', top: '10%',   left: '2%',   size: 28, dur: 12, delay: 1 },
-          { emoji: '🐢', bottom: '5%', right: '3%',  size: 26, dur: 9,  delay: 3 },
+          { emoji: '🦎', top: '5%',    right: '4%',  size: 36, dur: 10, delay: 0 },
+          { emoji: '🐠', bottom: '8%', left: '3%',   size: 32, dur: 8,  delay: 2, swim: true },
+          { emoji: '🐍', top: '10%',   left: '2%',   size: 30, dur: 12, delay: 1 },
+          { emoji: '🪸', bottom: '5%', right: '3%',  size: 28, dur: 9,  delay: 3 },
+          { emoji: '🦋', top: '18%',   right: '2%',  size: 24, dur: 7,  delay: 4 },
         ]} />
         <div className="container relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -563,9 +566,10 @@ const Index = () => {
       {/* Articles */}
       <section id="articles" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
         <DecoIcons items={[
-          { emoji: '🐙', top: '6%',    right: '3%', size: 28, dur: 10, delay: 0 },
-          { emoji: '🌊', bottom: '8%', left: '2%',  size: 26, dur: 8,  delay: 1.5 },
-          { emoji: '🐚', bottom: '5%', right: '4%', size: 24, dur: 12, delay: 3 },
+          { emoji: '🦎', top: '6%',    right: '3%',  size: 30, dur: 10, delay: 0 },
+          { emoji: '🐠', bottom: '8%', left: '2%',   size: 28, dur: 8,  delay: 1.5, swim: true },
+          { emoji: '🐢', top: '15%',   left: '1%',   size: 26, dur: 12, delay: 2.5 },
+          { emoji: '🪸', bottom: '5%', right: '4%',  size: 24, dur: 9,  delay: 3 },
         ]} />
         <div className="container relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">

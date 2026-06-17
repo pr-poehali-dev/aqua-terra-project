@@ -29,7 +29,7 @@ export default function DecoIcons({ items }: DecoIconsProps) {
             fontSize: item.size,
             animationDuration: `${item.dur}s`,
             animationDelay: `${item.delay}s`,
-            filter: 'saturate(0.6)',
+            filter: 'opacity(0.22)',
           }}
         >
           {item.emoji}
