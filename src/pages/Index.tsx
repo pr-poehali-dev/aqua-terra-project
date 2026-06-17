@@ -29,6 +29,7 @@ const NAV = [
   { id: 'shop', label: 'Магазин' },
   { id: 'portfolio', label: 'Портфолио' },
   { id: 'articles', label: 'Статьи' },
+  { id: 'quiz', label: '🎁 Тест' },
   { id: 'faq', label: 'FAQ' },
   { id: 'contacts', label: 'Контакты' },
 ];
@@ -119,6 +120,54 @@ const PRICES = [
   },
 ];
 
+const QUIZ = [
+  {
+    question: 'Что тебя привлекает больше всего?',
+    answers: [
+      { text: '🌊 Подводный мир и рыбы', type: 'aqua' },
+      { text: '🦎 Рептилии и экзотические животные', type: 'terra' },
+      { text: '🌿 Растения и живая природа', type: 'flora' },
+    ],
+  },
+  {
+    question: 'Какую атмосферу ты хочешь дома?',
+    answers: [
+      { text: '💙 Спокойную и медитативную', type: 'aqua' },
+      { text: '🔥 Дикую и необычную', type: 'terra' },
+      { text: '🍃 Тёплую и уютную', type: 'flora' },
+    ],
+  },
+  {
+    question: 'Сколько времени готов уделять уходу?',
+    answers: [
+      { text: '⏱ Минимум, всё само', type: 'flora' },
+      { text: '🕐 Раз в неделю с удовольствием', type: 'aqua' },
+      { text: '🕐 Каждый день — мне нравится', type: 'terra' },
+    ],
+  },
+];
+
+const RESULTS: Record<string, { emoji: string; title: string; desc: string; tip: string }> = {
+  aqua: {
+    emoji: '🐠',
+    title: 'Хранитель Рифа',
+    desc: 'Ты создан для подводного мира. Твоя стихия — аквариумы с живыми растениями, яркими рыбами и успокаивающим течением воды.',
+    tip: 'В нашем Telegram — советы по запуску первого аквариума и подборки лучших рыб для начинающих.',
+  },
+  terra: {
+    emoji: '🦎',
+    title: 'Повелитель Пустыни',
+    desc: 'Ты любишь необычное и смелое. Экзотические рептилии, пауки и нестандартные питомцы — твой выбор.',
+    tip: 'В нашем Telegram — гайды по уходу за геккончиками, хамелеонами и другими экзотами.',
+  },
+  flora: {
+    emoji: '🌿',
+    title: 'Дух Джунглей',
+    desc: 'Ты ценишь живую природу и уют. Флорариумы, палюдариумы и зелёные уголки — твоё призвание.',
+    tip: 'В нашем Telegram — идеи для зелёных уголков дома и советы по растениям для любых условий.',
+  },
+};
+
 const FAQ = [
   { q: 'Как часто нужно обслуживать аквариум?', a: 'Зависит от объёма и населения — обычно раз в 1-2 недели. Мы подберём индивидуальный график.' },
   { q: 'Вы перевозите аквариумы с рыбами?', a: 'Да, мы бережно транспортируем как систему, так и обитателей с сохранением параметров воды.' },
@@ -138,6 +187,26 @@ const Index = () => {
   const [sending, setSending] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<(Article & { content?: string }) | null>(null);
+  const [quizStep, setQuizStep] = useState(0);
+  const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
+  const [quizResult, setQuizResult] = useState<string | null>(null);
+
+  const answerQuiz = (type: string) => {
+    const next = { ...quizScores, [type]: quizScores[type] + 1 };
+    setQuizScores(next);
+    if (quizStep + 1 >= QUIZ.length) {
+      const winner = Object.entries(next).sort((a, b) => b[1] - a[1])[0][0];
+      setQuizResult(winner);
+    } else {
+      setQuizStep(quizStep + 1);
+    }
+  };
+
+  const resetQuiz = () => {
+    setQuizStep(0);
+    setQuizScores({ aqua: 0, terra: 0, flora: 0 });
+    setQuizResult(null);
+  };
   const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.cat === cat);
 
   useEffect(() => {
@@ -485,6 +554,80 @@ const Index = () => {
             </Button>
           </form>
         </Card>
+      </section>
+
+      {/* Quiz */}
+      <section id="quiz" className="py-24 container px-4 md:px-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <Badge variant="secondary" className="mb-4">Тест</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Кто ты в мире экзотики?</h2>
+            <p className="mt-4 text-muted-foreground">3 вопроса — и ты узнаешь свой тип + получишь подарок 🎁</p>
+          </div>
+
+          <Card className="p-8 md:p-10">
+            {quizResult ? (
+              /* Result screen */
+              <div className="text-center">
+                <div className="text-7xl mb-4">{RESULTS[quizResult].emoji}</div>
+                <h3 className="font-display text-3xl font-bold text-primary mb-3">{RESULTS[quizResult].title}</h3>
+                <p className="text-muted-foreground mb-6 leading-relaxed">{RESULTS[quizResult].desc}</p>
+
+                <div className="bg-muted/60 rounded-2xl p-6 mb-8 text-left">
+                  <p className="text-sm font-semibold text-primary mb-1">💡 Специально для тебя:</p>
+                  <p className="text-muted-foreground text-sm">{RESULTS[quizResult].tip}</p>
+                </div>
+
+                <div className="gradient-deep rounded-2xl p-6 mb-6 text-white">
+                  <p className="text-white/80 text-sm mb-2">Подпишись на наш Telegram-канал и получи:</p>
+                  <ul className="text-left space-y-2 mb-5">
+                    <li className="flex items-center gap-2 text-sm"><Icon name="Tag" size={16} className="text-sand shrink-0" /> Промокод <strong>AQUA10</strong> — скидка 10% на первый заказ</li>
+                    <li className="flex items-center gap-2 text-sm"><Icon name="Gift" size={16} className="text-sand shrink-0" /> Участие в ежемесячном розыгрыше призов из магазина</li>
+                    <li className="flex items-center gap-2 text-sm"><Icon name="BookOpen" size={16} className="text-sand shrink-0" /> Эксклюзивный контент для твоего типа</li>
+                  </ul>
+                  <a
+                    href="https://t.me/aquascale"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full bg-white text-primary font-bold py-3 rounded-xl hover:bg-sand transition-colors text-base"
+                  >
+                    <Icon name="Send" size={20} /> Подписаться на Telegram
+                  </a>
+                </div>
+
+                <button onClick={resetQuiz} className="text-sm text-muted-foreground hover:text-primary transition-colors underline underline-offset-4">
+                  Пройти тест заново
+                </button>
+              </div>
+            ) : (
+              /* Question screen */
+              <div>
+                <div className="flex justify-between items-center mb-8">
+                  <span className="text-sm text-muted-foreground">Вопрос {quizStep + 1} из {QUIZ.length}</span>
+                  <div className="flex gap-1.5">
+                    {QUIZ.map((_, i) => (
+                      <span key={i} className={`h-2 rounded-full transition-all duration-300 ${i <= quizStep ? 'bg-primary w-8' : 'bg-muted w-4'}`} />
+                    ))}
+                  </div>
+                </div>
+                <h3 className="font-display text-2xl md:text-3xl font-semibold text-primary mb-7 text-center">
+                  {QUIZ[quizStep].question}
+                </h3>
+                <div className="space-y-3">
+                  {QUIZ[quizStep].answers.map((a) => (
+                    <button
+                      key={a.text}
+                      onClick={() => answerQuiz(a.type)}
+                      className="w-full text-left px-6 py-4 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all duration-200 font-medium text-foreground text-base"
+                    >
+                      {a.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
       </section>
 
       {/* Footer */}
