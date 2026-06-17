@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -7,6 +7,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useToast } from '@/hooks/use-toast';
 
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
+const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
+
+interface Article {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  category: string;
+  cover_url: string | null;
+  created_at: string;
+}
 
 const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb2af31a9/files/e5f0d30d-ddcd-4698-9e7c-61167861b392.jpg';
 
@@ -15,6 +26,7 @@ const NAV = [
   { id: 'services', label: 'Услуги' },
   { id: 'shop', label: 'Магазин' },
   { id: 'portfolio', label: 'Портфолио' },
+  { id: 'articles', label: 'Статьи' },
   { id: 'faq', label: 'FAQ' },
   { id: 'contacts', label: 'Контакты' },
 ];
@@ -71,7 +83,20 @@ const Index = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [form, setForm] = useState({ name: '', contact: '', message: '' });
   const [sending, setSending] = useState(false);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<(Article & { content?: string }) | null>(null);
   const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.cat === cat);
+
+  useEffect(() => {
+    fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
+  }, []);
+
+  const openArticle = async (slug: string) => {
+    const res = await fetch(`${ARTICLES_URL}?slug=${slug}`);
+    const data = await res.json();
+    setSelectedArticle(data);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const submitLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,7 +266,60 @@ const Index = () => {
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* Articles */}
+      <section id="articles" className="py-24 container px-4 md:px-6">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <Badge variant="secondary" className="mb-4">Статьи</Badge>
+          <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Полезные материалы</h2>
+          <p className="mt-4 text-muted-foreground">Советы по уходу, обустройству и содержанию живых систем.</p>
+        </div>
+        {articles.length === 0 ? (
+          <p className="text-center text-muted-foreground">Статьи скоро появятся.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((a) => (
+              <Card key={a.id} className="overflow-hidden hover-scale group cursor-pointer" onClick={() => openArticle(a.slug)}>
+                <div className="aspect-[16/9] gradient-deep grid place-items-center text-white/40">
+                  {a.cover_url
+                    ? <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
+                    : <Icon name="BookOpen" size={48} />}
+                </div>
+                <div className="p-5">
+                  <Badge variant="outline" className="text-xs mb-3">{a.category}</Badge>
+                  <h3 className="font-display text-xl font-semibold text-primary mb-2 leading-snug">{a.title}</h3>
+                  <p className="text-muted-foreground text-sm line-clamp-2">{a.excerpt}</p>
+                  <span className="inline-flex items-center gap-1 text-secondary text-sm font-medium mt-4">
+                    Читать <Icon name="ArrowRight" size={14} />
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Article modal */}
+      {selectedArticle && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4 md:p-10" onClick={() => setSelectedArticle(null)}>
+          <Card className="w-full max-w-3xl my-4" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 md:p-10">
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <Badge variant="outline" className="mb-3">{selectedArticle.category}</Badge>
+                  <h2 className="font-display text-3xl font-bold text-primary">{selectedArticle.title}</h2>
+                </div>
+                <button onClick={() => setSelectedArticle(null)} className="shrink-0 p-2 rounded-lg hover:bg-muted transition-colors">
+                  <Icon name="X" size={22} />
+                </button>
+              </div>
+              <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap leading-relaxed">
+                {selectedArticle.content}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
       <section id="faq" className="py-24 bg-muted/50">
         <div className="container px-4 md:px-6 max-w-3xl">
           <div className="text-center mb-12">
