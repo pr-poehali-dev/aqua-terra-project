@@ -12,6 +12,18 @@ import { useCart } from '@/hooks/use-cart';
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
 const PRODUCTS_URL = 'https://functions.poehali.dev/31fd2710-461b-4a20-9d16-02264d66dd19';
+const SERVICES_URL = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
+
+interface Service {
+  id: number;
+  icon: string;
+  title: string;
+  description: string;
+  price_from: number;
+  price_unit: string;
+  tags: string[];
+  active: boolean;
+}
 
 interface Product {
   id: number;
@@ -48,13 +60,13 @@ const NAV = [
   { id: 'contacts', label: 'Контакты' },
 ];
 
-const SERVICES = [
-  { icon: 'Fish', title: 'Аквариумы', desc: 'Оформление, обслуживание и перевозка пресных и морских аквариумов любой сложности.' },
-  { icon: 'Turtle', title: 'Террариумы', desc: 'Создание и сервис террариумов под рептилий, амфибий и членистоногих.' },
-  { icon: 'Sprout', title: 'Флорариумы', desc: 'Живые композиции из растений в стекле — для дома и офиса.' },
-  { icon: 'Waves', title: 'Палюдариумы', desc: 'Гибрид воды и суши: тропический уголок природы под ключ.' },
-  { icon: 'Wrench', title: 'Обслуживание', desc: 'Регулярный уход, чистка, подмена воды, контроль параметров.' },
-  { icon: 'Truck', title: 'Перевозка', desc: 'Бережная транспортировка систем и обитателей без стресса.' },
+const SERVICES_FALLBACK = [
+  { id: 1, icon: 'Fish',   title: 'Оформление аквариума',   description: 'Дизайн, декор, растения, грунт — под ключ. Пресные и морские системы.',          price_from: 5000,  price_unit: 'за работу', tags: ['Пресный','Морской'],     active: true },
+  { id: 2, icon: 'Turtle', title: 'Оформление террариума',  description: 'Создание живого биотопа под конкретный вид рептилий, амфибий или пауков.',         price_from: 4000,  price_unit: 'за работу', tags: ['Тропик','Пустыня'],      active: true },
+  { id: 3, icon: 'Sprout', title: 'Флорариум / Палюдариум', description: 'Стеклянные сады с живыми растениями, мхами и водопадами.',                        price_from: 6000,  price_unit: 'за работу', tags: ['Флорариум','Палюдариум'],active: true },
+  { id: 4, icon: 'Wrench', title: 'Обслуживание',           description: 'Регулярный уход: чистка, подмена воды, контроль параметров, корм.',               price_from: 1500,  price_unit: 'за визит',  tags: ['Разовый','Договор'],     active: true },
+  { id: 5, icon: 'Truck',  title: 'Перевозка',              description: 'Бережная транспортировка аквариумов и террариумов с обитателями.',                price_from: 2000,  price_unit: 'за выезд',  tags: ['По городу','МО'],        active: true },
+  { id: 6, icon: 'Star',   title: 'Консультация',           description: 'Подбор оборудования, животных, параметров воды — онлайн или на выезде.',          price_from: 500,   price_unit: 'онлайн',    tags: ['Онлайн','Выезд'],        active: true },
 ];
 
 const CATEGORIES = [
@@ -64,17 +76,7 @@ const CATEGORIES = [
   { id: 'supplies', label: 'Материалы', icon: 'Package' },
 ];
 
-const PRODUCTS = [
-  { name: 'Геккон эублефар', price: '4 500 ₽', cat: 'animals', tag: 'Рептилия', icon: 'Turtle' },
-  { name: 'Креветка Вишня', price: '120 ₽', cat: 'animals', tag: 'Аквариум', icon: 'Fish' },
-  { name: 'Паук-птицеед', price: '2 800 ₽', cat: 'animals', tag: 'Экзотика', icon: 'Bug' },
-  { name: 'Сверчок банановый', price: '350 ₽', cat: 'food', tag: 'Живой корм', icon: 'Bug' },
-  { name: 'Мыши кормовые', price: '90 ₽', cat: 'food', tag: 'Заморозка', icon: 'Wheat' },
-  { name: 'Зофобас', price: '420 ₽', cat: 'food', tag: 'Живой корм', icon: 'Wheat' },
-  { name: 'Грунт питательный', price: '1 200 ₽', cat: 'supplies', tag: 'Аквариум', icon: 'Package' },
-  { name: 'Лампа УФ для рептилий', price: '2 100 ₽', cat: 'supplies', tag: 'Террариум', icon: 'Lightbulb' },
-  { name: 'Фильтр внешний', price: '5 600 ₽', cat: 'supplies', tag: 'Оборудование', icon: 'Settings' },
-];
+
 
 const PORTFOLIO = [
   { title: 'Морской риф 400л', tag: 'Аквариум', icon: 'Fish' },
@@ -83,56 +85,7 @@ const PORTFOLIO = [
   { title: 'Акваскейп «Лес»', tag: 'Аквариум', icon: 'Sprout' },
 ];
 
-const PRICES = [
-  {
-    icon: 'Fish',
-    title: 'Оформление аквариума',
-    desc: 'Дизайн, декор, растения, грунт — под ключ. Пресные и морские системы.',
-    from: '5 000',
-    unit: 'за работу',
-    tags: ['Пресный', 'Морской'],
-  },
-  {
-    icon: 'Turtle',
-    title: 'Оформление террариума',
-    desc: 'Создание живого биотопа под конкретный вид рептилий, амфибий или пауков.',
-    from: '4 000',
-    unit: 'за работу',
-    tags: ['Тропик', 'Пустыня'],
-  },
-  {
-    icon: 'Sprout',
-    title: 'Флорариум / Палюдариум',
-    desc: 'Стеклянные сады с живыми растениями, мхами и водопадами.',
-    from: '6 000',
-    unit: 'за работу',
-    tags: ['Флорариум', 'Палюдариум'],
-  },
-  {
-    icon: 'Wrench',
-    title: 'Обслуживание',
-    desc: 'Регулярный уход: чистка, подмена воды, контроль параметров, корм.',
-    from: '1 500',
-    unit: 'за визит',
-    tags: ['Разовый', 'Договор'],
-  },
-  {
-    icon: 'Truck',
-    title: 'Перевозка',
-    desc: 'Бережная транспортировка аквариумов и террариумов с обитателями.',
-    from: '2 000',
-    unit: 'за выезд',
-    tags: ['По городу', 'МО'],
-  },
-  {
-    icon: 'Star',
-    title: 'Консультация',
-    desc: 'Подбор оборудования, животных, параметров воды — онлайн или на выезде.',
-    from: '500',
-    unit: 'онлайн',
-    tags: ['Онлайн', 'Выезд'],
-  },
-];
+
 
 const QUIZ = [
   {
@@ -223,6 +176,8 @@ const Index = () => {
   const [selectedArticle, setSelectedArticle] = useState<(Article & { content?: string }) | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [servicesLoaded, setServicesLoaded] = useState(false);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
@@ -248,6 +203,7 @@ const Index = () => {
   useEffect(() => {
     fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
     fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
+    fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
   }, []);
 
   const openArticle = async (slug: string) => {
@@ -407,13 +363,13 @@ const Index = () => {
           <p className="mt-4 text-muted-foreground">От идеи до готовой экосистемы — берём на себя весь процесс.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SERVICES.map((s) => (
+          {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
             <Card key={s.title} className="p-7 hover-scale border-border hover:border-secondary/50 transition-colors">
               <span className="grid place-items-center w-14 h-14 rounded-xl bg-secondary/10 text-secondary mb-5">
                 <Icon name={s.icon} size={28} />
               </span>
               <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+              <p className="text-muted-foreground text-sm leading-relaxed">{s.description}</p>
             </Card>
           ))}
         </div>
@@ -428,23 +384,25 @@ const Index = () => {
             <p className="mt-4 text-muted-foreground">Итоговая цена зависит от объёма и сложности — уточним на консультации.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PRICES.map((p) => (
-              <Card key={p.title} className="p-7 flex flex-col hover-scale border-border hover:border-primary/30 transition-colors">
+            {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
+              <Card key={s.id ?? s.title} className="p-7 flex flex-col hover-scale border-border hover:border-primary/30 transition-colors">
                 <span className="grid place-items-center w-14 h-14 rounded-xl bg-primary/10 text-primary mb-5">
-                  <Icon name={p.icon} size={28} />
+                  <Icon name={s.icon} size={28} />
                 </span>
-                <h3 className="font-display text-2xl font-semibold text-primary mb-2">{p.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">{p.desc}</p>
+                <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">{s.description}</p>
                 <div className="flex flex-wrap gap-2 mb-5">
-                  {p.tags.map((t) => (
+                  {(s.tags || []).map((t: string) => (
                     <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
                   ))}
                 </div>
                 <div className="flex items-end justify-between border-t border-border pt-5">
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">от</p>
-                    <p className="font-display text-3xl font-bold text-primary leading-none">{p.from} <span className="text-base font-sans font-normal">₽</span></p>
-                    <p className="text-xs text-muted-foreground mt-1">{p.unit}</p>
+                    <p className="font-display text-3xl font-bold text-primary leading-none">
+                      {(s.price_from ?? 0).toLocaleString('ru')} <span className="text-base font-sans font-normal">₽</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{s.price_unit}</p>
                   </div>
                   <Button size="sm" onClick={() => scrollTo('contacts')}>Заказать</Button>
                 </div>
