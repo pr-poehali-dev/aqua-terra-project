@@ -55,41 +55,45 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 210 45% 7%;
+    --foreground: 40 38% 94%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 210 40% 10%;
+    --card-foreground: 40 38% 94%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 210 40% 10%;
+    --popover-foreground: 40 38% 94%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 192 70% 62%;
+    --primary-foreground: 210 45% 7%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 152 45% 48%;
+    --secondary-foreground: 210 45% 7%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 210 35% 15%;
+    --muted-foreground: 200 20% 58%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 36 54% 55%;
+    --accent-foreground: 210 45% 7%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 40 38% 94%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 210 30% 18%;
+    --input: 210 30% 18%;
+    --ring: 192 70% 62%;
+
+    --sand: 36 40% 32%;
+    --aqua: 192 70% 45%;
+
+    --sidebar-background: 210 45% 7%;
+    --sidebar-foreground: 40 38% 94%;
+    --sidebar-primary: 192 70% 62%;
+    --sidebar-primary-foreground: 210 45% 7%;
+    --sidebar-accent: 210 35% 15%;
+    --sidebar-accent-foreground: 40 38% 94%;
+    --sidebar-border: 210 30% 18%;
+    --sidebar-ring: 192 70% 62%;
   }
 }
 
@@ -195,5 +199,26 @@
   }
   .deco-swim {
     animation: swim ease-in-out infinite;
+  }
+
+  /* Reveal on scroll via @keyframes + animation-play-state */
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(36px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .section-reveal {
+    opacity: 0;
+    animation: reveal-up 0.75s ease forwards;
+    animation-play-state: paused;
+  }
+  .section-reveal.in-view {
+    animation-play-state: running;
   }
 }

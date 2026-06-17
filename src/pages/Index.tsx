@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import Bubbles from '@/components/Bubbles';
 import WaveDivider from '@/components/WaveDivider';
 import DecoIcons from '@/components/DecoIcons';
 import StatCounter from '@/components/StatCounter';
+import WaterCursor from '@/components/WaterCursor';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
+import { useTheme } from '@/hooks/use-theme';
 
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
@@ -174,11 +176,23 @@ function CartOrderForm({ onSubmit, sending }: { onSubmit: (contact: string) => v
   );
 }
 
+const PROMOS: Record<string, number> = {
+  'AQUA10': 10,
+  'TERRA15': 15,
+  'AQUASCALE20': 20,
+};
+
 const Index = () => {
   const { toast } = useToast();
   const cart = useCart();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [cat, setCat] = useState('all');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoError, setPromoError] = useState('');
   const [form, setForm] = useState({ name: '', contact: '', message: '' });
   const [sending, setSending] = useState(false);
   const [orderSending, setOrderSending] = useState(false);
@@ -195,6 +209,35 @@ const Index = () => {
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
+
+  const applyPromo = () => {
+    const code = promoCode.trim().toUpperCase();
+    if (PROMOS[code]) {
+      setPromoDiscount(PROMOS[code]);
+      setPromoError('');
+      toast({ title: `Промокод применён! Скидка ${PROMOS[code]}%` });
+    } else {
+      setPromoError('Промокод не найден');
+      setPromoDiscount(0);
+    }
+  };
+
+  const discountedTotal = promoDiscount > 0
+    ? Math.round(cart.total * (1 - promoDiscount / 100))
+    : cart.total;
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q || q.length < 2) return { products: [], articles: [] };
+    return {
+      products: products.filter(p =>
+        p.name.toLowerCase().includes(q) || p.tag.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q)
+      ).slice(0, 5),
+      articles: articles.filter(a =>
+        a.title.toLowerCase().includes(q) || a.excerpt?.toLowerCase().includes(q)
+      ).slice(0, 4),
+    };
+  }, [searchQuery, products, articles]);
 
   const answerQuiz = (type: string) => {
     const next = { ...quizScores, [type]: quizScores[type] + 1 };
@@ -280,6 +323,78 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <WaterCursor />
+
+      {/* Search overlay */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 px-4" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
+          <div className="w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+              <Icon name="Search" size={20} className="text-muted-foreground shrink-0" />
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground text-foreground"
+                placeholder="Поиск по товарам и статьям…"
+              />
+              <button onClick={() => { setSearchOpen(false); setSearchQuery(''); }} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+            {searchQuery.length >= 2 && (
+              <div className="max-h-[60vh] overflow-y-auto divide-y divide-border">
+                {searchResults.products.length === 0 && searchResults.articles.length === 0 && (
+                  <p className="text-center text-muted-foreground py-10 text-sm">Ничего не найдено</p>
+                )}
+                {searchResults.products.length > 0 && (
+                  <div className="p-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">Товары</p>
+                    {searchResults.products.map(p => (
+                      <button key={p.id} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-left"
+                        onClick={() => { setSelectedProduct(p); setSearchOpen(false); setSearchQuery(''); }}>
+                        <span className="w-9 h-9 rounded-lg gradient-deep grid place-items-center shrink-0">
+                          <Icon name={p.icon} size={18} className="text-white" />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground truncate">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">{p.price.toLocaleString('ru')} ₽ · {p.tag}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.articles.length > 0 && (
+                  <div className="p-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">Статьи</p>
+                    {searchResults.articles.map(a => (
+                      <button key={a.id} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-left"
+                        onClick={() => { setSelectedArticle(a); setSearchOpen(false); setSearchQuery(''); scrollTo('articles'); }}>
+                        <span className="w-9 h-9 rounded-lg bg-primary/10 grid place-items-center shrink-0">
+                          <Icon name="BookOpen" size={16} className="text-primary" />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground truncate">{a.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{a.excerpt}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {searchQuery.length < 2 && (
+              <div className="px-5 py-6 text-sm text-muted-foreground flex flex-wrap gap-2">
+                <span>Попробуйте:</span>
+                {['рыба', 'черепаха', 'аквариум', 'корм', 'растение'].map(hint => (
+                  <button key={hint} onClick={() => setSearchQuery(hint)} className="px-3 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary transition-colors">{hint}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="container flex items-center justify-between h-20 px-4 md:px-6">
@@ -295,6 +410,14 @@ const Index = () => {
           </nav>
           <div className="flex items-center gap-2">
             <Button onClick={() => scrollTo('contacts')} className="hidden md:inline-flex">Связаться</Button>
+            {/* Search */}
+            <button onClick={() => setSearchOpen(true)} className="grid place-items-center w-11 h-11 rounded-xl border border-border hover:bg-muted transition-colors">
+              <Icon name="Search" size={20} />
+            </button>
+            {/* Theme toggle */}
+            <button onClick={toggleTheme} className="grid place-items-center w-11 h-11 rounded-xl border border-border hover:bg-muted transition-colors" title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
+              <Icon name={theme === 'dark' ? 'Sun' : 'Moon'} size={20} />
+            </button>
             <button
               onClick={() => cart.setOpen(true)}
               className="relative grid place-items-center w-11 h-11 rounded-xl border border-border hover:bg-muted transition-colors"
@@ -398,7 +521,7 @@ const Index = () => {
       {/* Stats */}
       <section className="py-14 bg-background">
         <div className="container px-4 md:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 section-reveal">
             {[
               { value: 15, suffix: ' лет', label: 'Опыта в деле' },
               { value: 200, suffix: '+', label: 'Проектов выполнено' },
@@ -421,9 +544,9 @@ const Index = () => {
         ]} />
         <div className="container relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <Badge variant="secondary" className="mb-4">Услуги</Badge>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Что мы делаем</h2>
-            <p className="mt-4 text-muted-foreground">От идеи до готовой экосистемы — берём на себя весь процесс.</p>
+            <Badge variant="secondary" className="mb-4 section-reveal">Услуги</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary section-reveal" style={{animationDelay:'0.1s'}}>Что мы делаем</h2>
+            <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>От идеи до готовой экосистемы — берём на себя весь процесс.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
@@ -497,9 +620,9 @@ const Index = () => {
         ]} />
         <div className="container px-4 md:px-6 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <Badge variant="secondary" className="mb-4">Магазин</Badge>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Каталог</h2>
-            <p className="mt-4 text-muted-foreground">Животные, корма и расходные материалы — фильтруйте по категориям.</p>
+            <Badge variant="secondary" className="mb-4 section-reveal">Магазин</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary section-reveal" style={{animationDelay:'0.1s'}}>Каталог</h2>
+            <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>Животные, корма и расходные материалы — фильтруйте по категориям.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {CATEGORIES.map((c) => (
@@ -587,9 +710,9 @@ const Index = () => {
         ]} />
         <div className="container relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <Badge variant="secondary" className="mb-4">Портфолио</Badge>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Наши работы</h2>
-            <p className="mt-4 text-muted-foreground">Реализованные проекты разной сложности и стилистики.</p>
+            <Badge variant="secondary" className="mb-4 section-reveal">Портфолио</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary section-reveal" style={{animationDelay:'0.1s'}}>Наши работы</h2>
+            <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>Реализованные проекты разной сложности и стилистики.</p>
           </div>
           {portfolioItems.length === 0 && (
             <p className="text-center text-muted-foreground py-10">Работы скоро появятся.</p>
@@ -679,9 +802,9 @@ const Index = () => {
         ]} />
         <div className="container relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <Badge variant="secondary" className="mb-4">Статьи</Badge>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Полезные материалы</h2>
-            <p className="mt-4 text-muted-foreground">Советы по уходу, обустройству и содержанию живых систем.</p>
+            <Badge variant="secondary" className="mb-4 section-reveal">Статьи</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary section-reveal" style={{animationDelay:'0.1s'}}>Полезные материалы</h2>
+            <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>Советы по уходу, обустройству и содержанию живых систем.</p>
           </div>
           {articles.length === 0 ? (
             <p className="text-center text-muted-foreground">Статьи скоро появятся.</p>
@@ -925,11 +1048,34 @@ const Index = () => {
                 ))}
               </div>
 
+              {/* Promo code */}
+              <div className="rounded-xl border border-border bg-muted/30 p-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Промокод</p>
+                <div className="flex gap-2">
+                  <input
+                    value={promoCode}
+                    onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoError(''); }}
+                    onKeyDown={e => e.key === 'Enter' && applyPromo()}
+                    className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal"
+                    placeholder="Введите код"
+                  />
+                  <Button size="sm" variant="outline" onClick={applyPromo}>Применить</Button>
+                </div>
+                {promoError && <p className="text-xs text-destructive mt-1">{promoError}</p>}
+                {promoDiscount > 0 && <p className="text-xs text-secondary font-semibold mt-1">✓ Скидка {promoDiscount}% применена</p>}
+              </div>
+
               {/* Total */}
               <div className="border-t border-border pt-4 mt-auto">
+                {promoDiscount > 0 && (
+                  <div className="flex justify-between items-center mb-1 text-sm">
+                    <span className="text-muted-foreground line-through">{cart.total.toLocaleString('ru')} ₽</span>
+                    <Badge variant="secondary" className="text-xs">−{promoDiscount}%</Badge>
+                  </div>
+                )}
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-medium text-muted-foreground">Итого:</span>
-                  <span className="font-display text-2xl font-bold text-primary">{cart.total.toLocaleString('ru')} ₽</span>
+                  <span className="font-display text-2xl font-bold text-primary">{discountedTotal.toLocaleString('ru')} ₽</span>
                 </div>
 
                 {/* Contact for order */}
@@ -940,24 +1086,45 @@ const Index = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Scroll buttons */}
-      {scrollY > 300 && (
-        <div className="fixed bottom-6 left-6 z-40 flex flex-col gap-2">
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-11 h-11 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-transform grid place-items-center"
-            title="Наверх"
-          >
-            <Icon name="ArrowUp" size={20} />
-          </button>
-          <button
-            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
-            className="w-11 h-11 rounded-full bg-card border border-border text-muted-foreground shadow-lg hover:scale-110 hover:text-primary transition-all grid place-items-center"
-            title="Вниз"
-          >
-            <Icon name="ArrowDown" size={20} />
-          </button>
-        </div>
+      {/* Scroll progress bar */}
+      <div className="fixed top-0 inset-x-0 z-[60] h-0.5 bg-transparent pointer-events-none">
+        <div
+          className="h-full bg-gradient-to-r from-primary via-secondary to-aqua transition-none"
+          style={{ width: `${Math.min(100, (scrollY / (document.documentElement.scrollHeight - window.innerHeight || 1)) * 100)}%` }}
+        />
+      </div>
+
+      {/* Side dot navigation */}
+      <nav className="hidden lg:flex fixed right-5 top-1/2 -translate-y-1/2 z-40 flex-col gap-3">
+        {NAV.map((n) => {
+          const el = document.getElementById(n.id);
+          const rect = el?.getBoundingClientRect();
+          const isActive = rect ? rect.top <= 120 && rect.bottom > 120 : false;
+          return (
+            <button
+              key={n.id}
+              onClick={() => scrollTo(n.id)}
+              title={n.label}
+              className="group relative flex items-center justify-end gap-2"
+            >
+              <span className="absolute right-full mr-2 px-2 py-1 rounded-md bg-card border border-border text-xs font-medium text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg pointer-events-none">
+                {n.label}
+              </span>
+              <span className={`block rounded-full border-2 transition-all duration-300 ${isActive ? 'w-3 h-3 border-primary bg-primary' : 'w-2 h-2 border-muted-foreground bg-transparent group-hover:border-primary'}`} />
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Scroll to top */}
+      {scrollY > 400 && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-transform grid place-items-center"
+          title="Наверх"
+        >
+          <Icon name="ArrowUp" size={20} />
+        </button>
       )}
 
       {/* Footer */}
