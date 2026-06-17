@@ -1,15 +1,273 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import Icon from '@/components/ui/icon';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb2af31a9/files/e5f0d30d-ddcd-4698-9e7c-61167861b392.jpg';
+
+const NAV = [
+  { id: 'home', label: 'Главная' },
+  { id: 'services', label: 'Услуги' },
+  { id: 'shop', label: 'Магазин' },
+  { id: 'portfolio', label: 'Портфолио' },
+  { id: 'faq', label: 'FAQ' },
+  { id: 'contacts', label: 'Контакты' },
+];
+
+const SERVICES = [
+  { icon: 'Fish', title: 'Аквариумы', desc: 'Оформление, обслуживание и перевозка пресных и морских аквариумов любой сложности.' },
+  { icon: 'Turtle', title: 'Террариумы', desc: 'Создание и сервис террариумов под рептилий, амфибий и членистоногих.' },
+  { icon: 'Sprout', title: 'Флорариумы', desc: 'Живые композиции из растений в стекле — для дома и офиса.' },
+  { icon: 'Waves', title: 'Палюдариумы', desc: 'Гибрид воды и суши: тропический уголок природы под ключ.' },
+  { icon: 'Wrench', title: 'Обслуживание', desc: 'Регулярный уход, чистка, подмена воды, контроль параметров.' },
+  { icon: 'Truck', title: 'Перевозка', desc: 'Бережная транспортировка систем и обитателей без стресса.' },
+];
+
+const CATEGORIES = [
+  { id: 'all', label: 'Всё', icon: 'LayoutGrid' },
+  { id: 'animals', label: 'Животные', icon: 'Bug' },
+  { id: 'food', label: 'Корма', icon: 'Wheat' },
+  { id: 'supplies', label: 'Материалы', icon: 'Package' },
+];
+
+const PRODUCTS = [
+  { name: 'Геккон эублефар', price: '4 500 ₽', cat: 'animals', tag: 'Рептилия', icon: 'Turtle' },
+  { name: 'Креветка Вишня', price: '120 ₽', cat: 'animals', tag: 'Аквариум', icon: 'Fish' },
+  { name: 'Паук-птицеед', price: '2 800 ₽', cat: 'animals', tag: 'Экзотика', icon: 'Bug' },
+  { name: 'Сверчок банановый', price: '350 ₽', cat: 'food', tag: 'Живой корм', icon: 'Bug' },
+  { name: 'Мыши кормовые', price: '90 ₽', cat: 'food', tag: 'Заморозка', icon: 'Wheat' },
+  { name: 'Зофобас', price: '420 ₽', cat: 'food', tag: 'Живой корм', icon: 'Wheat' },
+  { name: 'Грунт питательный', price: '1 200 ₽', cat: 'supplies', tag: 'Аквариум', icon: 'Package' },
+  { name: 'Лампа УФ для рептилий', price: '2 100 ₽', cat: 'supplies', tag: 'Террариум', icon: 'Lightbulb' },
+  { name: 'Фильтр внешний', price: '5 600 ₽', cat: 'supplies', tag: 'Оборудование', icon: 'Settings' },
+];
+
+const PORTFOLIO = [
+  { title: 'Морской риф 400л', tag: 'Аквариум', icon: 'Fish' },
+  { title: 'Тропический палюдариум', tag: 'Палюдариум', icon: 'Waves' },
+  { title: 'Пустынный террариум', tag: 'Террариум', icon: 'Turtle' },
+  { title: 'Акваскейп «Лес»', tag: 'Аквариум', icon: 'Sprout' },
+];
+
+const FAQ = [
+  { q: 'Как часто нужно обслуживать аквариум?', a: 'Зависит от объёма и населения — обычно раз в 1-2 недели. Мы подберём индивидуальный график.' },
+  { q: 'Вы перевозите аквариумы с рыбами?', a: 'Да, мы бережно транспортируем как систему, так и обитателей с сохранением параметров воды.' },
+  { q: 'Можно ли заказать животное под заказ?', a: 'Конечно. Напишите нам, какой вид интересует — подберём здорового питомца от проверенных заводчиков.' },
+  { q: 'Даёте ли гарантию на оформление?', a: 'Да, на все работы и оборудование действует гарантия, условия обсуждаем индивидуально.' },
+];
+
+const scrollTo = (id: string) => {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+};
 
 const Index = () => {
+  const [cat, setCat] = useState('all');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter((p) => p.cat === cat);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4 color-black text-black">Добро пожаловать!</h1>
-        <p className="text-xl text-gray-600">тут будет отображаться ваш проект</p>
-      </div>
-      <span className="absolute bottom-8 left-1/2 -translate-x-1/2 inline-block bg-[#FF6637] text-white text-sm px-4 py-2 rounded-full whitespace-nowrap">
-        Подождите 5 минут, Юра создает первую версию проекта с нуля
-      </span>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
+      <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
+        <div className="container flex items-center justify-between h-16 px-4 md:px-6">
+          <button onClick={() => scrollTo('home')} className="flex items-center gap-2">
+            <span className="grid place-items-center w-9 h-9 rounded-lg gradient-deep text-white">
+              <Icon name="Fish" size={20} />
+            </span>
+            <span className="font-display text-2xl font-bold text-primary">АкваТеррариум</span>
+          </button>
+          <nav className="hidden md:flex items-center gap-7">
+            {NAV.map((n) => (
+              <button key={n.id} onClick={() => scrollTo(n.id)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                {n.label}
+              </button>
+            ))}
+          </nav>
+          <Button onClick={() => scrollTo('contacts')} className="hidden md:inline-flex">Связаться</Button>
+          <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+            <Icon name={menuOpen ? 'X' : 'Menu'} size={26} />
+          </button>
+        </div>
+        {menuOpen && (
+          <nav className="md:hidden flex flex-col gap-1 px-4 pb-4 border-t border-border bg-background">
+            {NAV.map((n) => (
+              <button key={n.id} onClick={() => { scrollTo(n.id); setMenuOpen(false); }} className="text-left py-2 text-sm font-medium text-muted-foreground hover:text-primary">
+                {n.label}
+              </button>
+            ))}
+          </nav>
+        )}
+      </header>
+
+      {/* Hero */}
+      <section id="home" className="relative pt-16 min-h-[92vh] flex items-center overflow-hidden">
+        <img src={HERO_IMG} alt="Аквариум" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 gradient-deep opacity-80" />
+        <div className="container relative z-10 px-4 md:px-6 py-20">
+          <div className="max-w-3xl animate-fade-in">
+            <Badge className="bg-sand text-primary hover:bg-sand mb-6 text-sm">Аквариумы · Террариумы · Экзотика</Badge>
+            <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-[1.05] text-balance">
+              Живая природа<br />в вашем доме
+            </h1>
+            <p className="mt-6 text-lg md:text-xl text-white/85 max-w-xl">
+              Оформление, обслуживание и перевозка аквариумов и террариумов любой сложности. Магазин экзотических животных, кормов и материалов.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-4">
+              <Button size="lg" onClick={() => scrollTo('services')} className="bg-sand text-primary hover:bg-sand/90 text-base">
+                Наши услуги
+              </Button>
+              <Button size="lg" variant="outline" onClick={() => scrollTo('shop')} className="bg-white/10 border-white/40 text-white hover:bg-white/20 text-base">
+                В магазин <Icon name="ArrowRight" size={18} className="ml-1" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services */}
+      <section id="services" className="py-24 container px-4 md:px-6">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <Badge variant="secondary" className="mb-4">Услуги</Badge>
+          <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Что мы делаем</h2>
+          <p className="mt-4 text-muted-foreground">От идеи до готовой экосистемы — берём на себя весь процесс.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SERVICES.map((s) => (
+            <Card key={s.title} className="p-7 hover-scale border-border hover:border-secondary/50 transition-colors">
+              <span className="grid place-items-center w-14 h-14 rounded-xl bg-secondary/10 text-secondary mb-5">
+                <Icon name={s.icon} size={28} />
+              </span>
+              <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Shop */}
+      <section id="shop" className="py-24 bg-muted/50">
+        <div className="container px-4 md:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <Badge variant="secondary" className="mb-4">Магазин</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Каталог</h2>
+            <p className="mt-4 text-muted-foreground">Животные, корма и расходные материалы — фильтруйте по категориям.</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setCat(c.id)}
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors border ${
+                  cat === c.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+                }`}
+              >
+                <Icon name={c.icon} size={16} />
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((p) => (
+              <Card key={p.name} className="overflow-hidden hover-scale group">
+                <div className="aspect-[4/3] gradient-deep grid place-items-center text-white/90 relative">
+                  <Icon name={p.icon} size={56} className="group-hover:animate-float" />
+                  <Badge className="absolute top-3 left-3 bg-sand text-primary hover:bg-sand">{p.tag}</Badge>
+                </div>
+                <div className="p-5 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-primary">{p.name}</h3>
+                    <p className="text-secondary font-bold mt-1">{p.price}</p>
+                  </div>
+                  <Button size="icon" variant="secondary" className="shrink-0">
+                    <Icon name="ShoppingCart" size={18} />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Portfolio */}
+      <section id="portfolio" className="py-24 container px-4 md:px-6">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <Badge variant="secondary" className="mb-4">Портфолио</Badge>
+          <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Наши работы</h2>
+          <p className="mt-4 text-muted-foreground">Реализованные проекты разной сложности и стилистики.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {PORTFOLIO.map((p) => (
+            <div key={p.title} className="group relative aspect-[3/4] rounded-2xl overflow-hidden gradient-deep cursor-pointer">
+              <div className="absolute inset-0 grid place-items-center opacity-30 group-hover:opacity-50 transition-opacity">
+                <Icon name={p.icon} size={64} className="text-white" />
+              </div>
+              <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/60 to-transparent">
+                <Badge className="bg-sand text-primary hover:bg-sand mb-2">{p.tag}</Badge>
+                <h3 className="font-display text-xl font-semibold text-white">{p.title}</h3>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-24 bg-muted/50">
+        <div className="container px-4 md:px-6 max-w-3xl">
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4">FAQ</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Частые вопросы</h2>
+          </div>
+          <Accordion type="single" collapsible className="space-y-3">
+            {FAQ.map((f, i) => (
+              <AccordionItem key={i} value={`item-${i}`} className="bg-card border border-border rounded-xl px-5">
+                <AccordionTrigger className="text-left font-medium text-primary hover:no-underline">{f.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+      {/* Contacts */}
+      <section id="contacts" className="py-24 container px-4 md:px-6">
+        <Card className="overflow-hidden grid md:grid-cols-2">
+          <div className="gradient-deep p-10 md:p-12 text-white">
+            <h2 className="font-display text-4xl font-bold mb-4">Свяжитесь с нами</h2>
+            <p className="text-white/80 mb-8">Расскажите о задаче — подберём решение под ваш интерьер и бюджет.</p>
+            <ul className="space-y-4 text-white/90">
+              <li className="flex items-center gap-3"><Icon name="Phone" size={20} /> +7 (000) 000-00-00</li>
+              <li className="flex items-center gap-3"><Icon name="Mail" size={20} /> hello@aquaterra.ru</li>
+              <li className="flex items-center gap-3"><Icon name="MapPin" size={20} /> Москва, выезд по городу</li>
+            </ul>
+            <div className="flex gap-3 mt-8">
+              {['Send', 'MessageCircle', 'Instagram'].map((ic) => (
+                <span key={ic} className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors cursor-pointer">
+                  <Icon name={ic} size={20} />
+                </span>
+              ))}
+            </div>
+          </div>
+          <form className="p-10 md:p-12 space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <input className="w-full h-12 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Ваше имя" />
+            <input className="w-full h-12 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Телефон или email" />
+            <textarea rows={4} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none" placeholder="Опишите задачу" />
+            <Button size="lg" className="w-full">Отправить заявку</Button>
+          </form>
+        </Card>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-10">
+        <div className="container px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span className="grid place-items-center w-7 h-7 rounded-md gradient-deep text-white"><Icon name="Fish" size={16} /></span>
+            <span className="font-display text-lg font-bold text-primary">АкваТеррариум</span>
+          </div>
+          <p>© 2026 АкваТеррариум. Живая природа в вашем доме.</p>
+        </div>
+      </footer>
     </div>
   );
 };
