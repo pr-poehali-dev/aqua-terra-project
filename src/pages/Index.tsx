@@ -302,6 +302,26 @@ const Index = () => {
             </div>
           </div>
         </div>
+
+        {/* Quiz promo button */}
+        <button
+          onClick={() => scrollTo('quiz')}
+          className="absolute bottom-10 right-6 md:right-12 z-20 group animate-wiggle"
+          aria-label="Пройти тест и получить скидку"
+        >
+          {/* pulse rings */}
+          <span className="absolute inset-0 rounded-2xl bg-yellow-400 animate-pulse-ring opacity-70" />
+          <span className="absolute inset-0 rounded-2xl bg-yellow-400 animate-pulse-ring opacity-50" style={{ animationDelay: '0.5s' }} />
+
+          <div className="relative bg-gradient-to-br from-yellow-400 to-orange-400 text-gray-900 rounded-2xl px-5 py-4 shadow-2xl flex flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200">
+            <span className="text-3xl">🎁</span>
+            <span className="font-bold text-base leading-tight text-center">Скидка 10%</span>
+            <span className="text-xs font-medium text-gray-800/80 text-center leading-tight">Пройди тест и получи<br />промокод + розыгрыш</span>
+            <span className="mt-1 flex items-center gap-1 text-xs font-bold bg-white/30 rounded-full px-3 py-0.5">
+              Попробовать <Icon name="ArrowRight" size={12} />
+            </span>
+          </div>
+        </button>
       </section>
 
       {/* Services */}
