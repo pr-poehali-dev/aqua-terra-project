@@ -103,6 +103,39 @@ export default function Admin() {
   const [newSection, setNewSection] = useState({ slug: '', title: '', description: '', icon: 'Package', has_order_form: false });
   const [newCategory, setNewCategory] = useState({ section_id: 0, slug: '', title: '', icon: 'Tag' });
   const [savingCatalog, setSavingCatalog] = useState(false);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [editingCatProduct, setEditingCatProduct] = useState<Partial<Product> | null>(null);
+  const [savingCatProduct, setSavingCatProduct] = useState(false);
+  const [uploadingCatPhoto, setUploadingCatPhoto] = useState(false);
+  const [activeCatalogSection, setActiveCatalogSection] = useState('');
+  const catProductFileRef = useRef<HTMLInputElement>(null);
+
+  const loadCatalogProducts = (sectionSlug: string) =>
+    fetch(`${CATALOG_URL}?section=${sectionSlug}`)
+      .then(r => r.json())
+      .then(setCatalogProducts);
+
+  const uploadCatalogPhoto = async (file: File, productId: number) => {
+    setUploadingCatPhoto(true);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string).split(',')[1];
+      const res = await fetch(`${PRODUCTS_ADMIN}/upload?id=${productId}`, {
+        method: 'POST', headers, body: JSON.stringify({ photo_base64: base64, ext }),
+      });
+      if (res.ok) {
+        const { photo_url } = await res.json();
+        setEditingCatProduct(prev => prev ? { ...prev, photo_url } : prev);
+        setCatalogProducts(prev => prev.map(p => p.id === productId ? { ...p, photo_url } : p));
+        toast({ title: 'Фото загружено!' });
+      } else {
+        toast({ title: 'Ошибка загрузки', variant: 'destructive' });
+      }
+      setUploadingCatPhoto(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token };
 
@@ -911,11 +944,131 @@ export default function Admin() {
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display text-2xl font-bold text-primary">Разделы каталога</h2>
-                <p className="text-muted-foreground text-sm mt-1">Управляйте разделами и категориями магазина</p>
+                <h2 className="font-display text-2xl font-bold text-primary">Каталог</h2>
+                <p className="text-muted-foreground text-sm mt-1">Разделы, категории и товары магазина</p>
               </div>
               <a href="/shop" target="_blank"><Button variant="outline" size="sm"><Icon name="ExternalLink" size={14} className="mr-1" />Открыть магазин</Button></a>
             </div>
+
+            {/* Товары раздела */}
+            <Card className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <h3 className="font-semibold text-foreground flex-1">Товары</h3>
+                <select className="h-8 px-2 rounded border border-input bg-background text-sm"
+                  value={activeCatalogSection}
+                  onChange={e => { setActiveCatalogSection(e.target.value); if (e.target.value) loadCatalogProducts(e.target.value); }}>
+                  <option value="">— выберите раздел —</option>
+                  {catalogSections.map(s => <option key={s.slug} value={s.slug}>{s.title}</option>)}
+                </select>
+                {activeCatalogSection && (
+                  <Button size="sm" onClick={() => setEditingCatProduct({ section_id: catalogSections.find(s => s.slug === activeCatalogSection)?.id, in_stock: true, icon: 'Package', photo_url: null })}>
+                    + Товар
+                  </Button>
+                )}
+              </div>
+
+              {/* Список товаров */}
+              {activeCatalogSection && (
+                <div className="space-y-2">
+                  {catalogProducts.length === 0
+                    ? <p className="text-sm text-muted-foreground text-center py-6">Товаров в этом разделе нет</p>
+                    : catalogProducts.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                          {p.photo_url
+                            ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full grid place-items-center"><Icon name={p.icon} size={20} className="text-muted-foreground" /></div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">{p.price.toLocaleString('ru')} ₽ · {p.tag}</p>
+                        </div>
+                        <Badge variant={p.in_stock ? 'secondary' : 'outline'} className="text-xs shrink-0">
+                          {p.in_stock ? 'В наличии' : 'Нет'}
+                        </Badge>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingCatProduct(p)}>
+                          <Icon name="Pencil" size={14} />
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Редактирование/создание товара */}
+            {editingCatProduct && (
+              <Card className="p-5 border-primary/30">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">{editingCatProduct.id ? 'Редактировать товар' : 'Новый товар'}</h3>
+                  <button onClick={() => setEditingCatProduct(null)}><Icon name="X" size={18} className="text-muted-foreground" /></button>
+                </div>
+
+                {/* Фото */}
+                <div className="flex gap-4 mb-4">
+                  <div className="w-24 h-24 rounded-xl overflow-hidden bg-muted shrink-0">
+                    {editingCatProduct.photo_url
+                      ? <img src={editingCatProduct.photo_url} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full grid place-items-center text-muted-foreground"><Icon name="ImagePlus" size={28} /></div>}
+                  </div>
+                  <div className="flex flex-col gap-2 justify-center">
+                    <input ref={catProductFileRef} type="file" accept="image/*" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f && editingCatProduct.id) uploadCatalogPhoto(f, editingCatProduct.id); }} />
+                    <Button variant="outline" size="sm" disabled={uploadingCatPhoto || !editingCatProduct.id}
+                      onClick={() => catProductFileRef.current?.click()}>
+                      <Icon name="Upload" size={14} className="mr-1" />
+                      {uploadingCatPhoto ? 'Загружаем...' : 'Загрузить фото'}
+                    </Button>
+                    {!editingCatProduct.id && <p className="text-xs text-muted-foreground">Сохраните товар, затем загрузите фото</p>}
+                    {editingCatProduct.photo_url && (
+                      <Button variant="ghost" size="sm" className="text-destructive text-xs"
+                        onClick={() => setEditingCatProduct(p => p ? { ...p, photo_url: null } : p)}>
+                        Удалить фото
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <input placeholder="Название товара" className="h-9 px-3 rounded-lg border border-input bg-background text-sm sm:col-span-2"
+                    value={editingCatProduct.name || ''} onChange={e => setEditingCatProduct(p => p ? { ...p, name: e.target.value } : p)} />
+                  <input placeholder="Цена, ₽" type="number" className="h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                    value={editingCatProduct.price || ''} onChange={e => setEditingCatProduct(p => p ? { ...p, price: Number(e.target.value) } : p)} />
+                  <input placeholder="Тег (напр: Аквариум)" className="h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                    value={editingCatProduct.tag || ''} onChange={e => setEditingCatProduct(p => p ? { ...p, tag: e.target.value } : p)} />
+                  <select className="h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                    value={editingCatProduct.category_id || ''}
+                    onChange={e => setEditingCatProduct(p => p ? { ...p, category_id: Number(e.target.value) } : p)}>
+                    <option value="">— категория —</option>
+                    {catalogSections.find(s => s.slug === activeCatalogSection)?.categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
+                  </select>
+                  <label className="flex items-center gap-2 text-sm h-9 px-3">
+                    <input type="checkbox" checked={!!editingCatProduct.in_stock}
+                      onChange={e => setEditingCatProduct(p => p ? { ...p, in_stock: e.target.checked } : p)} />
+                    В наличии
+                  </label>
+                  <textarea placeholder="Описание товара" rows={2}
+                    className="sm:col-span-2 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={editingCatProduct.description || ''} onChange={e => setEditingCatProduct(p => p ? { ...p, description: e.target.value } : p)} />
+                  <Button disabled={savingCatProduct} className="sm:col-span-2"
+                    onClick={async () => {
+                      if (!editingCatProduct.name || !editingCatProduct.price) { toast({ title: 'Заполните название и цену', variant: 'destructive' }); return; }
+                      setSavingCatProduct(true);
+                      const isNew = !editingCatProduct.id;
+                      const action = isNew ? 'add_product' : 'update_product';
+                      const body = { ...editingCatProduct, section_id: catalogSections.find(s => s.slug === activeCatalogSection)?.id };
+                      await fetch(`${CATALOG_URL}?action=${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                      await loadCatalogProducts(activeCatalogSection);
+                      toast({ title: isNew ? 'Товар добавлен!' : 'Сохранено!' });
+                      if (isNew) setEditingCatProduct(null);
+                      setSavingCatProduct(false);
+                    }}>
+                    {savingCatProduct ? 'Сохраняем...' : editingCatProduct.id ? 'Сохранить' : 'Создать товар'}
+                  </Button>
+                </div>
+              </Card>
+            )}
 
             {/* Список разделов */}
             <div className="space-y-4">
