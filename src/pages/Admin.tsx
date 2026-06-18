@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import RichEditor from '@/components/RichEditor';
+import ZoneEditor from '@/components/ZoneEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
@@ -1715,74 +1716,26 @@ export default function Admin() {
                 {zones.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Зон пока нет</p>}
               </div>
 
-              {/* Форма редактирования зоны */}
+              {/* Редактор зоны */}
               {editingZone && (
-                <div className="mt-4 p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
-                  <p className="text-sm font-semibold text-primary">{editingZone.id ? 'Редактировать зону' : 'Новая зона'}</p>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="text-xs text-muted-foreground mb-1 block">Название</label>
-                      <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
-                        value={editingZone.name || ''} onChange={e => setEditingZone(p => ({...p, name: e.target.value}))} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Тип зоны</label>
-                      <select className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
-                        value={editingZone.zone_type || 'circle'} onChange={e => setEditingZone(p => ({...p, zone_type: e.target.value as 'circle' | 'polygon'}))}>
-                        <option value="circle">Круг (радиус)</option>
-                        <option value="polygon">Полигон (точки)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Цвет</label>
-                      <div className="flex gap-2">
-                        <input type="color" className="h-9 w-12 rounded-lg border border-input cursor-pointer"
-                          value={editingZone.color || '#22c55e'} onChange={e => setEditingZone(p => ({...p, color: e.target.value}))} />
-                        <span className="text-sm flex items-center text-muted-foreground">{editingZone.color}</span>
-                      </div>
-                    </div>
-                    {editingZone.zone_type === 'circle' && (<>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Широта центра</label>
-                        <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
-                          value={editingZone.center_lat ?? ''} onChange={e => setEditingZone(p => ({...p, center_lat: parseFloat(e.target.value)}))} />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Долгота центра</label>
-                        <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
-                          value={editingZone.center_lon ?? ''} onChange={e => setEditingZone(p => ({...p, center_lon: parseFloat(e.target.value)}))} />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Радиус (км)</label>
-                        <input type="number" step="1" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
-                          value={editingZone.radius_km ?? ''} onChange={e => setEditingZone(p => ({...p, radius_km: parseFloat(e.target.value)}))} />
-                      </div>
-                    </>)}
-                    {editingZone.zone_type === 'polygon' && (
-                      <div className="sm:col-span-2">
-                        <label className="text-xs text-muted-foreground mb-1 block">Координаты точек (JSON, формат: [[lat,lon], ...])</label>
-                        <textarea rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ring"
-                          value={JSON.stringify(editingZone.coordinates || [])}
-                          onChange={e => { try { setEditingZone(p => ({...p, coordinates: JSON.parse(e.target.value)})); } catch (err) { void err; } }} />
-                        <p className="text-xs text-muted-foreground mt-1">Пример: [[55.72,37.20],[55.72,37.55],[55.87,37.55],[55.87,37.20]]</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button disabled={savingZone || !editingZone.name} onClick={async () => {
-                      setSavingZone(true);
-                      if (editingZone.id) {
-                        await fetch(`${ZONES_URL}?id=${editingZone.id}`, { method: 'PUT', headers, body: JSON.stringify(editingZone) });
-                      } else {
-                        await fetch(ZONES_URL, { method: 'POST', headers, body: JSON.stringify(editingZone) });
-                      }
-                      await loadZones();
-                      setEditingZone(null); setSavingZone(false);
-                      toast({ title: editingZone.id ? 'Зона обновлена!' : 'Зона добавлена!' });
-                    }}>{savingZone ? 'Сохраняем...' : editingZone.id ? 'Сохранить' : 'Добавить'}</Button>
-                    <Button variant="outline" onClick={() => setEditingZone(null)}>Отмена</Button>
-                  </div>
-                </div>
+                <ZoneEditor
+                  zone={editingZone}
+                  apiKey={siteSettings.yandex_maps_key || ''}
+                  saving={savingZone}
+                  onChange={setEditingZone}
+                  onSave={async () => {
+                    setSavingZone(true);
+                    if (editingZone.id) {
+                      await fetch(`${ZONES_URL}?id=${editingZone.id}`, { method: 'PUT', headers, body: JSON.stringify(editingZone) });
+                    } else {
+                      await fetch(ZONES_URL, { method: 'POST', headers, body: JSON.stringify(editingZone) });
+                    }
+                    await loadZones();
+                    setEditingZone(null); setSavingZone(false);
+                    toast({ title: editingZone.id ? 'Зона обновлена!' : 'Зона добавлена!' });
+                  }}
+                  onCancel={() => setEditingZone(null)}
+                />
               )}
             </Card>
 
