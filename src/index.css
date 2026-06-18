@@ -4,93 +4,93 @@
 
 @layer base {
   :root {
-    /* Тёмная глубина океана — основная тема */
-    --background: 222 42% 7%;
-    --foreground: 200 30% 90%;
+    /* Светлая тема — природный бежево-молочный фон */
+    --background: 46 30% 97%;
+    --foreground: 210 40% 12%;
 
-    --card: 220 38% 11%;
-    --card-foreground: 200 30% 90%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 12%;
 
-    --popover: 220 38% 11%;
-    --popover-foreground: 200 30% 90%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 12%;
 
-    /* Бирюзовый — цвет морской воды на свету */
-    --primary: 188 80% 52%;
-    --primary-foreground: 222 42% 7%;
+    /* Глубокий морской синий */
+    --primary: 208 72% 22%;
+    --primary-foreground: 46 30% 97%;
 
-    /* Зеленовато-голубой — вторичный акцент */
-    --secondary: 168 60% 42%;
-    --secondary-foreground: 222 42% 7%;
+    /* Живой зелёно-бирюзовый */
+    --secondary: 162 48% 36%;
+    --secondary-foreground: 46 30% 97%;
 
-    --muted: 220 32% 15%;
-    --muted-foreground: 210 22% 58%;
+    --muted: 44 22% 92%;
+    --muted-foreground: 210 18% 44%;
 
-    /* Золотисто-песчаный акцент — как луч света сквозь воду */
-    --accent: 42 70% 58%;
-    --accent-foreground: 222 42% 7%;
+    /* Тёплый песчано-золотой */
+    --accent: 38 58% 76%;
+    --accent-foreground: 210 40% 12%;
 
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 210 30% 92%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 28% 18%;
-    --input: 220 28% 18%;
-    --ring: 188 80% 52%;
+    --border: 44 18% 86%;
+    --input: 44 18% 86%;
+    --ring: 208 72% 22%;
 
-    --sand: 42 65% 52%;
-    --aqua: 188 80% 52%;
+    --sand: 38 55% 82%;
+    --aqua: 190 68% 44%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 222 42% 7%;
-    --sidebar-foreground: 200 30% 90%;
-    --sidebar-primary: 188 80% 52%;
-    --sidebar-primary-foreground: 222 42% 7%;
-    --sidebar-accent: 220 32% 15%;
-    --sidebar-accent-foreground: 200 30% 90%;
-    --sidebar-border: 220 28% 18%;
-    --sidebar-ring: 188 80% 52%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 210 40% 12%;
+    --sidebar-primary: 208 72% 22%;
+    --sidebar-primary-foreground: 46 30% 97%;
+    --sidebar-accent: 44 22% 92%;
+    --sidebar-accent-foreground: 210 40% 12%;
+    --sidebar-border: 44 18% 86%;
+    --sidebar-ring: 208 72% 22%;
   }
 
   .dark {
-    --background: 224 48% 5%;
-    --foreground: 200 28% 88%;
+    --background: 218 38% 8%;
+    --foreground: 210 28% 90%;
 
-    --card: 222 42% 9%;
-    --card-foreground: 200 28% 88%;
+    --card: 218 32% 12%;
+    --card-foreground: 210 28% 90%;
 
-    --popover: 222 42% 9%;
-    --popover-foreground: 200 28% 88%;
+    --popover: 218 32% 12%;
+    --popover-foreground: 210 28% 90%;
 
-    --primary: 188 85% 58%;
-    --primary-foreground: 224 48% 5%;
+    --primary: 190 78% 54%;
+    --primary-foreground: 218 38% 8%;
 
-    --secondary: 168 62% 46%;
-    --secondary-foreground: 224 48% 5%;
+    --secondary: 162 52% 44%;
+    --secondary-foreground: 218 38% 8%;
 
-    --muted: 222 35% 13%;
-    --muted-foreground: 210 20% 60%;
+    --muted: 218 28% 17%;
+    --muted-foreground: 210 18% 62%;
 
-    --accent: 42 72% 60%;
-    --accent-foreground: 224 48% 5%;
+    --accent: 38 62% 54%;
+    --accent-foreground: 218 38% 8%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 210 30% 92%;
 
-    --border: 222 30% 16%;
-    --input: 222 30% 16%;
-    --ring: 188 85% 58%;
+    --border: 218 26% 20%;
+    --input: 218 26% 20%;
+    --ring: 190 78% 54%;
 
-    --sand: 42 68% 54%;
-    --aqua: 188 85% 58%;
+    --sand: 38 58% 48%;
+    --aqua: 190 78% 54%;
 
-    --sidebar-background: 224 48% 5%;
-    --sidebar-foreground: 200 28% 88%;
-    --sidebar-primary: 188 85% 58%;
-    --sidebar-primary-foreground: 224 48% 5%;
-    --sidebar-accent: 222 35% 13%;
-    --sidebar-accent-foreground: 200 28% 88%;
-    --sidebar-border: 222 30% 16%;
-    --sidebar-ring: 188 85% 58%;
+    --sidebar-background: 218 38% 8%;
+    --sidebar-foreground: 210 28% 90%;
+    --sidebar-primary: 190 78% 54%;
+    --sidebar-primary-foreground: 218 38% 8%;
+    --sidebar-accent: 218 28% 17%;
+    --sidebar-accent-foreground: 210 28% 90%;
+    --sidebar-border: 218 26% 20%;
+    --sidebar-ring: 190 78% 54%;
   }
 }
 
@@ -122,9 +122,9 @@
   .gradient-deep {
     background: linear-gradient(
       160deg,
-      hsl(224 60% 8%) 0%,
-      hsl(210 70% 16%) 50%,
-      hsl(188 55% 22%) 100%
+      hsl(210 65% 14%) 0%,
+      hsl(200 60% 22%) 55%,
+      hsl(162 45% 28%) 100%
     );
   }
 
