@@ -12,6 +12,34 @@ import NotFound from "./pages/NotFound";
 import WaterCursor from "@/components/WaterCursor";
 
 const queryClient = new QueryClient();
+const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
+
+function YandexMetrika() {
+  useEffect(() => {
+    fetch(SETTINGS_URL).then(r => r.json()).then(d => {
+      const id = d?.settings?.metrika_id;
+      if (!id) return;
+      // Инициализируем счётчик
+      const w = window as unknown as Record<string, unknown>;
+      type YmFn = ((...args: unknown[]) => void) & { a?: unknown[]; l?: number };
+      const ym: YmFn = (w['ym'] as YmFn) || function(...args: unknown[]) { (ym.a = ym.a || []).push(args); };
+      ym.l = 1 * Date.now();
+      w['ym'] = ym;
+      // Подгружаем скрипт если ещё не загружен
+      if (!document.querySelector('script[src="https://mc.yandex.ru/metrika/tag.js"]')) {
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://mc.yandex.ru/metrika/tag.js';
+        document.head.appendChild(s);
+      }
+      // Инициализируем после загрузки
+      const init = () => (w['ym'] as YmFn)(Number(id), 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+      const existing = document.querySelector('script[src="https://mc.yandex.ru/metrika/tag.js"]');
+      if (existing) { existing.addEventListener('load', init); } else { init(); }
+    }).catch(() => {});
+  }, []);
+  return null;
+}
 
 function RevealObserver() {
   useEffect(() => {
@@ -41,6 +69,7 @@ const App = () => (
     <TooltipProvider>
       <WaterCursor />
       <RevealObserver />
+      <YandexMetrika />
       <Toaster />
       <Sonner />
       <BrowserRouter>

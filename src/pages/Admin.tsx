@@ -57,7 +57,7 @@ interface CatalogSection {
 }
 interface Lead {
   id: number; name: string; contact: string; message: string;
-  source: string; read: boolean; created_at: string;
+  source: string; read: boolean; created_at: string; archived: boolean;
 }
 interface Stats {
   total_leads: number; unread: number; leads_30d: number; leads_7d: number;
@@ -73,6 +73,8 @@ export default function Admin() {
   const [tab, setTab] = useState<'analytics' | 'products' | 'portfolio' | 'services' | 'articles' | 'promos' | 'catalog' | 'settings'>('analytics');
   const [stats, setStats] = useState<Stats | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [archivedLeads, setArchivedLeads] = useState<Lead[]>([]);
+  const [leadsView, setLeadsView] = useState<'active' | 'archived'>('active');
   const [promos, setPromos] = useState<PromoCode[]>([]);
   const [editingPromo, setEditingPromo] = useState<Partial<PromoCode> | null>(null);
   const [savingPromo, setSavingPromo] = useState(false);
@@ -193,18 +195,45 @@ export default function Admin() {
   };
 
   const loadAnalytics = async () => {
-    const [rs, rl] = await Promise.all([
+    const [rs, rl, ra] = await Promise.all([
       fetch(`${ANALYTICS_URL}?type=stats`, { headers }),
       fetch(`${ANALYTICS_URL}?type=leads`, { headers }),
+      fetch(`${ANALYTICS_URL}?type=archived`, { headers }),
     ]);
     setStats(await rs.json());
     setLeads(await rl.json());
+    setArchivedLeads(await ra.json());
   };
 
   const markRead = async (id: number) => {
     await fetch(`${ANALYTICS_URL}?id=${id}`, { method: 'PUT', headers });
     setLeads(prev => prev.map(l => l.id === id ? { ...l, read: true } : l));
     setStats(prev => prev ? { ...prev, unread: Math.max(0, prev.unread - 1) } : prev);
+  };
+
+  const archiveLead = async (id: number) => {
+    await fetch(`${ANALYTICS_URL}?id=${id}&action=archive`, { method: 'PUT', headers });
+    const lead = leads.find(l => l.id === id);
+    setLeads(prev => prev.filter(l => l.id !== id));
+    if (lead) setArchivedLeads(prev => [{ ...lead, archived: true, read: true }, ...prev]);
+    setStats(prev => prev ? { ...prev, total_leads: Math.max(0, prev.total_leads - 1), unread: lead?.read ? prev.unread : Math.max(0, prev.unread - 1) } : prev);
+    toast({ title: 'Заявка перенесена в архив' });
+  };
+
+  const unarchiveLead = async (id: number) => {
+    await fetch(`${ANALYTICS_URL}?id=${id}&action=unarchive`, { method: 'PUT', headers });
+    const lead = archivedLeads.find(l => l.id === id);
+    setArchivedLeads(prev => prev.filter(l => l.id !== id));
+    if (lead) setLeads(prev => [{ ...lead, archived: false }, ...prev]);
+    toast({ title: 'Заявка восстановлена' });
+  };
+
+  const deleteLead = async (id: number, fromArchive = false) => {
+    if (!confirm('Удалить заявку? Это действие нельзя отменить.')) return;
+    await fetch(`${ANALYTICS_URL}?id=${id}`, { method: 'DELETE', headers });
+    if (fromArchive) setArchivedLeads(prev => prev.filter(l => l.id !== id));
+    else setLeads(prev => prev.filter(l => l.id !== id));
+    toast({ title: 'Заявка удалена' });
   };
 
   const loadArticles = () => fetch(ARTICLES_ADMIN, { headers }).then(r => r.json()).then(setArticles);
@@ -466,34 +495,81 @@ export default function Admin() {
 
             {/* Leads list */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-primary">Заявки</h3>
-                <Button variant="outline" size="sm" onClick={loadAnalytics}><Icon name="RefreshCw" size={14} className="mr-1" />Обновить</Button>
-              </div>
-              <div className="space-y-3">
-                {leads.length === 0 && <p className="text-center text-muted-foreground py-10">Заявок пока нет</p>}
-                {leads.map((l) => (
-                  <Card key={l.id} className={`p-4 flex items-start gap-4 transition-colors ${!l.read ? 'border-primary/40 bg-primary/5' : ''}`}>
-                    <div className="grid place-items-center w-10 h-10 rounded-xl shrink-0" style={{ background: l.source === 'cart' ? 'hsl(152 38% 38% / 0.15)' : 'hsl(200 70% 24% / 0.1)' }}>
-                      <Icon name={l.source === 'cart' ? 'ShoppingCart' : 'Mail'} size={18} className={l.source === 'cart' ? 'text-secondary' : 'text-primary'} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-primary text-sm">{l.name}</p>
-                        {!l.read && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
-                        <span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleString('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <p className="text-sm text-secondary font-medium">{l.contact}</p>
-                      {l.message && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{l.message}</p>}
-                    </div>
-                    {!l.read && (
-                      <Button size="sm" variant="outline" className="shrink-0" onClick={() => markRead(l.id)}>
-                        <Icon name="Check" size={14} className="mr-1" /> Прочитано
-                      </Button>
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                {/* Переключатель Активные / Архив */}
+                <div className="flex items-center rounded-xl border border-border overflow-hidden">
+                  <button onClick={() => setLeadsView('active')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${leadsView === 'active' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+                    <Icon name="Mail" size={14} />Активные
+                    {(leads.filter(l => !l.read).length > 0) && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                        {leads.filter(l => !l.read).length}
+                      </span>
                     )}
-                  </Card>
-                ))}
+                  </button>
+                  <button onClick={() => setLeadsView('archived')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${leadsView === 'archived' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+                    <Icon name="Archive" size={14} />Архив
+                    {archivedLeads.length > 0 && <span className="text-xs opacity-60">({archivedLeads.length})</span>}
+                  </button>
+                </div>
+                <Button variant="outline" size="sm" onClick={loadAnalytics}>
+                  <Icon name="RefreshCw" size={14} className="mr-1" />Обновить
+                </Button>
               </div>
+
+              {/* Список заявок */}
+              {(() => {
+                const list = leadsView === 'archived' ? archivedLeads : leads;
+                if (list.length === 0) return (
+                  <p className="text-center text-muted-foreground py-10">
+                    {leadsView === 'archived' ? 'Архив пуст' : 'Заявок пока нет'}
+                  </p>
+                );
+                return (
+                  <div className="space-y-3">
+                    {list.map((l) => (
+                      <Card key={l.id} className={`p-4 flex items-start gap-4 transition-colors ${!l.read && leadsView === 'active' ? 'border-primary/40 bg-primary/5' : ''}`}>
+                        <div className="grid place-items-center w-10 h-10 rounded-xl shrink-0" style={{ background: l.source === 'cart' ? 'hsl(152 38% 38% / 0.15)' : 'hsl(200 70% 24% / 0.1)' }}>
+                          <Icon name={l.source === 'cart' ? 'ShoppingCart' : l.source === 'shop_order' ? 'Store' : 'Mail'} size={18} className={l.source === 'cart' ? 'text-secondary' : 'text-primary'} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <p className="font-semibold text-primary text-sm">{l.name}</p>
+                            {!l.read && leadsView === 'active' && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
+                            <span className="text-xs text-muted-foreground">{new Date(l.created_at).toLocaleString('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                              {l.source === 'cart' ? '🛒 Корзина' : l.source === 'shop_order' ? '🛍 Магазин' : '🐠 Форма'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-secondary font-medium">{l.contact}</p>
+                          {l.message && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{l.message}</p>}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                          {!l.read && leadsView === 'active' && (
+                            <Button size="sm" variant="outline" onClick={() => markRead(l.id)}>
+                              <Icon name="Check" size={13} className="mr-1" />Прочитано
+                            </Button>
+                          )}
+                          {leadsView === 'active' ? (
+                            <Button size="sm" variant="outline" className="text-muted-foreground" onClick={() => archiveLead(l.id)}>
+                              <Icon name="Archive" size={13} className="mr-1" />В архив
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => unarchiveLead(l.id)}>
+                              <Icon name="ArchiveRestore" size={13} className="mr-1" />Восстановить
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteLead(l.id, leadsView === 'archived')}>
+                            <Icon name="Trash2" size={13} />
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -1563,6 +1639,49 @@ export default function Admin() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </Card>
+
+            {/* Яндекс Метрика */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-1 flex items-center gap-2">
+                <Icon name="BarChart2" size={18} />Яндекс Метрика
+              </h3>
+              <p className="text-sm text-muted-foreground mb-5">Счётчик автоматически подключится на всех страницах сайта.</p>
+
+              <div className="space-y-3 mb-4">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Номер счётчика</label>
+                  <div className="flex gap-2">
+                    <input
+                      placeholder="Например: 98765432"
+                      className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={siteSettings.metrika_id || ''}
+                      onChange={e => setSiteSettings(p => ({...p, metrika_id: e.target.value.replace(/\D/g, '')}))}
+                    />
+                    <Button disabled={savingSettings} onClick={async () => {
+                      setSavingSettings(true);
+                      await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ metrika_id: siteSettings.metrika_id || '' }) });
+                      setSavingSettings(false);
+                      toast({ title: siteSettings.metrika_id ? 'Метрика подключена!' : 'Метрика отключена', description: siteSettings.metrika_id ? `Счётчик ${siteSettings.metrika_id} активен` : '' });
+                    }}>{savingSettings ? '...' : 'Сохранить'}</Button>
+                  </div>
+                  {siteSettings.metrika_id && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1.5 flex items-center gap-1">
+                      <Icon name="CheckCircle" size={12} />Счётчик {siteSettings.metrika_id} подключён
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-muted/50 space-y-2 text-sm">
+                <p className="font-medium text-foreground">Как получить номер счётчика:</p>
+                <ol className="space-y-1 text-muted-foreground text-xs list-decimal list-inside">
+                  <li>Зайдите на <span className="text-primary font-medium">metrika.yandex.ru</span></li>
+                  <li>Нажмите «Добавить счётчик» → укажите домен сайта</li>
+                  <li>Скопируйте номер счётчика (8 цифр) и вставьте выше</li>
+                  <li>Нажмите «Сохранить» — счётчик заработает автоматически</li>
+                </ol>
               </div>
             </Card>
 
