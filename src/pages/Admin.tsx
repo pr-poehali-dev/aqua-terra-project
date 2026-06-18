@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
 const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
+const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
 const SERVICES_ADMIN = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
@@ -146,6 +147,8 @@ export default function Admin() {
   const [quizQuestions, setQuizQuestions] = useState<{id: number; question: string; sort_order: number; answers: {id: number; text: string; type: string}[]}[]>([]);
   const [quizResults, setQuizResults] = useState<Record<string, {title: string; desc: string; tip: string}>>({});
   const [savingSettings, setSavingSettings] = useState(false);
+  const [tgStatus, setTgStatus] = useState<{connected: boolean; bot_name: string | null; has_token: boolean; has_chat_id: boolean} | null>(null);
+  const [tgTesting, setTgTesting] = useState(false);
   const [editingFaq, setEditingFaq] = useState<{id?: number; q: string; a: string; sort_order: number} | null>(null);
 
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token };
@@ -184,6 +187,7 @@ export default function Admin() {
     setFaqItems(sd.faq || []);
     setQuizQuestions(sd.quiz || []);
     setQuizResults(sd.quiz_results || {});
+    fetch(`${LEAD_URL}?action=status`, { headers }).then(r => r.json()).then(setTgStatus).catch(() => {});
     setAuthed(true);
     setLoading(false);
   };
@@ -1471,6 +1475,94 @@ export default function Admin() {
                     </div>
                   );
                 })}
+              </div>
+            </Card>
+
+            {/* Telegram */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-1 flex items-center gap-2">
+                <Icon name="Send" size={18} />Уведомления в Telegram
+              </h3>
+              <p className="text-sm text-muted-foreground mb-5">Заявки с сайта, корзины и магазина будут приходить в ваш Telegram-бот.</p>
+
+              {/* Статус */}
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-5 text-sm font-medium ${
+                tgStatus?.connected ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-orange-500/10 text-orange-700 dark:text-orange-400'
+              }`}>
+                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${tgStatus?.connected ? 'bg-green-500' : 'bg-orange-400'}`} />
+                {tgStatus === null && 'Проверяем статус…'}
+                {tgStatus?.connected && `✓ Подключён${tgStatus.bot_name ? ` — @${tgStatus.bot_name}` : ''}`}
+                {tgStatus && !tgStatus.connected && (
+                  !tgStatus.has_token ? 'Не задан TELEGRAM_BOT_TOKEN' :
+                  !tgStatus.has_chat_id ? 'Не задан TELEGRAM_CHAT_ID' :
+                  'Бот не подключён'
+                )}
+              </div>
+
+              {/* Инструкция */}
+              <div className="space-y-3 mb-5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Как подключить бота</p>
+                <div className="space-y-2.5">
+                  {[
+                    { n: 1, title: 'Создайте бота', desc: 'Напишите @BotFather в Telegram → /newbot → придумайте имя. Скопируйте токен вида 123456789:AAF...' },
+                    { n: 2, title: 'Узнайте свой Chat ID', desc: 'Напишите @userinfobot — он ответит числом, например 337216695. Это ваш Chat ID.' },
+                    { n: 3, title: 'Добавьте секреты', desc: 'В панели платформы (раздел Ядро → Секреты) добавьте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID.' },
+                    { n: 4, title: 'Напишите боту /start', desc: 'Откройте своего нового бота в Telegram и нажмите Start — иначе бот не сможет писать вам первым.' },
+                  ].map(s => (
+                    <div key={s.n} className="flex gap-3 items-start">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold grid place-items-center shrink-0 mt-0.5">{s.n}</div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{s.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Кнопки */}
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" disabled={tgTesting} onClick={async () => {
+                  setTgTesting(true);
+                  const res = await fetch(`${LEAD_URL}?action=test`, { method: 'POST', headers });
+                  const d = await res.json();
+                  if (d.success) {
+                    toast({ title: '✓ Тест отправлен!', description: 'Проверьте Telegram — должно прийти сообщение.' });
+                  } else {
+                    toast({ title: 'Ошибка', description: d.error || 'Что-то пошло не так', variant: 'destructive' });
+                  }
+                  fetch(`${LEAD_URL}?action=status`, { headers }).then(r => r.json()).then(setTgStatus).catch(() => {});
+                  setTgTesting(false);
+                }}>
+                  <Icon name="Send" size={14} className="mr-1.5" />
+                  {tgTesting ? 'Отправляем…' : 'Отправить тест'}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  fetch(`${LEAD_URL}?action=status`, { headers }).then(r => r.json()).then(setTgStatus).catch(() => {});
+                  toast({ title: 'Статус обновлён' });
+                }}>
+                  <Icon name="RefreshCw" size={14} className="mr-1.5" />Обновить статус
+                </Button>
+              </div>
+
+              {/* Что приходит */}
+              <div className="mt-5 pt-5 border-t border-border">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Что приходит в Telegram</p>
+                <div className="grid sm:grid-cols-3 gap-2 text-xs">
+                  {[
+                    { emoji: '🐠', label: 'Форма контактов', desc: 'Имя, контакт, сообщение' },
+                    { emoji: '🛒', label: 'Заказ из корзины', desc: 'Список товаров и сумма' },
+                    { emoji: '🛍', label: 'Заявка из магазина', desc: 'Раздел, имя, контакт' },
+                  ].map(s => (
+                    <div key={s.label} className="flex items-start gap-2 p-3 rounded-xl bg-muted/50">
+                      <span className="text-lg">{s.emoji}</span>
+                      <div>
+                        <p className="font-medium text-foreground">{s.label}</p>
+                        <p className="text-muted-foreground">{s.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </Card>
 
