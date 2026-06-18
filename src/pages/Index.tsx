@@ -555,31 +555,51 @@ const Index = () => {
           <WaveDivider fill="hsl(var(--background))" />
         </div>
 
-        {/* Стрелка вниз */}
+        {/* Стрелка вниз — только десктоп, по центру */}
         <button
           onClick={() => scrollTo('services')}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-white/60 hover:text-white transition-colors animate-bounce hidden md:block"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 text-white/50 hover:text-white/90 transition-colors animate-bounce hidden md:flex flex-col items-center gap-1"
           aria-label="Листать вниз"
         >
-          <Icon name="ChevronDown" size={32} />
+          <span className="text-[10px] font-medium tracking-widest uppercase text-white/40">листать</span>
+          <Icon name="ChevronDown" size={28} />
         </button>
 
-        {/* Quiz promo button */}
+        {/* Quiz promo button — десктоп: справа; мобиле: горизонтальная полоска снизу */}
         <button
           onClick={() => scrollTo('quiz')}
-          className="absolute bottom-14 right-6 md:right-12 z-20 group animate-wiggle"
           aria-label="Пройти тест и получить скидку"
+          className="group z-20 animate-wiggle
+            md:absolute md:bottom-14 md:right-12
+            absolute bottom-0 left-0 right-0 md:left-auto md:right-12 md:bottom-14"
         >
-          {/* pulse rings */}
-          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-30" />
-          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-20" style={{ animationDelay: '0.5s' }} />
+          {/* pulse rings — только десктоп */}
+          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-30 hidden md:block" />
+          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-20 hidden md:block" style={{ animationDelay: '0.5s' }} />
 
-          <div className="relative rounded-2xl px-5 py-4 shadow-2xl flex flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200 border border-secondary/40 backdrop-blur-md" style={{ background: 'linear-gradient(135deg, hsl(162 48% 14%) 0%, hsl(195 58% 18%) 100%)' }}>
+          {/* Десктоп-версия: карточка */}
+          <div className="hidden md:flex relative rounded-2xl px-5 py-4 shadow-2xl flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200 border border-secondary/40 backdrop-blur-md" style={{ background: 'linear-gradient(135deg, hsl(162 48% 14%) 0%, hsl(195 58% 18%) 100%)' }}>
             <Icon name="Tag" size={22} className="text-secondary mb-0.5" />
             <span className="font-bold text-base leading-tight text-center text-white">Скидка 10%</span>
             <span className="text-xs font-medium text-white/70 text-center leading-tight">Пройди тест и получи<br />промокод + розыгрыш</span>
             <span className="mt-1 flex items-center gap-1 text-xs font-bold bg-secondary/20 text-secondary rounded-full px-3 py-0.5">
               Попробовать <Icon name="ArrowRight" size={12} />
+            </span>
+          </div>
+
+          {/* Мобильная версия: горизонтальная полоска */}
+          <div className="flex md:hidden items-center justify-between px-5 py-3 border-t border-secondary/30 backdrop-blur-md" style={{ background: 'linear-gradient(90deg, hsl(162 48% 10% / 0.95) 0%, hsl(195 58% 14% / 0.95) 100%)' }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-secondary/20 grid place-items-center shrink-0">
+                <Icon name="Tag" size={16} className="text-secondary" />
+              </div>
+              <div className="text-left">
+                <p className="text-white font-semibold text-sm leading-tight">Скидка 10% на первый заказ</p>
+                <p className="text-white/60 text-xs">Пройди тест — получи промокод</p>
+              </div>
+            </div>
+            <span className="flex items-center gap-1 text-xs font-bold text-secondary shrink-0 ml-3">
+              Участвовать <Icon name="ArrowRight" size={12} />
             </span>
           </div>
         </button>
@@ -1208,7 +1228,7 @@ const Index = () => {
           className="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-transform grid place-items-center"
           title="Наверх"
         >
-          <Icon name="ArrowUp" size={20} />
+          <Icon name="ArrowUp" size={18} />
         </button>
       )}
 
