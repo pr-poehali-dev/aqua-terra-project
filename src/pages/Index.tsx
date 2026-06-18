@@ -1267,7 +1267,20 @@ const Index = () => {
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
               <p className="font-semibold text-foreground">Зоны выезда</p>
             </div>
-            <p className="text-sm text-muted-foreground mb-4">Зелёным отмечены районы, куда мы выезжаем. Наведи на зону, чтобы узнать её название.</p>
+            <p className="text-sm text-muted-foreground mb-2">Наведи на зону, чтобы узнать коэффициент стоимости выезда.</p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {[
+                { label: 'Основная', color: 'bg-green-500', hint: 'базовая цена' },
+                { label: 'Ближняя',  color: 'bg-yellow-500', hint: 'немного дороже' },
+                { label: 'Средняя',  color: 'bg-orange-500', hint: 'дороже' },
+                { label: 'Дальняя',  color: 'bg-red-500', hint: 'самая дальняя' },
+              ].map(z => (
+                <span key={z.label} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className={`w-2 h-2 rounded-full ${z.color}`} />
+                  {z.label} — {z.hint}
+                </span>
+              ))}
+            </div>
           </div>
           <ServiceZoneMap
             apiKey={siteSettings.yandex_maps_key}
