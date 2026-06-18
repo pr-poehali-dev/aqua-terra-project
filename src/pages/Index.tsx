@@ -517,7 +517,7 @@ const Index = () => {
           src={HERO_IMG}
           alt="Аквариум"
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ willChange: 'transform', transformOrigin: 'center top', height: '130%', top: '-15%' }}
+          style={{ willChange: 'transform', transformOrigin: 'center top', height: '130%', top: '-15%', objectPosition: 'center 30%' }}
         />
         <div className="absolute inset-0" style={{background: 'linear-gradient(175deg, hsl(150 55% 6% / 0.72) 0%, hsl(162 48% 10% / 0.55) 50%, hsl(195 58% 14% / 0.45) 100%)'}} />
         <div className="absolute inset-x-0 bottom-0 h-2/3" style={{background: 'linear-gradient(to top, hsl(150 55% 6% / 0.85) 0%, transparent 100%)'}} />
@@ -560,14 +560,14 @@ const Index = () => {
           aria-label="Пройти тест и получить скидку"
         >
           {/* pulse rings */}
-          <span className="absolute inset-0 rounded-2xl bg-yellow-400 animate-pulse-ring opacity-70" />
-          <span className="absolute inset-0 rounded-2xl bg-yellow-400 animate-pulse-ring opacity-50" style={{ animationDelay: '0.5s' }} />
+          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-30" />
+          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-20" style={{ animationDelay: '0.5s' }} />
 
-          <div className="relative bg-gradient-to-br from-yellow-400 to-orange-400 text-gray-900 rounded-2xl px-5 py-4 shadow-2xl flex flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200">
-            <span className="text-3xl">🎁</span>
-            <span className="font-bold text-base leading-tight text-center">Скидка 10%</span>
-            <span className="text-xs font-medium text-gray-800/80 text-center leading-tight">Пройди тест и получи<br />промокод + розыгрыш</span>
-            <span className="mt-1 flex items-center gap-1 text-xs font-bold bg-white/30 rounded-full px-3 py-0.5">
+          <div className="relative rounded-2xl px-5 py-4 shadow-2xl flex flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200 border border-secondary/40 backdrop-blur-md" style={{ background: 'linear-gradient(135deg, hsl(162 48% 14%) 0%, hsl(195 58% 18%) 100%)' }}>
+            <Icon name="Tag" size={22} className="text-secondary mb-0.5" />
+            <span className="font-bold text-base leading-tight text-center text-white">Скидка 10%</span>
+            <span className="text-xs font-medium text-white/70 text-center leading-tight">Пройди тест и получи<br />промокод + розыгрыш</span>
+            <span className="mt-1 flex items-center gap-1 text-xs font-bold bg-secondary/20 text-secondary rounded-full px-3 py-0.5">
               Попробовать <Icon name="ArrowRight" size={12} />
             </span>
           </div>
