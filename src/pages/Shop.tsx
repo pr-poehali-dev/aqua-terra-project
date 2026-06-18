@@ -46,7 +46,14 @@ export default function Shop() {
   const activeCategory = params.get('category') || '';
 
   useEffect(() => {
-    fetch(CATALOG_URL).then(r => r.json()).then(setSections).catch(() => {});
+    fetch(CATALOG_URL).then(r => r.json()).then((data: Section[]) => {
+      setSections(data);
+      // Автоматически открываем первый активный раздел если ничего не выбрано
+      if (!activeSection) {
+        const first = data.find(s => s.active);
+        if (first) setParams({ section: first.slug }, { replace: true });
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -114,14 +121,10 @@ export default function Shop() {
           ))}
         </div>
 
-        {/* Пустой стейт */}
-        {!activeSection && (
-          <div className="text-center py-24">
-            <div className="w-20 h-20 rounded-2xl bg-muted mx-auto mb-6 grid place-items-center">
-              <Icon name="ShoppingBag" size={36} className="text-muted-foreground" />
-            </div>
-            <h2 className="font-display text-3xl font-bold text-primary mb-3">Выберите раздел</h2>
-            <p className="text-muted-foreground max-w-sm mx-auto">Выберите категорию выше, чтобы увидеть товары</p>
+        {/* Скелетон пока разделы грузятся */}
+        {!activeSection && sections.length === 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
+            {[1,2,3,4].map(i => <div key={i} className="h-32 rounded-2xl bg-muted" />)}
           </div>
         )}
 
