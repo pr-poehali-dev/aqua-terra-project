@@ -236,6 +236,15 @@ const Index = () => {
   const [lightboxItem, setLightboxItem] = useState<PortfolioItem | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  const [activeSection, setActiveSection] = useState(0);
+
+  const SECTION_IDS = ['home', 'services', 'prices', 'shop', 'portfolio', 'articles', 'faq', 'contacts'];
+
+  const goSection = (dir: 1 | -1) => {
+    const next = Math.max(0, Math.min(SECTION_IDS.length - 1, activeSection + dir));
+    document.getElementById(SECTION_IDS[next])?.scrollIntoView({ behavior: 'smooth' });
+    setActiveSection(next);
+  };
   const heroImgRef = useRef<HTMLImageElement>(null);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
@@ -313,6 +322,11 @@ const Index = () => {
       if (heroImgRef.current) {
         heroImgRef.current.style.transform = `translateY(${y * 0.35}px)`;
       }
+      const idx = SECTION_IDS.map(id => {
+        const el = document.getElementById(id);
+        return el ? Math.abs(el.getBoundingClientRect().top) : Infinity;
+      }).reduce((bestIdx, dist, i, arr) => dist < arr[bestIdx] ? i : bestIdx, 0);
+      setActiveSection(idx);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -555,15 +569,6 @@ const Index = () => {
           <WaveDivider fill="hsl(var(--background))" />
         </div>
 
-        {/* Стрелка вниз — только десктоп, по центру */}
-        <button
-          onClick={() => scrollTo('services')}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 text-white/50 hover:text-white/90 transition-colors animate-bounce hidden md:flex flex-col items-center gap-1"
-          aria-label="Листать вниз"
-        >
-          <span className="text-[10px] font-medium tracking-widest uppercase text-white/40">листать</span>
-          <Icon name="ChevronDown" size={28} />
-        </button>
 
         {/* Quiz promo button — десктоп: справа; мобиле: горизонтальная полоска снизу */}
         <button
@@ -1221,15 +1226,26 @@ const Index = () => {
         })}
       </nav>
 
-      {/* Scroll to top */}
-      {scrollY > 400 && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-transform grid place-items-center"
-          title="Наверх"
-        >
-          <Icon name="ArrowUp" size={18} />
-        </button>
+      {/* Section navigator up/down */}
+      {scrollY > 100 && (
+        <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-1.5">
+          <button
+            onClick={() => goSection(-1)}
+            disabled={activeSection === 0}
+            className="w-10 h-10 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-all grid place-items-center disabled:opacity-30 disabled:scale-100"
+            title="Предыдущий раздел"
+          >
+            <Icon name="ChevronUp" size={18} />
+          </button>
+          <button
+            onClick={() => goSection(1)}
+            disabled={activeSection === SECTION_IDS.length - 1}
+            className="w-10 h-10 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-all grid place-items-center disabled:opacity-30 disabled:scale-100"
+            title="Следующий раздел"
+          >
+            <Icon name="ChevronDown" size={18} />
+          </button>
+        </div>
       )}
 
       {/* Footer */}

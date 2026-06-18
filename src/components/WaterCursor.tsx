@@ -13,6 +13,7 @@ export default function WaterCursor() {
   const [click, setClick]     = useState(false);
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [isTouch, setIsTouch] = useState(false);
+  const [visible, setVisible] = useState(false);
   const nextId = useRef(0);
 
   useEffect(() => {
@@ -39,14 +40,20 @@ export default function WaterCursor() {
     };
     const down = (e: MouseEvent) => { setClick(true); addRipple(e.clientX, e.clientY); };
     const up   = () => setClick(false);
+    const leave = () => setVisible(false);
+    const enter = () => setVisible(true);
 
     document.addEventListener('mousemove', move, { passive: true });
     document.addEventListener('mousedown', down);
     document.addEventListener('mouseup', up);
+    document.addEventListener('mouseleave', leave);
+    document.addEventListener('mouseenter', enter);
     return () => {
       document.removeEventListener('mousemove', move);
       document.removeEventListener('mousedown', down);
       document.removeEventListener('mouseup', up);
+      document.removeEventListener('mouseleave', leave);
+      document.removeEventListener('mouseenter', enter);
     };
   }, [addRipple, isTouch]);
 
@@ -73,7 +80,8 @@ export default function WaterCursor() {
           background: hover
             ? 'radial-gradient(circle, hsl(152 50% 45% / 0.07) 0%, transparent 70%)'
             : 'radial-gradient(circle, hsl(188 75% 55% / 0.06) 0%, transparent 70%)',
-          transition: 'background 0.4s ease',
+          opacity: visible ? 1 : 0,
+          transition: 'background 0.4s ease, opacity 0.15s ease',
           willChange: 'transform',
           pointerEvents: 'none',
         }}
@@ -97,7 +105,7 @@ export default function WaterCursor() {
       <div
         ref={cursorRef}
         className="pointer-events-none fixed top-0 left-0 z-[9999]"
-        style={{ willChange: 'transform' }}
+        style={{ willChange: 'transform', opacity: visible ? 1 : 0, transition: 'opacity 0.15s ease' }}
       >
         <svg
           width="20" height="24" viewBox="0 0 20 24" fill="none"
