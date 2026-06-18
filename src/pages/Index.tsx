@@ -485,7 +485,7 @@ const Index = () => {
           </div>
         </div>
         {menuOpen && (
-          <div className="md:hidden fixed inset-0 top-20 z-40 bg-background/95 backdrop-blur-md flex flex-col">
+          <div className="md:hidden fixed inset-0 top-20 z-40 bg-background flex flex-col border-t border-border">
             <nav className="flex flex-col px-6 pt-6 pb-8 gap-1 flex-1">
               {NAV.map((n, i) => (
                 <button
@@ -554,6 +554,15 @@ const Index = () => {
         <div className="absolute bottom-0 inset-x-0 z-10 pointer-events-none">
           <WaveDivider fill="hsl(var(--background))" />
         </div>
+
+        {/* Стрелка вниз */}
+        <button
+          onClick={() => scrollTo('services')}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-white/60 hover:text-white transition-colors animate-bounce hidden md:block"
+          aria-label="Листать вниз"
+        >
+          <Icon name="ChevronDown" size={32} />
+        </button>
 
         {/* Quiz promo button */}
         <button

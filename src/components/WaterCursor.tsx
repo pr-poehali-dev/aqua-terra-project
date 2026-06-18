@@ -2,13 +2,22 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface Ripple { id: number; x: number; y: number; }
 
+function isTouchDevice() {
+  return window.matchMedia('(pointer: coarse)').matches;
+}
+
 export default function WaterCursor() {
   const cursorRef  = useRef<HTMLDivElement>(null);
   const ambientRef = useRef<HTMLDivElement>(null);
   const [hover, setHover]     = useState(false);
   const [click, setClick]     = useState(false);
   const [ripples, setRipples] = useState<Ripple[]>([]);
+  const [isTouch, setIsTouch] = useState(false);
   const nextId = useRef(0);
+
+  useEffect(() => {
+    setIsTouch(isTouchDevice());
+  }, []);
 
   const addRipple = useCallback((x: number, y: number) => {
     const id = nextId.current++;
@@ -17,6 +26,7 @@ export default function WaterCursor() {
   }, []);
 
   useEffect(() => {
+    if (isTouch) return;
     const move = (e: MouseEvent) => {
       if (cursorRef.current) {
         cursorRef.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
@@ -38,7 +48,9 @@ export default function WaterCursor() {
       document.removeEventListener('mousedown', down);
       document.removeEventListener('mouseup', up);
     };
-  }, [addRipple]);
+  }, [addRipple, isTouch]);
+
+  if (isTouch) return null;
 
   return (
     <>
