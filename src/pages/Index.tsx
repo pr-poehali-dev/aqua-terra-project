@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import Bubbles from '@/components/Bubbles';
@@ -105,44 +105,75 @@ const QUIZ = [
   {
     question: 'Что тебя привлекает больше всего?',
     answers: [
-      { text: '🌊 Подводный мир и рыбы', type: 'aqua' },
-      { text: '🦎 Рептилии и экзотические животные', type: 'terra' },
-      { text: '🌿 Растения и живая природа', type: 'flora' },
+      { text: 'Подводный мир и рыбы', type: 'aqua' },
+      { text: 'Рептилии и экзотические животные', type: 'terra' },
+      { text: 'Растения и живая природа', type: 'flora' },
     ],
   },
   {
     question: 'Какую атмосферу ты хочешь дома?',
     answers: [
-      { text: '💙 Спокойную и медитативную', type: 'aqua' },
-      { text: '🔥 Дикую и необычную', type: 'terra' },
-      { text: '🍃 Тёплую и уютную', type: 'flora' },
+      { text: 'Спокойную и медитативную', type: 'aqua' },
+      { text: 'Дикую и необычную', type: 'terra' },
+      { text: 'Тёплую и уютную', type: 'flora' },
     ],
   },
   {
     question: 'Сколько времени готов уделять уходу?',
     answers: [
-      { text: '⏱ Минимум, всё само', type: 'flora' },
-      { text: '🕐 Раз в неделю с удовольствием', type: 'aqua' },
-      { text: '🕐 Каждый день — мне нравится', type: 'terra' },
+      { text: 'Минимум, всё само', type: 'flora' },
+      { text: 'Раз в неделю с удовольствием', type: 'aqua' },
+      { text: 'Каждый день — мне нравится', type: 'terra' },
     ],
   },
 ];
 
-const RESULTS: Record<string, { emoji: string; title: string; desc: string; tip: string }> = {
+const RESULT_SVG: Record<string, React.FC> = {
+  aqua: () => (
+    <svg width="80" height="80" viewBox="0 0 48 48" fill="none" stroke="hsl(var(--secondary))" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 24 C6 14 14 8 24 8 C34 8 42 14 42 24 C42 34 34 40 24 40 C14 40 6 34 6 24Z" />
+      <path d="M6 24 C2 18 2 14 6 10 L6 24Z" />
+      <path d="M6 24 C2 30 2 34 6 38 L6 24Z" />
+      <circle cx="34" cy="18" r="2" fill="hsl(var(--secondary))" stroke="none" />
+      <path d="M18 22 Q22 20 26 22 Q22 26 18 24Z" />
+      <path d="M24 8 Q28 4 32 8" />
+      <path d="M24 40 Q28 44 32 40" />
+    </svg>
+  ),
+  terra: () => (
+    <svg width="80" height="80" viewBox="0 0 48 48" fill="none" stroke="hsl(var(--secondary))" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 28 Q14 22 22 22 Q30 22 36 18 Q40 15 42 12" />
+      <ellipse cx="20" cy="26" rx="8" ry="5" />
+      <path d="M12 30 Q10 36 8 40" />
+      <path d="M14 31 Q12 37 11 42" />
+      <path d="M26 30 Q28 36 28 40" />
+      <path d="M24 30 Q27 37 26 42" />
+      <circle cx="14" cy="23" r="1.5" fill="hsl(var(--secondary))" stroke="none" />
+      <path d="M36 18 Q39 14 42 12 M36 18 Q40 18 42 12" />
+    </svg>
+  ),
+  flora: () => (
+    <svg width="80" height="80" viewBox="0 0 48 48" fill="none" stroke="hsl(var(--secondary))" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M24 40 Q24 24 24 16" />
+      <path d="M24 30 Q16 26 12 18 Q18 16 24 22" />
+      <path d="M24 24 Q32 20 36 12 Q30 10 24 18" />
+      <path d="M24 36 Q18 34 14 28 Q20 26 24 32" />
+    </svg>
+  ),
+};
+
+const RESULTS: Record<string, { title: string; desc: string; tip: string }> = {
   aqua: {
-    emoji: '🐠',
     title: 'Хранитель Рифа',
     desc: 'Ты создан для подводного мира. Твоя стихия — аквариумы с живыми растениями, яркими рыбами и успокаивающим течением воды.',
     tip: 'В нашем Telegram — советы по запуску первого аквариума и подборки лучших рыб для начинающих.',
   },
   terra: {
-    emoji: '🦎',
     title: 'Повелитель Пустыни',
     desc: 'Ты любишь необычное и смелое. Экзотические рептилии, пауки и нестандартные питомцы — твой выбор.',
     tip: 'В нашем Telegram — гайды по уходу за геккончиками, хамелеонами и другими экзотами.',
   },
   flora: {
-    emoji: '🌿',
     title: 'Дух Джунглей',
     desc: 'Ты ценишь живую природу и уют. Флорариумы, палюдариумы и зелёные уголки — твоё призвание.',
     tip: 'В нашем Telegram — идеи для зелёных уголков дома и советы по растениям для любых условий.',
@@ -963,19 +994,21 @@ const Index = () => {
           <div className="text-center mb-10">
             <Badge variant="secondary" className="mb-4">Тест</Badge>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Кто ты в мире экзотики?</h2>
-            <p className="mt-4 text-muted-foreground">3 вопроса — и ты узнаешь свой тип + получишь подарок 🎁</p>
+            <p className="mt-4 text-muted-foreground">3 вопроса — и ты узнаешь свой тип + получишь подарок</p>
           </div>
 
           <Card className="p-8 md:p-10">
             {quizResult ? (
               /* Result screen */
               <div className="text-center">
-                <div className="text-7xl mb-4">{RESULTS[quizResult].emoji}</div>
+                <div className="flex justify-center mb-5">
+                  {quizResult && RESULT_SVG[quizResult] && React.createElement(RESULT_SVG[quizResult])}
+                </div>
                 <h3 className="font-display text-3xl font-bold text-primary mb-3">{RESULTS[quizResult].title}</h3>
                 <p className="text-muted-foreground mb-6 leading-relaxed">{RESULTS[quizResult].desc}</p>
 
                 <div className="bg-muted/60 rounded-2xl p-6 mb-8 text-left">
-                  <p className="text-sm font-semibold text-primary mb-1">💡 Специально для тебя:</p>
+                  <p className="text-sm font-semibold text-primary mb-1">Специально для тебя:</p>
                   <p className="text-muted-foreground text-sm">{RESULTS[quizResult].tip}</p>
                 </div>
 
