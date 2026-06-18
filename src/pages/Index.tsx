@@ -25,6 +25,7 @@ const SERVICES_URL = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacf
 const PORTFOLIO_URL = 'https://functions.poehali.dev/86ea5a33-361e-443c-8816-3050029776df';
 const PROMO_URL = 'https://functions.poehali.dev/34b026bd-3d35-40ea-bc8d-90855ba968d3';
 const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
+const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
 
 interface PortfolioItem {
   id: number; title: string; tag: string; description: string;
@@ -85,12 +86,7 @@ const SERVICES_FALLBACK = [
   { id: 6, icon: 'Star',   title: 'Консультация',           description: 'Подбор оборудования, животных, параметров воды — онлайн или на выезде.',          price_from: 500,   price_unit: 'онлайн',    tags: ['Онлайн','Выезд'],        active: true },
 ];
 
-const CATEGORIES = [
-  { id: 'all', label: 'Всё', icon: 'LayoutGrid' },
-  { id: 'animals', label: 'Животные', icon: 'Bug' },
-  { id: 'food', label: 'Корма', icon: 'Wheat' },
-  { id: 'supplies', label: 'Материалы', icon: 'Package' },
-];
+
 
 
 
@@ -216,7 +212,8 @@ const Index = () => {
   const navigate = useNavigate();
   const cart = useCart();
   const { theme, toggle: toggleTheme } = useTheme();
-  const [cat, setCat] = useState('all');
+  const [cat, setCat] = useState<string>('all');
+  const [catalogSections, setCatalogSections] = useState<{id: number; slug: string; title: string; icon: string; active: boolean; categories: {id: number; slug: string; title: string; icon: string; active: boolean}[]}[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -320,11 +317,21 @@ const Index = () => {
     setQuizScores({ aqua: 0, terra: 0, flora: 0 });
     setQuizResult(null);
   };
-  const filtered = cat === 'all' ? products : products.filter((p) => p.category === cat);
+  // Все категории из всех активных разделов каталога
+  const allCatalogCategories = catalogSections
+    .filter(s => s.active)
+    .flatMap(s => s.categories.filter(c => c.active));
+
+  const filtered = cat === 'all'
+    ? products
+    : products.filter((p) => {
+        return (p as unknown as Record<string, string>)['category_slug'] === cat || p.category === cat;
+      });
 
   useEffect(() => {
     fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
     fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
+    fetch(CATALOG_URL).then((r) => r.json()).then(setCatalogSections).catch(() => {});
     fetch(PORTFOLIO_URL).then((r) => r.json()).then(setPortfolioItems).catch(() => {});
     fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
     fetch(SETTINGS_URL).then(r => r.json()).then(d => {
@@ -736,16 +743,21 @@ const Index = () => {
             <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>Животные, корма и расходные материалы — фильтруйте по категориям.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setCat(c.id)}
+            {/* Кнопка «Всё» */}
+            <button onClick={() => setCat('all')}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors border ${
+                cat === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+              }`}>
+              <Icon name="LayoutGrid" size={16} />Всё
+            </button>
+            {/* Категории из каталога */}
+            {allCatalogCategories.map((c) => (
+              <button key={c.slug} onClick={() => setCat(c.slug)}
                 className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors border ${
-                  cat === c.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'
-                }`}
-              >
+                  cat === c.slug ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+                }`}>
                 <Icon name={c.icon} size={16} />
-                {c.label}
+                {c.title}
               </button>
             ))}
           </div>
