@@ -8,6 +8,7 @@ import RichEditor from '@/components/RichEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
+const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
 const SERVICES_ADMIN = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
@@ -67,7 +68,7 @@ export default function Admin() {
   const [token, setToken] = useState('');
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'analytics' | 'products' | 'portfolio' | 'services' | 'articles' | 'promos' | 'catalog'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'products' | 'portfolio' | 'services' | 'articles' | 'promos' | 'catalog' | 'settings'>('analytics');
   const [stats, setStats] = useState<Stats | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [promos, setPromos] = useState<PromoCode[]>([]);
@@ -137,11 +138,26 @@ export default function Admin() {
     reader.readAsDataURL(file);
   };
 
+  // Settings state
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
+  const [faqItems, setFaqItems] = useState<{id: number; q: string; a: string; sort_order: number}[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<{id: number; question: string; sort_order: number; answers: {id: number; text: string; type: string}[]}[]>([]);
+  const [quizResults, setQuizResults] = useState<Record<string, {title: string; desc: string; tip: string}>>({});
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<{id?: number; q: string; a: string; sort_order: number} | null>(null);
+
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token };
+
+  const loadSettings = () => fetch(SETTINGS_URL).then(r => r.json()).then(d => {
+    setSiteSettings(d.settings || {});
+    setFaqItems(d.faq || []);
+    setQuizQuestions(d.quiz || []);
+    setQuizResults(d.quiz_results || {});
+  });
 
   const login = async () => {
     setLoading(true);
-    const [ra, rp, rs, rport, rstat, rleads, rpromo, rcat] = await Promise.all([
+    const [ra, rp, rs, rport, rstat, rleads, rpromo, rcat, rset] = await Promise.all([
       fetch(ARTICLES_ADMIN, { headers }),
       fetch(PRODUCTS_ADMIN, { headers }),
       fetch(`${SERVICES_ADMIN}?admin=1`, { headers }),
@@ -150,6 +166,7 @@ export default function Admin() {
       fetch(`${ANALYTICS_URL}?type=leads`, { headers }),
       fetch(PROMO_URL, { headers }),
       fetch(CATALOG_URL),
+      fetch(SETTINGS_URL),
     ]);
     if (ra.status === 401) { toast({ title: 'Неверный пароль', variant: 'destructive' }); setLoading(false); return; }
     setArticles(await ra.json());
@@ -160,6 +177,11 @@ export default function Admin() {
     setLeads(await rleads.json());
     setPromos(await rpromo.json());
     setCatalogSections(await rcat.json());
+    const sd = await rset.json();
+    setSiteSettings(sd.settings || {});
+    setFaqItems(sd.faq || []);
+    setQuizQuestions(sd.quiz || []);
+    setQuizResults(sd.quiz_results || {});
     setAuthed(true);
     setLoading(false);
   };
@@ -371,7 +393,7 @@ export default function Admin() {
       {/* Tabs */}
       <div className="border-b border-border bg-background">
         <div className="container px-4 md:px-6 flex gap-0">
-          {([['analytics','📊 Аналитика'], ['products','🛍 Товары'], ['portfolio','🖼 Портфолио'], ['services','💰 Услуги'], ['articles','📝 Статьи'], ['promos','🏷 Промокоды'], ['catalog','🗂 Каталог']] as const).map(([t, label]) => (
+          {([['analytics','📊 Аналитика'], ['products','🛍 Товары'], ['portfolio','🖼 Портфолио'], ['services','💰 Услуги'], ['articles','📝 Статьи'], ['promos','🏷 Промокоды'], ['catalog','🗂 Каталог'], ['settings','⚙️ Настройки']] as const).map(([t, label]) => (
             <button key={t} onClick={() => { setTab(t); setEditingProduct(null); setEditingPort(null); setEditingSvc(null); setEditingArticle(null); setEditingPromo(null); }}
               className={`relative px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'}`}>
               {label}
@@ -1169,6 +1191,209 @@ export default function Admin() {
                 </Button>
               </div>
             </Card>
+          </div>
+        )}
+
+        {/* === SETTINGS TAB === */}
+        {tab === 'settings' && (
+          <div className="space-y-8">
+
+            {/* Hero */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="Sparkles" size={18} />Главный экран (Hero)</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Бейдж под логотипом</label>
+                  <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                    value={siteSettings.hero_badge || ''} onChange={e => setSiteSettings(p => ({...p, hero_badge: e.target.value}))} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Заголовок</label>
+                  <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                    value={siteSettings.hero_title || ''} onChange={e => setSiteSettings(p => ({...p, hero_title: e.target.value}))} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Подзаголовок</label>
+                  <textarea rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={siteSettings.hero_subtitle || ''} onChange={e => setSiteSettings(p => ({...p, hero_subtitle: e.target.value}))} />
+                </div>
+                <Button disabled={savingSettings} onClick={async () => {
+                  setSavingSettings(true);
+                  await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ hero_badge: siteSettings.hero_badge, hero_title: siteSettings.hero_title, hero_subtitle: siteSettings.hero_subtitle }) });
+                  setSavingSettings(false); toast({ title: 'Сохранено!' });
+                }}>{savingSettings ? 'Сохраняем...' : 'Сохранить'}</Button>
+              </div>
+            </Card>
+
+            {/* Stats */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="BarChart2" size={18} />Статистика</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { key: 'stat_years', label: 'Лет опыта' },
+                  { key: 'stat_projects', label: 'Проектов' },
+                  { key: 'stat_clients', label: 'Клиентов' },
+                  { key: 'stat_rating', label: 'Рейтинг' },
+                ].map(({key, label}) => (
+                  <div key={key}>
+                    <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+                    <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                      value={siteSettings[key] || ''} onChange={e => setSiteSettings(p => ({...p, [key]: e.target.value}))} />
+                  </div>
+                ))}
+              </div>
+              <Button className="mt-3" disabled={savingSettings} onClick={async () => {
+                setSavingSettings(true);
+                await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ stat_years: siteSettings.stat_years, stat_projects: siteSettings.stat_projects, stat_clients: siteSettings.stat_clients, stat_rating: siteSettings.stat_rating }) });
+                setSavingSettings(false); toast({ title: 'Сохранено!' });
+              }}>{savingSettings ? 'Сохраняем...' : 'Сохранить'}</Button>
+            </Card>
+
+            {/* Contacts */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="Phone" size={18} />Контакты</h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {[
+                  { key: 'contacts_phone', label: 'Телефон', placeholder: '+7 900 000 0000' },
+                  { key: 'contacts_telegram', label: 'Telegram (без @)', placeholder: 'username' },
+                  { key: 'contacts_whatsapp', label: 'WhatsApp (номер)', placeholder: '79000000000' },
+                  { key: 'contacts_email', label: 'Email', placeholder: 'info@example.com' },
+                  { key: 'contacts_address', label: 'Адрес', placeholder: 'Город, улица' },
+                ].map(({key, label, placeholder}) => (
+                  <div key={key} className={key === 'contacts_address' ? 'sm:col-span-2' : ''}>
+                    <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
+                    <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                      placeholder={placeholder} value={siteSettings[key] || ''}
+                      onChange={e => setSiteSettings(p => ({...p, [key]: e.target.value}))} />
+                  </div>
+                ))}
+              </div>
+              <Button className="mt-3" disabled={savingSettings} onClick={async () => {
+                setSavingSettings(true);
+                const contactKeys = { contacts_phone: siteSettings.contacts_phone, contacts_telegram: siteSettings.contacts_telegram, contacts_whatsapp: siteSettings.contacts_whatsapp, contacts_email: siteSettings.contacts_email, contacts_address: siteSettings.contacts_address };
+                await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify(contactKeys) });
+                setSavingSettings(false); toast({ title: 'Сохранено!' });
+              }}>{savingSettings ? 'Сохраняем...' : 'Сохранить'}</Button>
+            </Card>
+
+            {/* FAQ */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2"><Icon name="HelpCircle" size={18} />FAQ</h3>
+                <Button size="sm" onClick={() => setEditingFaq({ q: '', a: '', sort_order: faqItems.length + 1 })}>+ Вопрос</Button>
+              </div>
+              <div className="space-y-2">
+                {faqItems.map(item => (
+                  <div key={item.id} className="flex items-start gap-3 p-3 rounded-xl border border-border">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">{item.q}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.a}</p>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingFaq({ id: item.id, q: item.q, a: item.a, sort_order: item.sort_order })}><Icon name="Pencil" size={14} /></Button>
+                    <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={async () => {
+                      await fetch(`${SETTINGS_URL}?section=faq`, { method: 'POST', headers, body: JSON.stringify({ action: 'toggle', id: item.id }) });
+                      await loadSettings();
+                    }}><Icon name="EyeOff" size={14} /></Button>
+                  </div>
+                ))}
+              </div>
+              {editingFaq && (
+                <div className="mt-4 p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Вопрос</label>
+                    <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                      value={editingFaq.q} onChange={e => setEditingFaq(p => p ? {...p, q: e.target.value} : p)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Ответ</label>
+                    <textarea rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={editingFaq.a} onChange={e => setEditingFaq(p => p ? {...p, a: e.target.value} : p)} />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button disabled={savingSettings} onClick={async () => {
+                      if (!editingFaq.q || !editingFaq.a) return;
+                      setSavingSettings(true);
+                      const action = editingFaq.id ? 'update' : 'create';
+                      await fetch(`${SETTINGS_URL}?section=faq`, { method: 'POST', headers, body: JSON.stringify({ action, ...editingFaq, question: editingFaq.q, answer: editingFaq.a }) });
+                      await loadSettings();
+                      setEditingFaq(null);
+                      setSavingSettings(false);
+                      toast({ title: 'Сохранено!' });
+                    }}>{savingSettings ? 'Сохраняем...' : editingFaq.id ? 'Сохранить' : 'Добавить'}</Button>
+                    <Button variant="outline" onClick={() => setEditingFaq(null)}>Отмена</Button>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Quiz */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="ListChecks" size={18} />Квиз — вопросы и ответы</h3>
+              <div className="space-y-4">
+                {quizQuestions.map((q, qi) => (
+                  <div key={q.id} className="p-4 rounded-xl border border-border space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-muted-foreground w-5">{qi + 1}.</span>
+                      <input className="flex-1 h-8 px-2 rounded-lg border border-input bg-background text-sm"
+                        value={q.question}
+                        onChange={e => setQuizQuestions(prev => prev.map(item => item.id === q.id ? {...item, question: e.target.value} : item))} />
+                      <Button size="sm" variant="ghost" disabled={savingSettings} onClick={async () => {
+                        setSavingSettings(true);
+                        await fetch(`${SETTINGS_URL}?section=quiz`, { method: 'POST', headers, body: JSON.stringify({ action: 'update_question', id: q.id, question: q.question }) });
+                        setSavingSettings(false); toast({ title: 'Вопрос сохранён' });
+                      }}><Icon name="Check" size={14} /></Button>
+                    </div>
+                    {q.answers.map(ans => (
+                      <div key={ans.id} className="flex items-center gap-2 ml-7">
+                        <input className="flex-1 h-7 px-2 rounded border border-input bg-background text-xs"
+                          value={ans.text}
+                          onChange={e => setQuizQuestions(prev => prev.map(item => item.id === q.id ? {...item, answers: item.answers.map(a => a.id === ans.id ? {...a, text: e.target.value} : a)} : item))} />
+                        <select className="h-7 px-1 rounded border border-input bg-background text-xs w-20"
+                          value={ans.type}
+                          onChange={e => setQuizQuestions(prev => prev.map(item => item.id === q.id ? {...item, answers: item.answers.map(a => a.id === ans.id ? {...a, type: e.target.value} : a)} : item))}>
+                          <option value="aqua">aqua</option>
+                          <option value="terra">terra</option>
+                          <option value="flora">flora</option>
+                        </select>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" disabled={savingSettings} onClick={async () => {
+                          setSavingSettings(true);
+                          await fetch(`${SETTINGS_URL}?section=quiz`, { method: 'POST', headers, body: JSON.stringify({ action: 'update_answer', id: ans.id, text: ans.text, type: ans.type }) });
+                          setSavingSettings(false); toast({ title: 'Ответ сохранён' });
+                        }}><Icon name="Check" size={12} /></Button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Quiz Results */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="Trophy" size={18} />Квиз — результаты</h3>
+              <div className="space-y-4">
+                {(['aqua', 'terra', 'flora'] as const).map(type => {
+                  const r = quizResults[type] || { title: '', desc: '', tip: '' };
+                  const labels: Record<string, string> = { aqua: '🌊 Аквариум', terra: '🦎 Террариум', flora: '🌿 Флорариум' };
+                  return (
+                    <div key={type} className="p-4 rounded-xl border border-border space-y-2">
+                      <p className="font-semibold text-sm mb-2">{labels[type]}</p>
+                      <input placeholder="Заголовок результата" className="w-full h-8 px-2 rounded-lg border border-input bg-background text-sm"
+                        value={r.title} onChange={e => setQuizResults(p => ({...p, [type]: {...r, title: e.target.value}}))} />
+                      <textarea placeholder="Описание" rows={2} className="w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        value={r.desc} onChange={e => setQuizResults(p => ({...p, [type]: {...r, desc: e.target.value}}))} />
+                      <input placeholder="Совет / призыв к действию" className="w-full h-8 px-2 rounded-lg border border-input bg-background text-sm"
+                        value={r.tip} onChange={e => setQuizResults(p => ({...p, [type]: {...r, tip: e.target.value}}))} />
+                      <Button size="sm" disabled={savingSettings} onClick={async () => {
+                        setSavingSettings(true);
+                        await fetch(`${SETTINGS_URL}?section=results`, { method: 'POST', headers, body: JSON.stringify({ type, title: r.title, description: r.desc, tip: r.tip }) });
+                        setSavingSettings(false); toast({ title: 'Результат сохранён!' });
+                      }}>{savingSettings ? '...' : 'Сохранить'}</Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
           </div>
         )}
       </main>

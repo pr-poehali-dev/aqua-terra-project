@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "GET all site data",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"settings": {}, "faq": [], "quiz": [], "quiz_results": {}},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

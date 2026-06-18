@@ -24,6 +24,7 @@ const PRODUCTS_URL = 'https://functions.poehali.dev/31fd2710-461b-4a20-9d16-0226
 const SERVICES_URL = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
 const PORTFOLIO_URL = 'https://functions.poehali.dev/86ea5a33-361e-443c-8816-3050029776df';
 const PROMO_URL = 'https://functions.poehali.dev/34b026bd-3d35-40ea-bc8d-90855ba968d3';
+const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
 
 interface PortfolioItem {
   id: number; title: string; tag: string; description: string;
@@ -102,7 +103,7 @@ const PORTFOLIO = [
 
 
 
-const QUIZ = [
+const QUIZ_FALLBACK = [
   {
     question: 'Что тебя привлекает больше всего?',
     answers: [
@@ -163,7 +164,7 @@ const RESULT_SVG: Record<string, React.FC> = {
   ),
 };
 
-const RESULTS: Record<string, { title: string; desc: string; tip: string }> = {
+const RESULTS_FALLBACK: Record<string, { title: string; desc: string; tip: string }> = {
   aqua: {
     title: 'Хранитель Рифа',
     desc: 'Ты создан для подводного мира. Твоя стихия — аквариумы с живыми растениями, яркими рыбами и успокаивающим течением воды.',
@@ -181,7 +182,7 @@ const RESULTS: Record<string, { title: string; desc: string; tip: string }> = {
   },
 };
 
-const FAQ = [
+const FAQ_FALLBACK = [
   { q: 'Как часто нужно обслуживать аквариум?', a: 'Зависит от объёма и населения — обычно раз в 1-2 недели. Мы подберём индивидуальный график.' },
   { q: 'Вы перевозите аквариумы с рыбами?', a: 'Да, мы бережно транспортируем как систему, так и обитателей с сохранением параметров воды.' },
   { q: 'Можно ли заказать животное под заказ?', a: 'Конечно. Напишите нам, какой вид интересует — подберём здорового питомца от проверенных заводчиков.' },
@@ -250,6 +251,12 @@ const Index = () => {
   const [quizScores, setQuizScores] = useState<Record<string, number>>({ aqua: 0, terra: 0, flora: 0 });
   const [quizResult, setQuizResult] = useState<string | null>(null);
 
+  // Dynamic content from API
+  const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
+  const [faqData, setFaqData] = useState<{ q: string; a: string }[]>(FAQ_FALLBACK);
+  const [quizData, setQuizData] = useState<{ question: string; answers: { text: string; type: string }[] }[]>(QUIZ_FALLBACK);
+  const [resultsData, setResultsData] = useState<Record<string, { title: string; desc: string; tip: string }>>(RESULTS_FALLBACK);
+
   const applyPromo = async () => {
     const code = promoCode.trim().toUpperCase();
     if (!code) return;
@@ -296,7 +303,7 @@ const Index = () => {
   const answerQuiz = (type: string) => {
     const next = { ...quizScores, [type]: quizScores[type] + 1 };
     setQuizScores(next);
-    if (quizStep + 1 >= QUIZ.length) {
+    if (quizStep + 1 >= quizData.length) {
       const winner = Object.entries(next).sort((a, b) => b[1] - a[1])[0][0];
       setQuizResult(winner);
     } else {
@@ -316,6 +323,12 @@ const Index = () => {
     fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
     fetch(PORTFOLIO_URL).then((r) => r.json()).then(setPortfolioItems).catch(() => {});
     fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
+    fetch(SETTINGS_URL).then(r => r.json()).then(d => {
+      if (d.settings) setSiteSettings(d.settings);
+      if (d.faq?.length) setFaqData(d.faq.map((f: {q: string; a: string}) => ({ q: f.q, a: f.a })));
+      if (d.quiz?.length) setQuizData(d.quiz.map((q: {question: string; answers: {text: string; type: string}[]}) => ({ question: q.question, answers: q.answers })));
+      if (d.quiz_results && Object.keys(d.quiz_results).length) setResultsData(d.quiz_results);
+    }).catch(() => {});
     const onScroll = () => {
       const y = window.scrollY;
       setScrollY(y);
@@ -544,14 +557,14 @@ const Index = () => {
             <div className="mb-6">
               <Logo size="lg" light className="mb-5" />
               <Badge className="bg-white/95 text-primary hover:bg-white border-0 text-sm font-semibold px-4 py-1.5 shadow-md">
-                Аквариумы · Террариумы · Экзотика
+                {siteSettings.hero_badge || 'Аквариумы · Террариумы · Экзотика'}
               </Badge>
             </div>
             <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-[1.05] text-balance">
-              Живая природа<br />в вашем доме
+              {siteSettings.hero_title || 'Живая природа в вашем доме'}
             </h1>
             <p className="mt-6 text-lg md:text-xl text-white/85 max-w-xl">
-              Оформление, обслуживание и перевозка аквариумов и террариумов любой сложности. Магазин экзотических животных, кормов и материалов.
+              {siteSettings.hero_subtitle || 'Оформление, обслуживание и перевозка аквариумов и террариумов любой сложности. Магазин экзотических животных, кормов и материалов.'}
             </p>
             <div className="mt-9 flex flex-wrap gap-4">
               <Button size="lg" onClick={() => scrollTo('services')} className="bg-sand text-primary hover:bg-sand/90 text-base">
@@ -615,10 +628,10 @@ const Index = () => {
         <div className="container px-4 md:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 section-reveal">
             {[
-              { value: 15, suffix: ' лет', label: 'Опыта в деле' },
-              { value: 200, suffix: '+', label: 'Проектов выполнено' },
-              { value: 500, suffix: '+', label: 'Довольных клиентов' },
-              { value: 50, suffix: '+', label: 'Видов животных' },
+              { value: Number(siteSettings.stat_years  || 15),  suffix: ' лет', label: 'Опыта в деле' },
+              { value: Number(siteSettings.stat_projects|| 200), suffix: '+',    label: 'Проектов выполнено' },
+              { value: Number(siteSettings.stat_clients || 500), suffix: '+',    label: 'Довольных клиентов' },
+              { value: Number(siteSettings.stat_rating  || 4.9), suffix: '',     label: 'Средний рейтинг' },
             ].map((s, i) => (
               <StatCounter key={i} {...s} />
             ))}
@@ -962,7 +975,7 @@ const Index = () => {
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Частые вопросы</h2>
           </div>
           <Accordion type="single" collapsible className="space-y-3">
-            {FAQ.map((f, i) => (
+            {faqData.map((f, i) => (
               <AccordionItem key={i} value={`item-${i}`} className="bg-card border border-border rounded-xl px-5">
                 <AccordionTrigger className="text-left font-medium text-primary hover:no-underline">{f.q}</AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
@@ -983,24 +996,32 @@ const Index = () => {
             <ul className="space-y-4 text-white/90">
               <li className="flex items-center gap-3">
                 <Icon name="Phone" size={20} />
-                <a href="tel:+79055337226" className="hover:text-white transition-colors">+7 905 533 7226</a>
+                <a href={`tel:${(siteSettings.contacts_phone || '+79055337226').replace(/\s/g,'')}`} className="hover:text-white transition-colors">{siteSettings.contacts_phone || '+7 905 533 7226'}</a>
               </li>
+              {siteSettings.contacts_email && (
               <li className="flex items-center gap-3">
                 <Icon name="Mail" size={20} />
-                <a href="mailto:aquascale@mail.ru" className="hover:text-white transition-colors">aquascale@mail.ru</a>
+                <a href={`mailto:${siteSettings.contacts_email}`} className="hover:text-white transition-colors">{siteSettings.contacts_email}</a>
               </li>
+              )}
+              {siteSettings.contacts_address && (
               <li className="flex items-start gap-3">
                 <Icon name="MapPin" size={20} className="mt-0.5 shrink-0" />
-                <span>Московская обл., г. Звенигород,<br />ул. Садовая, д. 2</span>
+                <span>{siteSettings.contacts_address}</span>
               </li>
+              )}
             </ul>
             <div className="flex gap-3 mt-8">
-              <a href="https://t.me/aquascale" target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+              {siteSettings.contacts_telegram && (
+              <a href={`https://t.me/${siteSettings.contacts_telegram}`} target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                 <Icon name="Send" size={20} />
               </a>
-              <a href="https://wa.me/79055337226" target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+              )}
+              {siteSettings.contacts_whatsapp && (
+              <a href={`https://wa.me/${siteSettings.contacts_whatsapp}`} target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                 <Icon name="MessageCircle" size={20} />
               </a>
+              )}
             </div>
           </div>
           <form className="p-10 md:p-12 space-y-4" onSubmit={submitLead}>
@@ -1046,12 +1067,12 @@ const Index = () => {
                 <div className="flex justify-center mb-5">
                   {quizResult && RESULT_SVG[quizResult] && React.createElement(RESULT_SVG[quizResult])}
                 </div>
-                <h3 className="font-display text-3xl font-bold text-primary mb-3">{RESULTS[quizResult].title}</h3>
-                <p className="text-muted-foreground mb-6 leading-relaxed">{RESULTS[quizResult].desc}</p>
+                <h3 className="font-display text-3xl font-bold text-primary mb-3">{(resultsData[quizResult] || RESULTS_FALLBACK[quizResult])?.title}</h3>
+                <p className="text-muted-foreground mb-6 leading-relaxed">{(resultsData[quizResult] || RESULTS_FALLBACK[quizResult])?.desc}</p>
 
                 <div className="bg-muted/60 rounded-2xl p-6 mb-8 text-left">
                   <p className="text-sm font-semibold text-primary mb-1">Специально для тебя:</p>
-                  <p className="text-muted-foreground text-sm">{RESULTS[quizResult].tip}</p>
+                  <p className="text-muted-foreground text-sm">{(resultsData[quizResult] || RESULTS_FALLBACK[quizResult])?.tip}</p>
                 </div>
 
                 <div className="gradient-deep rounded-2xl p-6 mb-6 text-white">
@@ -1079,18 +1100,18 @@ const Index = () => {
               /* Question screen */
               <div>
                 <div className="flex justify-between items-center mb-8">
-                  <span className="text-sm text-muted-foreground">Вопрос {quizStep + 1} из {QUIZ.length}</span>
+                  <span className="text-sm text-muted-foreground">Вопрос {quizStep + 1} из {quizData.length}</span>
                   <div className="flex gap-1.5">
-                    {QUIZ.map((_, i) => (
+                    {quizData.map((_, i) => (
                       <span key={i} className={`h-2 rounded-full transition-all duration-300 ${i <= quizStep ? 'bg-primary w-8' : 'bg-muted w-4'}`} />
                     ))}
                   </div>
                 </div>
                 <h3 className="font-display text-2xl md:text-3xl font-semibold text-primary mb-7 text-center">
-                  {QUIZ[quizStep].question}
+                  {quizData[quizStep]?.question}
                 </h3>
                 <div className="space-y-3">
-                  {QUIZ[quizStep].answers.map((a) => (
+                  {quizData[quizStep]?.answers.map((a) => (
                     <button
                       key={a.text}
                       onClick={() => answerQuiz(a.type)}
