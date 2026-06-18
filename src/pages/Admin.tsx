@@ -7,7 +7,6 @@ import Logo from '@/components/Logo';
 import RichEditor from '@/components/RichEditor';
 import ZoneEditor from '@/components/ZoneEditor';
 import PriceZoneEditor from '@/components/PriceZoneEditor';
-import ClientLocationEditor from '@/components/ClientLocationEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
@@ -164,16 +163,20 @@ export default function Admin() {
   const [savingZone, setSavingZone] = useState(false);
   const loadZones = () => fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
   // Ценовые зоны
-  interface PriceZoneItem { radius: number; factor: number; label: string; }
-  interface PriceZoneConfig { center_lat: number; center_lon: number; zones: PriceZoneItem[]; active: boolean; }
+  interface PriceZoneConfig {
+    ring1_km: number; ring1_factor: number; ring1_label: string;
+    ring2_km: number; ring2_factor: number; ring2_label: string;
+    ring3_km: number; ring3_factor: number; ring3_label: string;
+    ring4_km: number; ring4_factor: number; ring4_label: string;
+    points: { lat: number; lon: number; address: string }[];
+    active: boolean;
+  }
   const DEFAULT_PRICE_ZONES: PriceZoneConfig = {
-    center_lat: 55.7328, center_lon: 36.8517, active: true,
-    zones: [
-      { radius: 20, factor: 1.0, label: 'Основная зона' },
-      { radius: 35, factor: 1.3, label: 'Ближняя зона' },
-      { radius: 55, factor: 1.6, label: 'Средняя зона' },
-      { radius: 80, factor: 2.0, label: 'Дальняя зона' },
-    ],
+    ring1_km: 10, ring1_factor: 1.0, ring1_label: 'Рядом',
+    ring2_km: 25, ring2_factor: 1.3, ring2_label: 'Недалеко',
+    ring3_km: 45, ring3_factor: 1.6, ring3_label: 'Далеко',
+    ring4_km: 70, ring4_factor: 2.0, ring4_label: 'Очень далеко',
+    points: [], active: true,
   };
   const [priceZones, setPriceZones] = useState<PriceZoneConfig>(DEFAULT_PRICE_ZONES);
   const [savingPriceZones, setSavingPriceZones] = useState(false);
@@ -1779,20 +1782,6 @@ export default function Admin() {
                   setSavingPriceZones(false);
                   toast({ title: 'Ценовые зоны сохранены!' });
                 }}
-              />
-            </Card>
-
-            {/* Клиентские локации */}
-            <Card className="p-6">
-              <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 mb-1">
-                <Icon name="Users" size={18} />География клиентов
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Добавьте адреса клиентов — на карте появятся синие зоны. Там где клиентов много, зоны сольются в одно пятно.
-              </p>
-              <ClientLocationEditor
-                apiKey={siteSettings.yandex_maps_key || ''}
-                adminToken={token}
               />
             </Card>
 

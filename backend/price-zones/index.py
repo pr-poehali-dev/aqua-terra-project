@@ -1,7 +1,7 @@
 """
-Ценовые зоны по радиусу от точек.
-GET  / — получить настройки (публичный)
-POST / — сохранить настройки (admin)
+Ценовые зоны: единые радиусы 4 колец + рабочие точки.
+GET  / — получить (публичный)
+POST / — сохранить (admin)
 """
 import json, os, psycopg2
 
@@ -28,7 +28,7 @@ def check_admin(event):
     return token == os.environ.get('ADMIN_TOKEN', '')
 
 def handler(event: dict, context) -> dict:
-    """Настройки ценовых зон — несколько точек на зону с радиусами"""
+    """Рабочие точки + единые радиусы 4 ценовых колец"""
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
@@ -39,26 +39,23 @@ def handler(event: dict, context) -> dict:
     try:
         if method == 'GET':
             cur.execute(f"""
-                SELECT center_lat, center_lon,
-                       zone1_radius, zone1_factor, zone1_label, zone1_points,
-                       zone2_radius, zone2_factor, zone2_label, zone2_points,
-                       zone3_radius, zone3_factor, zone3_label, zone3_points,
-                       zone4_radius, zone4_factor, zone4_label, zone4_points,
-                       active
+                SELECT ring1_km, ring1_factor, ring1_label,
+                       ring2_km, ring2_factor, ring2_label,
+                       ring3_km, ring3_factor, ring3_label,
+                       ring4_km, ring4_factor, ring4_label,
+                       work_points, active
                 FROM {SCHEMA}.price_zones ORDER BY id LIMIT 1
             """)
             row = cur.fetchone()
             if not row:
                 return ok(None)
             return ok({
-                'center_lat': row[0], 'center_lon': row[1],
-                'zones': [
-                    {'radius': row[2],  'factor': row[3],  'label': row[4],  'points': row[5]  or []},
-                    {'radius': row[6],  'factor': row[7],  'label': row[8],  'points': row[9]  or []},
-                    {'radius': row[10], 'factor': row[11], 'label': row[12], 'points': row[13] or []},
-                    {'radius': row[14], 'factor': row[15], 'label': row[16], 'points': row[17] or []},
-                ],
-                'active': row[18],
+                'ring1_km': row[0],  'ring1_factor': row[1],  'ring1_label': row[2],
+                'ring2_km': row[3],  'ring2_factor': row[4],  'ring2_label': row[5],
+                'ring3_km': row[6],  'ring3_factor': row[7],  'ring3_label': row[8],
+                'ring4_km': row[9],  'ring4_factor': row[10], 'ring4_label': row[11],
+                'points': row[12] or [],
+                'active': row[13],
             })
 
         if not check_admin(event):
@@ -66,43 +63,37 @@ def handler(event: dict, context) -> dict:
 
         if method == 'POST':
             body = json.loads(event.get('body') or '{}')
-            zones = body.get('zones', [])
-            if len(zones) < 4:
-                return err('Need 4 zones')
-
             cur.execute(f"SELECT id FROM {SCHEMA}.price_zones ORDER BY id LIMIT 1")
             row = cur.fetchone()
 
             vals = (
-                body.get('center_lat', 55.7328),
-                body.get('center_lon', 36.8517),
-                zones[0].get('radius', 20),  zones[0].get('factor', 1.0), zones[0].get('label', 'Основная зона'), json.dumps(zones[0].get('points', []), ensure_ascii=False),
-                zones[1].get('radius', 35),  zones[1].get('factor', 1.3), zones[1].get('label', 'Ближняя зона'),  json.dumps(zones[1].get('points', []), ensure_ascii=False),
-                zones[2].get('radius', 55),  zones[2].get('factor', 1.6), zones[2].get('label', 'Средняя зона'),  json.dumps(zones[2].get('points', []), ensure_ascii=False),
-                zones[3].get('radius', 80),  zones[3].get('factor', 2.0), zones[3].get('label', 'Дальняя зона'),  json.dumps(zones[3].get('points', []), ensure_ascii=False),
+                body.get('ring1_km', 10),  body.get('ring1_factor', 1.0), body.get('ring1_label', 'Рядом'),
+                body.get('ring2_km', 25),  body.get('ring2_factor', 1.3), body.get('ring2_label', 'Недалеко'),
+                body.get('ring3_km', 45),  body.get('ring3_factor', 1.6), body.get('ring3_label', 'Далеко'),
+                body.get('ring4_km', 70),  body.get('ring4_factor', 2.0), body.get('ring4_label', 'Очень далеко'),
+                json.dumps(body.get('points', []), ensure_ascii=False),
                 body.get('active', True),
             )
 
             if row:
                 cur.execute(f"""
                     UPDATE {SCHEMA}.price_zones SET
-                      center_lat=%s, center_lon=%s,
-                      zone1_radius=%s, zone1_factor=%s, zone1_label=%s, zone1_points=%s::jsonb,
-                      zone2_radius=%s, zone2_factor=%s, zone2_label=%s, zone2_points=%s::jsonb,
-                      zone3_radius=%s, zone3_factor=%s, zone3_label=%s, zone3_points=%s::jsonb,
-                      zone4_radius=%s, zone4_factor=%s, zone4_label=%s, zone4_points=%s::jsonb,
-                      active=%s, updated_at=NOW()
+                      ring1_km=%s, ring1_factor=%s, ring1_label=%s,
+                      ring2_km=%s, ring2_factor=%s, ring2_label=%s,
+                      ring3_km=%s, ring3_factor=%s, ring3_label=%s,
+                      ring4_km=%s, ring4_factor=%s, ring4_label=%s,
+                      work_points=%s::jsonb, active=%s, updated_at=NOW()
                     WHERE id=%s
                 """, (*vals, row[0]))
             else:
                 cur.execute(f"""
                     INSERT INTO {SCHEMA}.price_zones
-                      (center_lat, center_lon,
-                       zone1_radius, zone1_factor, zone1_label, zone1_points,
-                       zone2_radius, zone2_factor, zone2_label, zone2_points,
-                       zone3_radius, zone3_factor, zone3_label, zone3_points,
-                       zone4_radius, zone4_factor, zone4_label, zone4_points, active)
-                    VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s::jsonb,%s,%s,%s,%s::jsonb,%s,%s,%s,%s::jsonb,%s)
+                      (ring1_km, ring1_factor, ring1_label,
+                       ring2_km, ring2_factor, ring2_label,
+                       ring3_km, ring3_factor, ring3_label,
+                       ring4_km, ring4_factor, ring4_label,
+                       work_points, active)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s)
                 """, vals)
 
             conn.commit()

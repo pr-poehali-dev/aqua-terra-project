@@ -1267,17 +1267,17 @@ const Index = () => {
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
               <p className="font-semibold text-foreground">Зоны выезда</p>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">Наведи на зону, чтобы узнать коэффициент стоимости выезда.</p>
-            <div className="flex flex-wrap gap-2 mb-4">
+            <p className="text-sm text-muted-foreground mb-2">Зелёные зоны — работаем здесь постоянно. Чем дальше от них — тем выше коэффициент выезда. Наведи на зону, чтобы узнать.</p>
+            <div className="flex flex-wrap gap-3 mb-4">
               {[
-                { label: 'Основная', color: 'bg-green-500', hint: 'базовая цена' },
-                { label: 'Ближняя',  color: 'bg-yellow-500', hint: 'немного дороже' },
-                { label: 'Средняя',  color: 'bg-orange-500', hint: 'дороже' },
-                { label: 'Дальняя',  color: 'bg-red-500', hint: 'самая дальняя' },
-              ].map(z => (
-                <span key={z.label} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                { color: 'bg-green-500',  hint: 'работаем постоянно' },
+                { color: 'bg-yellow-500', hint: 'чуть дороже' },
+                { color: 'bg-orange-500', hint: 'дороже' },
+                { color: 'bg-red-500',    hint: 'далеко' },
+              ].map((z, i) => (
+                <span key={i} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span className={`w-2 h-2 rounded-full ${z.color}`} />
-                  {z.label} — {z.hint}
+                  {z.hint}
                 </span>
               ))}
             </div>
