@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import Shop from "./pages/Shop";
 import NotFound from "./pages/NotFound";
+import WaterCursor from "@/components/WaterCursor";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ function RevealObserver() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <WaterCursor />
       <RevealObserver />
       <Toaster />
       <Sonner />

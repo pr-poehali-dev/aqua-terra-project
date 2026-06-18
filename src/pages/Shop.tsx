@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
-import WaterCursor from '@/components/WaterCursor';
+
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
@@ -83,7 +83,6 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <WaterCursor />
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
