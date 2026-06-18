@@ -121,10 +121,10 @@
   }
   .gradient-deep {
     background: linear-gradient(
-      160deg,
-      hsl(210 65% 14%) 0%,
-      hsl(200 60% 22%) 55%,
-      hsl(162 45% 28%) 100%
+      175deg,
+      hsl(150 55% 8%) 0%,
+      hsl(162 48% 14%) 40%,
+      hsl(195 58% 18%) 100%
     );
   }
 

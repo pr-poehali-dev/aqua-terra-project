@@ -519,7 +519,7 @@ const Index = () => {
           className="absolute inset-0 w-full h-full object-cover"
           style={{ willChange: 'transform', transformOrigin: 'center top', height: '130%', top: '-15%' }}
         />
-        <div className="absolute inset-0 gradient-deep opacity-80" />
+        <div className="absolute inset-0 gradient-deep opacity-72" />
         <Bubbles />
         <Plankton />
         <div className="container relative z-10 px-4 md:px-6 py-20">
