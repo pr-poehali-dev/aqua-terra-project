@@ -8,6 +8,7 @@ import Logo from '@/components/Logo';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
+const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 
 interface Category { id: number; slug: string; title: string; icon: string; sort_order: number; active: boolean; }
 interface Section { id: number; slug: string; title: string; description: string; icon: string; active: boolean; has_order_form: boolean; categories: Category[]; }
@@ -36,6 +37,12 @@ export default function Shop() {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const [orderForm, setOrderForm] = useState({ name: '', contact: '', message: '' });
   const [sending, setSending] = useState(false);
+  // Оформление заказа из корзины
+  const [cartContact, setCartContact] = useState('');
+  const [cartDelivery, setCartDelivery] = useState<'pickup' | 'yandex'>('pickup');
+  const [cartDatetime, setCartDatetime] = useState('');
+  const [cartAddress, setCartAddress] = useState('');
+  const [cartSending, setCartSending] = useState(false);
 
   // Тулбар
   const [shopSearch, setShopSearch] = useState('');
@@ -439,13 +446,68 @@ export default function Shop() {
             </div>
             {cart.items.length > 0 && (
               <div className="p-4 border-t border-border space-y-3">
-                <div className="flex justify-between font-bold">
+                <div className="flex justify-between font-bold mb-1">
                   <span>Итого:</span>
                   <span className="text-primary font-display text-xl">{cart.total.toLocaleString('ru')} ₽</span>
                 </div>
-                <Button className="w-full" onClick={() => toast({ title: 'Заявка отправлена!' })}>
-                  Оформить заказ
+
+                {/* Способ получения */}
+                <div className="grid grid-cols-2 gap-2">
+                  {([['pickup', '🏪', 'Заберу сам'] , ['yandex', '🚗', 'Доставка']] as const).map(([v, emoji, label]) => (
+                    <button key={v} onClick={() => setCartDelivery(v)}
+                      className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                        cartDelivery === v ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'
+                      }`}>
+                      <span className="text-lg">{emoji}</span>{label}
+                    </button>
+                  ))}
+                </div>
+
+                {cartDelivery === 'pickup' && (
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Дата и время самовывоза</label>
+                    <input type="datetime-local" value={cartDatetime} onChange={e => setCartDatetime(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                )}
+                {cartDelivery === 'yandex' && (
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Адрес доставки</label>
+                    <input value={cartAddress} onChange={e => setCartAddress(e.target.value)}
+                      placeholder="Улица, дом, квартира"
+                      className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                )}
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Телефон или Telegram</label>
+                  <input value={cartContact} onChange={e => setCartContact(e.target.value)}
+                    placeholder="+7 900 000 0000 или @username"
+                    className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <Button className="w-full" disabled={cartSending || !cartContact.trim() || (cartDelivery === 'pickup' ? !cartDatetime : !cartAddress.trim())}
+                  onClick={async () => {
+                    setCartSending(true);
+                    const itemsList = cart.items.map(i => `• ${i.name} × ${i.qty} = ${(Number(i.price) * i.qty).toLocaleString('ru')} ₽`).join('\n');
+                    const deliveryLine = cartDelivery === 'pickup'
+                      ? `🏪 Самовывоз: ${new Date(cartDatetime).toLocaleString('ru', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}`
+                      : `🚗 Доставка Яндексом: ${cartAddress}`;
+                    const message = `🛒 Заказ из корзины\n\n${deliveryLine}\n📞 Контакт: ${cartContact}\n\nТовары:\n${itemsList}\n\nИтого: ${cart.total.toLocaleString('ru')} ₽`;
+                    try {
+                      const res = await fetch(LEAD_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'Заказ из магазина', contact: cartContact, message, source: 'cart' }) });
+                      if (!res.ok) throw new Error();
+                      toast({ title: 'Заказ отправлен!', description: 'Свяжемся для подтверждения.' });
+                      cart.items.forEach(i => cart.remove(i.name));
+                      setCartOpen(false);
+                      setCartContact(''); setCartAddress(''); setCartDatetime('');
+                    } catch {
+                      toast({ title: 'Ошибка', description: 'Попробуйте ещё раз', variant: 'destructive' });
+                    } finally { setCartSending(false); }
+                  }}>
+                  {cartSending ? 'Отправляем…' : 'Оформить заказ'}
                 </Button>
+                <p className="text-xs text-muted-foreground text-center">Мы свяжемся для подтверждения и оплаты</p>
               </div>
             )}
           </div>

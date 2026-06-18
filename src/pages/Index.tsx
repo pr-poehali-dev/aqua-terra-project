@@ -188,17 +188,61 @@ const scrollTo = (id: string) => {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 };
 
-function CartOrderForm({ onSubmit, sending }: { onSubmit: (contact: string) => void; sending: boolean }) {
+interface OrderData { contact: string; delivery: 'pickup' | 'yandex'; pickup_datetime?: string; address?: string; }
+
+function CartOrderForm({ onSubmit, sending }: { onSubmit: (data: OrderData) => void; sending: boolean }) {
   const [contact, setContact] = useState('');
+  const [delivery, setDelivery] = useState<'pickup' | 'yandex'>('pickup');
+  const [pickupDatetime, setPickupDatetime] = useState('');
+  const [address, setAddress] = useState('');
+
+  const canSubmit = contact.trim() && (delivery === 'yandex' ? address.trim() : pickupDatetime.trim());
+
   return (
     <div className="space-y-3">
-      <input
-        value={contact}
-        onChange={(e) => setContact(e.target.value)}
-        placeholder="Телефон или Telegram для связи"
-        className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-      />
-      <Button className="w-full" size="lg" disabled={sending} onClick={() => onSubmit(contact)}>
+      {/* Способ получения */}
+      <div className="grid grid-cols-2 gap-2">
+        {([['pickup', '🏪', 'Заберу сам'], ['yandex', '🚗', 'Доставка']] as const).map(([v, emoji, label]) => (
+          <button key={v} type="button" onClick={() => setDelivery(v)}
+            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 text-sm font-medium transition-all ${
+              delivery === v ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'
+            }`}>
+            <span className="text-xl">{emoji}</span>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Дата и время самовывоза */}
+      {delivery === 'pickup' && (
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Дата и время</label>
+          <input type="datetime-local" value={pickupDatetime} onChange={e => setPickupDatetime(e.target.value)}
+            min={new Date().toISOString().slice(0, 16)}
+            className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        </div>
+      )}
+
+      {/* Адрес доставки */}
+      {delivery === 'yandex' && (
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Адрес доставки</label>
+          <input value={address} onChange={e => setAddress(e.target.value)}
+            placeholder="Улица, дом, квартира"
+            className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        </div>
+      )}
+
+      {/* Контакт */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Телефон или Telegram</label>
+        <input value={contact} onChange={e => setContact(e.target.value)}
+          placeholder="+7 900 000 0000 или @username"
+          className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+      </div>
+
+      <Button className="w-full" size="lg" disabled={sending || !canSubmit}
+        onClick={() => onSubmit({ contact, delivery, pickup_datetime: pickupDatetime, address })}>
         {sending ? 'Отправляем…' : 'Оформить заказ'}
       </Button>
       <p className="text-xs text-muted-foreground text-center">Мы свяжемся для подтверждения и оплаты</p>
@@ -398,19 +442,18 @@ const Index = () => {
     }
   };
 
-  const submitOrder = async (contact: string) => {
-    if (!contact.trim()) {
-      toast({ title: 'Введите телефон или Telegram для связи', variant: 'destructive' });
-      return;
-    }
+  const submitOrder = async (data: OrderData) => {
     setOrderSending(true);
     const itemsList = cart.items.map((i) => `• ${i.name} × ${i.qty} = ${(i.priceNum * i.qty).toLocaleString('ru')} ₽`).join('\n');
-    const message = `🛒 Заказ из корзины\n\nКонтакт: ${contact}\n\nТовары:\n${itemsList}\n\nИтого: ${cart.total.toLocaleString('ru')} ₽`;
+    const deliveryLine = data.delivery === 'pickup'
+      ? `🏪 Самовывоз: ${data.pickup_datetime ? new Date(data.pickup_datetime).toLocaleString('ru', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '—'}`
+      : `🚗 Доставка Яндексом: ${data.address}`;
+    const message = `🛒 Заказ из корзины\n\n${deliveryLine}\n📞 Контакт: ${data.contact}\n\nТовары:\n${itemsList}\n\nИтого: ${cart.total.toLocaleString('ru')} ₽`;
     try {
       const res = await fetch(LEAD_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Заказ из корзины', contact, message }),
+        body: JSON.stringify({ name: 'Заказ из корзины', contact: data.contact, message, source: 'cart' }),
       });
       if (!res.ok) throw new Error();
       toast({ title: 'Заказ отправлен!', description: 'Мы свяжемся с вами для подтверждения.' });
