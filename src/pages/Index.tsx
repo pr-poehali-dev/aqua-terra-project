@@ -61,7 +61,7 @@ interface Article {
   created_at: string;
 }
 
-const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb2af31a9/files/e5f0d30d-ddcd-4698-9e7c-61167861b392.jpg';
+const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb2af31a9/files/ff3c2439-42a5-45cb-a7a0-2855e30a6703.jpg';
 
 const NAV = [
   { id: 'home', label: 'Главная' },

@@ -4,102 +4,93 @@
 
 @layer base {
   :root {
-    --background: 40 38% 97%;
-    --foreground: 200 45% 13%;
+    /* Тёмная глубина океана — основная тема */
+    --background: 222 42% 7%;
+    --foreground: 200 30% 90%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 200 45% 13%;
+    --card: 220 38% 11%;
+    --card-foreground: 200 30% 90%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 200 45% 13%;
+    --popover: 220 38% 11%;
+    --popover-foreground: 200 30% 90%;
 
-    --primary: 200 70% 24%;
-    --primary-foreground: 40 38% 97%;
+    /* Бирюзовый — цвет морской воды на свету */
+    --primary: 188 80% 52%;
+    --primary-foreground: 222 42% 7%;
 
-    --secondary: 152 38% 38%;
-    --secondary-foreground: 40 38% 97%;
+    /* Зеленовато-голубой — вторичный акцент */
+    --secondary: 168 60% 42%;
+    --secondary-foreground: 222 42% 7%;
 
-    --muted: 40 24% 92%;
-    --muted-foreground: 200 18% 42%;
+    --muted: 220 32% 15%;
+    --muted-foreground: 210 22% 58%;
 
-    --accent: 36 54% 78%;
-    --accent-foreground: 200 45% 13%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 40 20% 86%;
-    --input: 40 20% 86%;
-    --ring: 200 70% 24%;
-
-    --sand: 36 54% 84%;
-    --aqua: 192 70% 45%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    /* Глубокий тёмно-синий фон, как ночное море */
-    --background: 218 35% 9%;
-    --foreground: 210 30% 92%;
-
-    /* Карточки чуть светлее фона — хорошо видны */
-    --card: 218 30% 13%;
-    --card-foreground: 210 30% 92%;
-
-    --popover: 218 30% 13%;
-    --popover-foreground: 210 30% 92%;
-
-    /* Бирюзовый primary — яркий, хорошо читается на тёмном */
-    --primary: 188 75% 55%;
-    --primary-foreground: 218 35% 9%;
-
-    /* Зелёный secondary — насыщеннее для тёмного */
-    --secondary: 152 50% 45%;
-    --secondary-foreground: 218 35% 9%;
-
-    /* Muted — заметно отличается от фона */
-    --muted: 218 25% 18%;
-    --muted-foreground: 210 20% 65%;
-
-    --accent: 36 60% 52%;
-    --accent-foreground: 218 35% 9%;
+    /* Золотисто-песчаный акцент — как луч света сквозь воду */
+    --accent: 42 70% 58%;
+    --accent-foreground: 222 42% 7%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 210 30% 92%;
 
-    /* Граница хорошо видна */
-    --border: 218 25% 22%;
-    --input: 218 25% 22%;
-    --ring: 188 75% 55%;
+    --border: 220 28% 18%;
+    --input: 220 28% 18%;
+    --ring: 188 80% 52%;
 
-    --sand: 36 50% 42%;
-    --aqua: 188 75% 55%;
+    --sand: 42 65% 52%;
+    --aqua: 188 80% 52%;
 
-    --sidebar-background: 218 35% 9%;
-    --sidebar-foreground: 210 30% 92%;
-    --sidebar-primary: 188 75% 55%;
-    --sidebar-primary-foreground: 218 35% 9%;
-    --sidebar-accent: 218 25% 18%;
-    --sidebar-accent-foreground: 210 30% 92%;
-    --sidebar-border: 218 25% 22%;
-    --sidebar-ring: 188 75% 55%;
+    --radius: 0.75rem;
+
+    --sidebar-background: 222 42% 7%;
+    --sidebar-foreground: 200 30% 90%;
+    --sidebar-primary: 188 80% 52%;
+    --sidebar-primary-foreground: 222 42% 7%;
+    --sidebar-accent: 220 32% 15%;
+    --sidebar-accent-foreground: 200 30% 90%;
+    --sidebar-border: 220 28% 18%;
+    --sidebar-ring: 188 80% 52%;
+  }
+
+  .dark {
+    --background: 224 48% 5%;
+    --foreground: 200 28% 88%;
+
+    --card: 222 42% 9%;
+    --card-foreground: 200 28% 88%;
+
+    --popover: 222 42% 9%;
+    --popover-foreground: 200 28% 88%;
+
+    --primary: 188 85% 58%;
+    --primary-foreground: 224 48% 5%;
+
+    --secondary: 168 62% 46%;
+    --secondary-foreground: 224 48% 5%;
+
+    --muted: 222 35% 13%;
+    --muted-foreground: 210 20% 60%;
+
+    --accent: 42 72% 60%;
+    --accent-foreground: 224 48% 5%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 210 30% 92%;
+
+    --border: 222 30% 16%;
+    --input: 222 30% 16%;
+    --ring: 188 85% 58%;
+
+    --sand: 42 68% 54%;
+    --aqua: 188 85% 58%;
+
+    --sidebar-background: 224 48% 5%;
+    --sidebar-foreground: 200 28% 88%;
+    --sidebar-primary: 188 85% 58%;
+    --sidebar-primary-foreground: 224 48% 5%;
+    --sidebar-accent: 222 35% 13%;
+    --sidebar-accent-foreground: 200 28% 88%;
+    --sidebar-border: 222 30% 16%;
+    --sidebar-ring: 188 85% 58%;
   }
 }
 
@@ -131,9 +122,9 @@
   .gradient-deep {
     background: linear-gradient(
       160deg,
-      hsl(200 70% 18%) 0%,
-      hsl(192 60% 28%) 55%,
-      hsl(152 38% 30%) 100%
+      hsl(224 60% 8%) 0%,
+      hsl(210 70% 16%) 50%,
+      hsl(188 55% 22%) 100%
     );
   }
 
@@ -163,7 +154,7 @@
   /* Текстура чешуи (SVG паттерн через background) */
   .bg-scales {
     background-color: hsl(var(--background));
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cellipse cx='20' cy='20' rx='18' ry='10' fill='none' stroke='%23a8d4e6' stroke-width='0.7' opacity='0.18'/%3E%3Cellipse cx='0' cy='20' rx='18' ry='10' fill='none' stroke='%23a8d4e6' stroke-width='0.7' opacity='0.18'/%3E%3Cellipse cx='40' cy='20' rx='18' ry='10' fill='none' stroke='%23a8d4e6' stroke-width='0.7' opacity='0.18'/%3E%3Cellipse cx='20' cy='0' rx='18' ry='10' fill='none' stroke='%23a8d4e6' stroke-width='0.7' opacity='0.18'/%3E%3Cellipse cx='20' cy='40' rx='18' ry='10' fill='none' stroke='%23a8d4e6' stroke-width='0.7' opacity='0.18'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cellipse cx='20' cy='20' rx='18' ry='10' fill='none' stroke='%2330a8c8' stroke-width='0.6' opacity='0.12'/%3E%3Cellipse cx='0' cy='20' rx='18' ry='10' fill='none' stroke='%2330a8c8' stroke-width='0.6' opacity='0.12'/%3E%3Cellipse cx='40' cy='20' rx='18' ry='10' fill='none' stroke='%2330a8c8' stroke-width='0.6' opacity='0.12'/%3E%3Cellipse cx='20' cy='0' rx='18' ry='10' fill='none' stroke='%2330a8c8' stroke-width='0.6' opacity='0.12'/%3E%3Cellipse cx='20' cy='40' rx='18' ry='10' fill='none' stroke='%2330a8c8' stroke-width='0.6' opacity='0.12'/%3E%3C/svg%3E");
   }
 
   /* Текстура листьев/растений */
