@@ -161,6 +161,24 @@ def handler(event: dict, context) -> dict:
                 conn.commit()
                 return ok({'active': row[0]})
 
+            # Редактировать категорию
+            if action == 'update_category':
+                cat_id = body.get('id')
+                cur.execute(f"""
+                    UPDATE {SCHEMA}.shop_categories
+                    SET slug=%s, title=%s, icon=%s, sort_order=%s
+                    WHERE id=%s
+                """, (body['slug'], body['title'], body.get('icon', 'Tag'), body.get('sort_order', 0), cat_id))
+                conn.commit()
+                return ok({'success': True})
+
+            # Удалить категорию
+            if action == 'delete_category':
+                cat_id = body.get('id')
+                cur.execute(f"DELETE FROM {SCHEMA}.shop_categories WHERE id=%s", (cat_id,))
+                conn.commit()
+                return ok({'success': True})
+
             # Добавить товар
             if action == 'add_product':
                 cur.execute(f"""

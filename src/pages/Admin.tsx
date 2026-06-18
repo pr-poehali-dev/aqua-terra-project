@@ -103,6 +103,7 @@ export default function Admin() {
   const [catalogSections, setCatalogSections] = useState<CatalogSection[]>([]);
   const [newSection, setNewSection] = useState({ slug: '', title: '', description: '', icon: 'Package', has_order_form: false });
   const [newCategory, setNewCategory] = useState({ section_id: 0, slug: '', title: '', icon: 'Tag' });
+  const [editingCategory, setEditingCategory] = useState<{ id: number; slug: string; title: string; icon: string; sort_order: number } | null>(null);
   const [savingCatalog, setSavingCatalog] = useState(false);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [editingCatProduct, setEditingCatProduct] = useState<Partial<Product> | null>(null);
@@ -1116,10 +1117,12 @@ export default function Admin() {
                   {/* Категории */}
                   <div className="flex flex-wrap gap-2">
                     {section.categories.map(cat => (
-                      <div key={cat.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm ${cat.active ? 'border-border bg-muted/50' : 'border-dashed opacity-40'}`}>
+                      <div key={cat.id} className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm ${cat.active ? 'border-border bg-muted/50' : 'border-dashed opacity-40'}`}>
                         <Icon name={cat.icon} size={13} className="text-muted-foreground" />
                         <span>{cat.title}</span>
-                        <button className="ml-1 text-muted-foreground hover:text-primary"
+                        <span className="text-muted-foreground/50 text-xs">/{cat.slug}</span>
+                        {/* Показать/скрыть */}
+                        <button className="ml-0.5 text-muted-foreground hover:text-primary transition-colors" title="Показать/скрыть"
                           onClick={async () => {
                             const r = await fetch(`${CATALOG_URL}?action=toggle_category`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: cat.id }) });
                             const d = await r.json();
@@ -1129,9 +1132,57 @@ export default function Admin() {
                           }}>
                           <Icon name={cat.active ? 'EyeOff' : 'Eye'} size={12} />
                         </button>
+                        {/* Редактировать */}
+                        <button className="text-muted-foreground hover:text-primary transition-colors" title="Редактировать"
+                          onClick={() => setEditingCategory({ id: cat.id, slug: cat.slug, title: cat.title, icon: cat.icon, sort_order: cat.sort_order })}>
+                          <Icon name="Pencil" size={12} />
+                        </button>
+                        {/* Удалить */}
+                        <button className="text-muted-foreground hover:text-destructive transition-colors" title="Удалить"
+                          onClick={async () => {
+                            if (!confirm(`Удалить категорию «${cat.title}»?`)) return;
+                            await fetch(`${CATALOG_URL}?action=delete_category`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: cat.id }) });
+                            setCatalogSections(prev => prev.map(s => s.id === section.id ? {
+                              ...s, categories: s.categories.filter(c => c.id !== cat.id)
+                            } : s));
+                            toast({ title: 'Категория удалена' });
+                          }}>
+                          <Icon name="Trash2" size={12} />
+                        </button>
                       </div>
                     ))}
                   </div>
+
+                  {/* Форма редактирования категории */}
+                  {editingCategory && section.categories.some(c => c.id === editingCategory.id) && (
+                    <div className="mt-3 p-3 rounded-xl border border-primary/30 bg-primary/5">
+                      <p className="text-xs font-semibold text-primary mb-2">Редактировать категорию</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <input placeholder="slug" className="h-8 px-2 rounded border border-input bg-background text-sm w-28"
+                          value={editingCategory.slug}
+                          onChange={e => setEditingCategory(p => p ? { ...p, slug: e.target.value } : p)} />
+                        <input placeholder="Название" className="h-8 px-2 rounded border border-input bg-background text-sm flex-1 min-w-[120px]"
+                          value={editingCategory.title}
+                          onChange={e => setEditingCategory(p => p ? { ...p, title: e.target.value } : p)} />
+                        <input placeholder="Иконка (напр. Fish)" className="h-8 px-2 rounded border border-input bg-background text-sm w-32"
+                          value={editingCategory.icon}
+                          onChange={e => setEditingCategory(p => p ? { ...p, icon: e.target.value } : p)} />
+                        <Button size="sm" disabled={savingCatalog} onClick={async () => {
+                          if (!editingCategory.slug || !editingCategory.title) return;
+                          setSavingCatalog(true);
+                          await fetch(`${CATALOG_URL}?action=update_category`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editingCategory) });
+                          setCatalogSections(prev => prev.map(s => s.id === section.id ? {
+                            ...s, categories: s.categories.map(c => c.id === editingCategory.id ? { ...c, ...editingCategory } : c)
+                          } : s));
+                          setEditingCategory(null);
+                          setSavingCatalog(false);
+                          toast({ title: 'Категория обновлена' });
+                        }}>{savingCatalog ? '...' : 'Сохранить'}</Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>Отмена</Button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Добавить категорию */}
                   <div className="mt-4 pt-4 border-t border-border flex gap-2">
                     <input placeholder="slug" className="h-8 px-2 rounded border border-input bg-background text-sm w-24"
