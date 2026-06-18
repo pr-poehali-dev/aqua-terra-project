@@ -519,11 +519,12 @@ const Index = () => {
           className="absolute inset-0 w-full h-full object-cover"
           style={{ willChange: 'transform', transformOrigin: 'center top', height: '130%', top: '-15%', objectPosition: 'center 30%' }}
         />
-        <div className="absolute inset-0" style={{background: 'linear-gradient(175deg, hsl(150 55% 6% / 0.72) 0%, hsl(162 48% 10% / 0.55) 50%, hsl(195 58% 14% / 0.45) 100%)'}} />
-        <div className="absolute inset-x-0 bottom-0 h-2/3" style={{background: 'linear-gradient(to top, hsl(150 55% 6% / 0.85) 0%, transparent 100%)'}} />
-        <Plankton />
+        {/* Левый градиент — зона текста */}
+        <div className="absolute inset-0" style={{background: 'linear-gradient(to right, hsl(150 50% 5% / 0.95) 0%, hsl(150 50% 5% / 0.75) 40%, hsl(150 50% 5% / 0.2) 70%, transparent 100%)'}} />
+        {/* Нижний градиент — волна */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2" style={{background: 'linear-gradient(to top, hsl(150 50% 5% / 0.95) 0%, transparent 100%)'}} />
         <div className="container relative z-10 px-4 md:px-6 py-20">
-          <div className="max-w-3xl animate-fade-in">
+          <div className="max-w-lg animate-fade-in">
             <div className="mb-6">
               <Logo size="lg" light className="mb-5" />
               <Badge className="bg-white/95 text-primary hover:bg-white border-0 text-sm font-semibold px-4 py-1.5 shadow-md">
