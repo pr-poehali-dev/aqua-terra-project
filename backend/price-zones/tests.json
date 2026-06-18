@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "GET price zones",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"center_lat": 55.7328},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

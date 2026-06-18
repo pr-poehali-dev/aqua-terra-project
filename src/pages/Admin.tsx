@@ -12,6 +12,7 @@ const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa8
 const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ZONES_URL = 'https://functions.poehali.dev/0092227c-949a-4bfa-afca-6c591a34e572';
+const PRICE_ZONES_URL = 'https://functions.poehali.dev/03fb0c39-d302-40a1-82c6-b87dcc1b4071';
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
 const SERVICES_ADMIN = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
@@ -160,6 +161,21 @@ export default function Admin() {
   const [editingZone, setEditingZone] = useState<Partial<ServiceZone> | null>(null);
   const [savingZone, setSavingZone] = useState(false);
   const loadZones = () => fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
+  // Ценовые зоны
+  interface PriceZoneItem { radius: number; factor: number; label: string; }
+  interface PriceZoneConfig { center_lat: number; center_lon: number; zones: PriceZoneItem[]; active: boolean; }
+  const DEFAULT_PRICE_ZONES: PriceZoneConfig = {
+    center_lat: 55.7328, center_lon: 36.8517, active: true,
+    zones: [
+      { radius: 20, factor: 1.0, label: 'Основная зона' },
+      { radius: 35, factor: 1.3, label: 'Ближняя зона' },
+      { radius: 55, factor: 1.6, label: 'Средняя зона' },
+      { radius: 80, factor: 2.0, label: 'Дальняя зона' },
+    ],
+  };
+  const [priceZones, setPriceZones] = useState<PriceZoneConfig>(DEFAULT_PRICE_ZONES);
+  const [savingPriceZones, setSavingPriceZones] = useState(false);
+  const loadPriceZones = () => fetch(PRICE_ZONES_URL).then(r => r.json()).then(d => { if (d) setPriceZones(d); }).catch(() => {});
 
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token };
 
@@ -199,6 +215,7 @@ export default function Admin() {
     setQuizResults(sd.quiz_results || {});
     fetch(`${LEAD_URL}?action=status`, { headers }).then(r => r.json()).then(setTgStatus).catch(() => {});
     fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
+    fetch(PRICE_ZONES_URL).then(r => r.json()).then(d => { if (d) setPriceZones(d); }).catch(() => {});
     setAuthed(true);
     setLoading(false);
   };
@@ -1738,6 +1755,97 @@ export default function Admin() {
                   />
                 );
               })()}
+            </Card>
+
+            {/* Ценовые зоны по радиусу */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 mb-1">
+                <Icon name="CircleDollarSign" size={18} />Ценовые зоны выезда
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Укажите центр и 4 зоны с коэффициентами. На карте они отобразятся концентрическими кругами: зелёный → жёлтый → оранжевый → красный.
+              </p>
+
+              {/* Центр */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Центр (базовая точка)</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Широта</label>
+                    <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                      value={priceZones.center_lat}
+                      onChange={e => setPriceZones(p => ({...p, center_lat: parseFloat(e.target.value)}))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Долгота</label>
+                    <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                      value={priceZones.center_lon}
+                      onChange={e => setPriceZones(p => ({...p, center_lon: parseFloat(e.target.value)}))} />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">По умолчанию: Звенигород (55.7328, 36.8517)</p>
+              </div>
+
+              {/* 4 зоны */}
+              <div className="space-y-2 mb-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Зоны (от ближней к дальней)</p>
+                {([
+                  { color: '#22c55e', bg: 'bg-green-500/10 border-green-500/30' },
+                  { color: '#eab308', bg: 'bg-yellow-500/10 border-yellow-500/30' },
+                  { color: '#f97316', bg: 'bg-orange-500/10 border-orange-500/30' },
+                  { color: '#ef4444', bg: 'bg-red-500/10 border-red-500/30' },
+                ] as const).map((meta, i) => (
+                  <div key={i} className={`rounded-xl border p-3 ${meta.bg}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
+                      <span className="text-xs font-medium">Зона {i + 1}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Название</label>
+                        <input className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
+                          value={priceZones.zones[i]?.label || ''}
+                          onChange={e => setPriceZones(p => {
+                            const zones = [...p.zones];
+                            zones[i] = { ...zones[i], label: e.target.value };
+                            return { ...p, zones };
+                          })} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Радиус (км)</label>
+                        <input type="number" step="5" min="1" className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
+                          value={priceZones.zones[i]?.radius || ''}
+                          onChange={e => setPriceZones(p => {
+                            const zones = [...p.zones];
+                            zones[i] = { ...zones[i], radius: parseFloat(e.target.value) };
+                            return { ...p, zones };
+                          })} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Коэффициент</label>
+                        <input type="number" step="0.1" min="1" className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
+                          value={priceZones.zones[i]?.factor || ''}
+                          onChange={e => setPriceZones(p => {
+                            const zones = [...p.zones];
+                            zones[i] = { ...zones[i], factor: parseFloat(e.target.value) };
+                            return { ...p, zones };
+                          })} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button disabled={savingPriceZones} onClick={async () => {
+                setSavingPriceZones(true);
+                await fetch(PRICE_ZONES_URL, { method: 'POST', headers, body: JSON.stringify(priceZones) });
+                await loadPriceZones();
+                setSavingPriceZones(false);
+                toast({ title: 'Ценовые зоны сохранены!' });
+              }}>
+                <Icon name="Check" size={14} className="mr-1.5" />
+                {savingPriceZones ? 'Сохраняем...' : 'Сохранить зоны'}
+              </Button>
             </Card>
 
             {/* Яндекс Метрика */}

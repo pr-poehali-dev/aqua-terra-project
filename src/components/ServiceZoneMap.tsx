@@ -1,128 +1,120 @@
 import { useEffect, useRef, useState } from 'react';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const ZONES_URL = 'https://functions.poehali.dev/0092227c-949a-4bfa-afca-6c591a34e572';
+const PRICE_ZONES_URL = 'https://functions.poehali.dev/03fb0c39-d302-40a1-82c6-b87dcc1b4071';
 
 interface Zone {
-  id: number;
-  name: string;
-  color: string;
-  opacity: number;
-  zone_type: 'circle' | 'polygon';
-  coordinates: [number, number][];
-  center_lat: number | null;
-  center_lon: number | null;
-  radius_km: number | null;
-  active: boolean;
+  id: number; name: string; color: string; opacity: number;
+  zone_type: 'circle' | 'polygon'; coordinates: [number, number][];
+  center_lat: number | null; center_lon: number | null; radius_km: number | null; active: boolean;
 }
 
-declare global {
-  interface Window {
-    ymaps: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  }
-}
+interface PriceZoneItem { radius: number; factor: number; label: string; }
+interface PriceZoneConfig { center_lat: number; center_lon: number; zones: PriceZoneItem[]; active: boolean; }
 
-interface Props {
-  apiKey?: string;
-  height?: string;
-  className?: string;
-}
+declare global { interface Window { ymaps: any; } }
+
+interface Props { apiKey?: string; height?: string; className?: string; }
+
+const ZONE_COLORS = [
+  { fill: '#22c55e', stroke: '#16a34a' },
+  { fill: '#eab308', stroke: '#ca8a04' },
+  { fill: '#f97316', stroke: '#ea580c' },
+  { fill: '#ef4444', stroke: '#dc2626' },
+];
 
 export default function ServiceZoneMap({ apiKey, height = '420px', className = '' }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const mapInstance = useRef<any>(null);
   const [zones, setZones] = useState<Zone[]>([]);
+  const [priceZones, setPriceZones] = useState<PriceZoneConfig | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
-  const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [activeZone, setActiveZone] = useState<{ label: string; factor: number } | null>(null);
 
-  // Загружаем зоны
   useEffect(() => {
     fetch(ZONES_URL).then(r => r.json()).then(setZones).catch(() => {});
+    fetch(PRICE_ZONES_URL).then(r => r.json()).then(d => { if (d) setPriceZones(d); }).catch(() => {});
   }, []);
 
-  // Подгружаем Яндекс Карты
   useEffect(() => {
     if (!apiKey) return;
-    if (window.ymaps) { setLoaded(true); return; }
-
+    const init = () => { if (window.ymaps) window.ymaps.ready(() => setLoaded(true)); };
+    if (window.ymaps) { window.ymaps.ready(() => setLoaded(true)); return; }
     const existing = document.querySelector('script[src*="api-maps.yandex.ru"]');
-    if (existing) {
-      existing.addEventListener('load', () => setLoaded(true));
-      return;
-    }
-
+    if (existing) { existing.addEventListener('load', init); return; }
     const script = document.createElement('script');
     script.src = `https://api-maps.yandex.ru/2.1/?apikey=${apiKey}&lang=ru_RU`;
     script.async = true;
-    script.onload = () => setLoaded(true);
+    script.onload = init;
     script.onerror = () => setError('Не удалось загрузить карту');
     document.head.appendChild(script);
   }, [apiKey]);
 
-  // Инициализируем карту
   useEffect(() => {
-    if (!loaded || !mapRef.current || zones.length === 0) return;
+    if (!loaded || !mapRef.current) return;
+
+    const hasPriceZones = priceZones && priceZones.active && priceZones.zones?.length === 4;
+    const hasPolygon = zones.some(z => z.active && z.zone_type === 'polygon' && z.coordinates?.length > 2);
+
+    if (!hasPriceZones && !hasPolygon) return;
 
     window.ymaps.ready(() => {
-      if (mapInstance.current) {
-        mapInstance.current.destroy();
-      }
+      if (mapInstance.current) mapInstance.current.destroy();
+
+      const centerLat = priceZones?.center_lat ?? 55.7328;
+      const centerLon = priceZones?.center_lon ?? 36.8517;
 
       const map = new window.ymaps.Map(mapRef.current, {
-        center: [55.7328, 36.8517], // Звенигород
+        center: [centerLat, centerLon],
         zoom: 9,
         controls: ['zoomControl', 'fullscreenControl'],
-      }, {
-        suppressMapOpenBlock: true,
-      });
+      }, { suppressMapOpenBlock: true });
 
       mapInstance.current = map;
 
-      zones.filter(z => z.active).forEach(zone => {
-        if (zone.zone_type === 'circle' && zone.center_lat && zone.center_lon && zone.radius_km) {
+      // Рисуем ценовые зоны — от большего к меньшему (чтобы маленькие были поверх)
+      if (hasPriceZones) {
+        const sorted = [...priceZones!.zones].sort((a, b) => b.radius - a.radius);
+        sorted.forEach(zone => {
+          const idx = priceZones!.zones.indexOf(zone);
+          const color = ZONE_COLORS[idx] || ZONE_COLORS[3];
           const circle = new window.ymaps.Circle(
-            [[zone.center_lat, zone.center_lon], zone.radius_km * 1000],
-            { hintContent: zone.name },
+            [[centerLat, centerLon], zone.radius * 1000],
+            { hintContent: `${zone.label} — ×${zone.factor}` },
             {
-              fillColor: zone.color + '44',
-              strokeColor: zone.color,
+              fillColor: color.fill + '33',
+              strokeColor: color.stroke,
               strokeWidth: 2,
-              strokeStyle: 'solid',
-              fillOpacity: zone.opacity,
+              fillOpacity: 0.25,
+              cursor: 'default',
             }
           );
-          circle.events.add('mouseenter', () => setActiveZone(zone.name));
+          circle.events.add('mouseenter', () => setActiveZone({ label: zone.label, factor: zone.factor }));
           circle.events.add('mouseleave', () => setActiveZone(null));
           map.geoObjects.add(circle);
-        }
+        });
+      }
 
-        if (zone.zone_type === 'polygon' && zone.coordinates?.length > 2) {
-          // ymaps ожидает [lat, lon]
-          const coords = zone.coordinates.map(c => [c[0], c[1]]);
-          const polygon = new window.ymaps.Polygon(
-            [coords],
-            { hintContent: zone.name },
-            {
-              fillColor: zone.color + '44',
-              strokeColor: zone.color,
-              strokeWidth: 2,
-              fillOpacity: zone.opacity,
-            }
-          );
-          polygon.events.add('mouseenter', () => setActiveZone(zone.name));
-          polygon.events.add('mouseleave', () => setActiveZone(null));
-          map.geoObjects.add(polygon);
-        }
+      // Рисуем полигон основной зоны (поверх кругов)
+      zones.filter(z => z.active && z.zone_type === 'polygon' && z.coordinates?.length > 2).forEach(zone => {
+        const coords = zone.coordinates.map(c => [c[0], c[1]]);
+        const polygon = new window.ymaps.Polygon([coords], {}, {
+          fillColor: '#22c55e33',
+          strokeColor: '#16a34a',
+          strokeWidth: 2.5,
+          fillOpacity: 0.25,
+        });
+        map.geoObjects.add(polygon);
       });
     });
 
     return () => {
-      if (mapInstance.current) {
-        mapInstance.current.destroy();
-        mapInstance.current = null;
-      }
+      if (mapInstance.current) { mapInstance.current.destroy(); mapInstance.current = null; }
     };
-  }, [loaded, zones]);
+  }, [loaded, zones, priceZones]);
 
   if (!apiKey) {
     return (
@@ -130,7 +122,7 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
         <div className="text-center p-8 text-muted-foreground">
           <div className="text-4xl mb-3">🗺️</div>
           <p className="font-medium text-foreground mb-1">Карта зон обслуживания</p>
-          <p className="text-sm">Добавьте YANDEX_MAPS_KEY в настройках для отображения карты</p>
+          <p className="text-sm">Ключ Яндекс Карт не настроен</p>
         </div>
       </div>
     );
@@ -144,28 +136,36 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
     );
   }
 
+  const legendItems = priceZones?.active && priceZones.zones?.length === 4
+    ? priceZones.zones.map((z, i) => ({ label: z.label, factor: z.factor, color: ZONE_COLORS[i].stroke }))
+    : [];
+
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`} style={{ height }}>
       <div ref={mapRef} className="w-full h-full" />
 
       {/* Легенда */}
-      <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-xl shadow-lg p-3 max-w-[220px]">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Зоны выезда</p>
-        <div className="space-y-1.5">
-          {zones.filter(z => z.active).map(zone => (
-            <div key={zone.id}
-              className={`flex items-center gap-2 text-xs transition-colors ${activeZone === zone.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-              <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: zone.color }} />
-              {zone.name}
-            </div>
-          ))}
+      {legendItems.length > 0 && (
+        <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-xl shadow-lg p-3 max-w-[200px]">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Зоны выезда</p>
+          <div className="space-y-1.5">
+            {legendItems.map((item, i) => (
+              <div key={i} className={`flex items-center justify-between gap-2 text-xs transition-colors ${activeZone?.label === item.label ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                  {item.label}
+                </div>
+                <span className="font-mono text-[11px] opacity-70">×{item.factor}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Тултип при наведении */}
       {activeZone && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-xl shadow-lg pointer-events-none">
-          {activeZone}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-foreground text-background text-sm font-medium px-4 py-2 rounded-xl shadow-lg pointer-events-none whitespace-nowrap">
+          {activeZone.label} — коэффициент ×{activeZone.factor}
         </div>
       )}
 
