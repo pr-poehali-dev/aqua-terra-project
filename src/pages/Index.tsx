@@ -242,6 +242,10 @@ const Index = () => {
   const SECTION_IDS = ['home', 'services', 'prices', 'shop', 'portfolio', 'articles', 'faq', 'contacts'];
 
   const goSection = (dir: 1 | -1) => {
+    if (dir === -1 && activeSection === 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const next = Math.max(0, Math.min(SECTION_IDS.length - 1, activeSection + dir));
     document.getElementById(SECTION_IDS[next])?.scrollIntoView({ behavior: 'smooth' });
     setActiveSection(next);
@@ -1252,7 +1256,6 @@ const Index = () => {
         <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-1.5">
           <button
             onClick={() => goSection(-1)}
-            disabled={activeSection === 0}
             className="w-10 h-10 rounded-full gradient-deep text-white shadow-lg hover:scale-110 transition-all grid place-items-center disabled:opacity-30 disabled:scale-100"
             title="Предыдущий раздел"
           >
