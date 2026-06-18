@@ -1422,13 +1422,13 @@ export default function Admin() {
               <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="Phone" size={18} />Контакты</h3>
               <div className="grid sm:grid-cols-2 gap-3">
                 {[
-                  { key: 'contacts_name', label: 'Имя контакта', placeholder: 'MAX' },
                   { key: 'contacts_phone', label: 'Телефон', placeholder: '+7 900 000 0000' },
                   { key: 'contacts_telegram', label: 'Telegram (без @)', placeholder: 'username' },
+                  { key: 'contacts_max', label: 'MAX (username без @)', placeholder: 'username' },
                   { key: 'contacts_email', label: 'Email', placeholder: 'info@example.com' },
                   { key: 'contacts_address', label: 'Адрес', placeholder: 'Город, улица' },
                 ].map(({key, label, placeholder}) => (
-                  <div key={key} className={key === 'contacts_address' || key === 'contacts_name' ? 'sm:col-span-2' : ''}>
+                  <div key={key} className={key === 'contacts_address' ? 'sm:col-span-2' : ''}>
                     <label className="text-xs text-muted-foreground mb-1 block">{label}</label>
                     <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
                       placeholder={placeholder} value={siteSettings[key] || ''}
@@ -1438,7 +1438,7 @@ export default function Admin() {
               </div>
               <Button className="mt-3" disabled={savingSettings} onClick={async () => {
                 setSavingSettings(true);
-                const contactKeys = { contacts_name: siteSettings.contacts_name, contacts_phone: siteSettings.contacts_phone, contacts_telegram: siteSettings.contacts_telegram, contacts_email: siteSettings.contacts_email, contacts_address: siteSettings.contacts_address };
+                const contactKeys = { contacts_phone: siteSettings.contacts_phone, contacts_telegram: siteSettings.contacts_telegram, contacts_max: siteSettings.contacts_max, contacts_email: siteSettings.contacts_email, contacts_address: siteSettings.contacts_address };
                 await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify(contactKeys) });
                 setSavingSettings(false); toast({ title: 'Сохранено!' });
               }}>{savingSettings ? 'Сохраняем...' : 'Сохранить'}</Button>

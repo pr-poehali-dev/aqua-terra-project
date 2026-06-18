@@ -1174,7 +1174,6 @@ const Index = () => {
           <div className="gradient-deep p-10 md:p-12 text-white">
             <h2 className="font-display text-4xl font-bold mb-4">Свяжитесь с нами</h2>
             <p className="text-white/80 mb-8">Расскажите о задаче — подберём решение под ваш интерьер и бюджет.</p>
-            <p className="text-white/70 text-sm mb-5 -mt-4">{siteSettings.contacts_name || 'MAX'}</p>
             <ul className="space-y-4 text-white/90">
               <li className="flex items-center gap-3">
                 <Icon name="Phone" size={20} />
@@ -1183,7 +1182,13 @@ const Index = () => {
               {siteSettings.contacts_telegram && (
               <li className="flex items-center gap-3">
                 <Icon name="Send" size={20} />
-                <a href={`https://t.me/${siteSettings.contacts_telegram}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">@{siteSettings.contacts_telegram}</a>
+                <a href={`https://t.me/${siteSettings.contacts_telegram}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Telegram: @{siteSettings.contacts_telegram}</a>
+              </li>
+              )}
+              {siteSettings.contacts_max && (
+              <li className="flex items-center gap-3">
+                <span className="text-base font-bold leading-none w-5 text-center">M</span>
+                <a href={`https://max.ru/u/${siteSettings.contacts_max}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">MAX: @{siteSettings.contacts_max}</a>
               </li>
               )}
               {siteSettings.contacts_email && (
@@ -1199,14 +1204,20 @@ const Index = () => {
               </li>
               )}
             </ul>
-            {siteSettings.contacts_telegram && (
-            <div className="mt-8">
+            <div className="flex flex-wrap gap-2 mt-8">
+              {siteSettings.contacts_telegram && (
               <a href={`https://t.me/${siteSettings.contacts_telegram}`} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium">
-                <Icon name="Send" size={18} />Написать в Telegram
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium">
+                <Icon name="Send" size={16} />Telegram
               </a>
+              )}
+              {siteSettings.contacts_max && (
+              <a href={`https://max.ru/u/${siteSettings.contacts_max}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium">
+                <span className="font-bold text-sm">MAX</span>
+              </a>
+              )}
             </div>
-            )}
           </div>
           <form className="p-10 md:p-12 space-y-4" onSubmit={submitLead}>
             <input
