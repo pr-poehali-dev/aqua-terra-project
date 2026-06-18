@@ -57,10 +57,11 @@ def handler(event: dict, context) -> dict:
             f"💬 Сообщение: {message or '—'}"
         )
         tg_url = f'https://api.telegram.org/bot{token}/sendMessage'
-        payload = urllib.parse.urlencode({'chat_id': chat_id, 'text': text}).encode()
-        req = urllib.request.Request(tg_url, data=payload, method='POST')
+        payload = json.dumps({'chat_id': chat_id, 'text': text}).encode('utf-8')
+        req = urllib.request.Request(tg_url, data=payload, method='POST',
+                                     headers={'Content-Type': 'application/json'})
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 resp.read()
         except Exception:
             pass
