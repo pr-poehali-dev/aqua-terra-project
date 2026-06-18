@@ -1653,15 +1653,10 @@ export default function Admin() {
 
             {/* Зоны обслуживания */}
             <Card className="p-6">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2">
-                  <Icon name="MapPin" size={18} />Зоны обслуживания
-                </h3>
-                <Button size="sm" onClick={() => setEditingZone({ name: '', color: '#22c55e', opacity: 0.25, zone_type: 'circle', center_lat: 55.7328, center_lon: 36.8517, radius_km: 10, coordinates: [], sort_order: 99, active: true })}>
-                  + Добавить зону
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">Зоны отображаются на карте в секции «Контакты». Сначала добавьте ключ Яндекс Карт ниже.</p>
+              <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 mb-1">
+                <Icon name="MapPin" size={18} />Зона выезда на карте
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">Нарисуйте одну зону — она отобразится зелёным на сайте в разделе «Контакты».</p>
 
               {/* Ключ Яндекс Карт */}
               <div className="mb-5">
@@ -1680,63 +1675,69 @@ export default function Admin() {
                 <p className="text-xs text-muted-foreground mt-1">Получить бесплатно на <span className="text-primary">developer.tech.yandex.ru</span> → JavaScript API и HTTP Геокодер</p>
               </div>
 
-              {/* Список зон */}
-              <div className="space-y-2">
-                {zones.map(zone => (
-                  <div key={zone.id} className={`flex items-center gap-3 p-3 rounded-xl border ${zone.active ? 'border-border' : 'border-dashed opacity-50'}`}>
-                    <span className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: zone.color }} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{zone.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {zone.zone_type === 'circle'
-                          ? `Круг · ${zone.radius_km} км · ${zone.center_lat?.toFixed(4)}, ${zone.center_lon?.toFixed(4)}`
-                          : `Полигон · ${zone.coordinates?.length || 0} точек`}
-                      </p>
+              {/* Одна активная зона */}
+              {(() => {
+                const activeZone = zones.find(z => z.active);
+                if (!editingZone) {
+                  return (
+                    <div className="space-y-3">
+                      {activeZone ? (
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
+                          <span className="w-4 h-4 rounded shrink-0 bg-green-500" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{activeZone.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {activeZone.zone_type === 'circle'
+                                ? `Круг · ${activeZone.radius_km} км`
+                                : `Полигон · ${activeZone.coordinates?.length || 0} точек`}
+                            </p>
+                          </div>
+                          <Button size="sm" onClick={() => setEditingZone({...activeZone})}>
+                            <Icon name="Pencil" size={13} className="mr-1.5" />Редактировать
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-3">Зона ещё не нарисована</p>
+                      )}
+                      <Button variant="outline" size="sm" className="w-full" onClick={() => setEditingZone({
+                        id: activeZone?.id,
+                        name: 'Зона выезда',
+                        color: '#22c55e', opacity: 0.22,
+                        zone_type: 'polygon', coordinates: [],
+                        center_lat: null, center_lon: null, radius_km: null,
+                        sort_order: 1, active: true,
+                      })}>
+                        <Icon name="Pencil" size={14} className="mr-1.5" />
+                        {activeZone ? 'Нарисовать заново' : 'Нарисовать зону'}
+                      </Button>
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button size="sm" variant="ghost" onClick={() => setEditingZone({...zone})}>
-                        <Icon name="Pencil" size={13} />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={async () => {
-                        await fetch(`${ZONES_URL}?id=${zone.id}`, { method: 'PUT', headers, body: JSON.stringify({...zone, active: !zone.active}) });
-                        loadZones();
-                      }}>
-                        <Icon name={zone.active ? 'EyeOff' : 'Eye'} size={13} />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={async () => {
-                        if (!confirm(`Удалить зону «${zone.name}»?`)) return;
-                        await fetch(`${ZONES_URL}?id=${zone.id}`, { method: 'DELETE', headers });
-                        loadZones(); toast({ title: 'Зона удалена' });
-                      }}>
-                        <Icon name="Trash2" size={13} />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {zones.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Зон пока нет</p>}
-              </div>
-
-              {/* Редактор зоны */}
-              {editingZone && (
-                <ZoneEditor
-                  zone={editingZone}
-                  apiKey={siteSettings.yandex_maps_key || ''}
-                  saving={savingZone}
-                  onChange={setEditingZone}
-                  onSave={async () => {
-                    setSavingZone(true);
-                    if (editingZone.id) {
-                      await fetch(`${ZONES_URL}?id=${editingZone.id}`, { method: 'PUT', headers, body: JSON.stringify(editingZone) });
-                    } else {
-                      await fetch(ZONES_URL, { method: 'POST', headers, body: JSON.stringify(editingZone) });
-                    }
-                    await loadZones();
-                    setEditingZone(null); setSavingZone(false);
-                    toast({ title: editingZone.id ? 'Зона обновлена!' : 'Зона добавлена!' });
-                  }}
-                  onCancel={() => setEditingZone(null)}
-                />
-              )}
+                  );
+                }
+                return (
+                  <ZoneEditor
+                    zone={editingZone}
+                    apiKey={siteSettings.yandex_maps_key || ''}
+                    saving={savingZone}
+                    onChange={setEditingZone}
+                    onSave={async () => {
+                      setSavingZone(true);
+                      // Скрываем все остальные зоны, сохраняем текущую
+                      for (const z of zones.filter(z => z.active && z.id !== editingZone.id)) {
+                        await fetch(`${ZONES_URL}?id=${z.id}`, { method: 'PUT', headers, body: JSON.stringify({...z, active: false}) });
+                      }
+                      if (editingZone.id) {
+                        await fetch(`${ZONES_URL}?id=${editingZone.id}`, { method: 'PUT', headers, body: JSON.stringify(editingZone) });
+                      } else {
+                        await fetch(ZONES_URL, { method: 'POST', headers, body: JSON.stringify(editingZone) });
+                      }
+                      await loadZones();
+                      setEditingZone(null); setSavingZone(false);
+                      toast({ title: 'Зона сохранена!' });
+                    }}
+                    onCancel={() => setEditingZone(null)}
+                  />
+                );
+              })()}
             </Card>
 
             {/* Яндекс Метрика */}
