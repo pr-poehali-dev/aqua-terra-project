@@ -178,27 +178,37 @@ export default function Shop() {
                   const isActive = section.slug === activeSection;
                   return (
                     <div key={section.slug}>
-                      <button
-                        onClick={() => { setSection(section.slug); toggleSection(section.slug); }}
-                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
-                          isActive ? 'text-primary' : 'text-foreground hover:bg-muted'
-                        }`}>
-                        <Icon name={section.icon} size={15} className="text-primary shrink-0" />
-                        <span className="flex-1 text-left">{section.title}</span>
-                        <Icon name={isOpen ? 'Minus' : 'Plus'} size={13} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                      </button>
-                      {isOpen && isActive && (
+                      <div className={`flex items-center rounded-xl transition-all ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                        {/* Клик по названию — переключает раздел */}
+                        <button
+                          onClick={() => setSection(section.slug)}
+                          className={`flex items-center gap-2 flex-1 px-3 py-2.5 text-sm font-medium text-left rounded-l-xl transition-all ${
+                            isActive ? 'text-primary' : 'text-foreground hover:bg-muted'
+                          }`}>
+                          <Icon name={section.icon} size={15} className="text-primary shrink-0" />
+                          {section.title}
+                        </button>
+                        {/* Плюсик — только открывает/закрывает категории */}
+                        <button
+                          onClick={() => toggleSection(section.slug)}
+                          className="px-2.5 py-2.5 rounded-r-xl text-muted-foreground hover:text-primary hover:bg-muted transition-all">
+                          <Icon name={isOpen ? 'Minus' : 'Plus'} size={13} />
+                        </button>
+                      </div>
+                      {isOpen && (
                         <div className="ml-4 pl-3 border-l border-border space-y-0.5 mb-1">
                           {section.categories.filter(c => c.active).map(cat => (
-                            <button key={cat.slug} onClick={() => setCategory(cat.slug)}
+                            <button key={cat.slug} onClick={() => { setSection(section.slug); setCategory(cat.slug); }}
                               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm transition-all text-left ${
-                                activeCategory === cat.slug ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                isActive && activeCategory === cat.slug ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                               }`}>
                               <Icon name={cat.icon} size={13} className="shrink-0" />
                               {cat.title}
-                              <span className="ml-auto text-xs opacity-50">
-                                {products.filter(p => p.category?.slug === cat.slug).length || ''}
-                              </span>
+                              {isActive && (
+                                <span className="ml-auto text-xs opacity-50">
+                                  {products.filter(p => p.category?.slug === cat.slug).length || ''}
+                                </span>
+                              )}
                             </button>
                           ))}
                         </div>
