@@ -37,6 +37,7 @@ export default function WaterCursor() {
       }
       const el = document.elementFromPoint(e.clientX, e.clientY);
       setHover(!!el?.closest('button, a, [role=button], input, textarea, select, label'));
+      setVisible(true);
     };
     const down = (e: MouseEvent) => { setClick(true); addRipple(e.clientX, e.clientY); };
     const up   = () => setClick(false);
