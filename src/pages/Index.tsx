@@ -519,7 +519,8 @@ const Index = () => {
           className="absolute inset-0 w-full h-full object-cover"
           style={{ willChange: 'transform', transformOrigin: 'center top', height: '130%', top: '-15%' }}
         />
-        <div className="absolute inset-0 gradient-deep opacity-72" />
+        <div className="absolute inset-0" style={{background: 'linear-gradient(175deg, hsl(150 55% 6% / 0.72) 0%, hsl(162 48% 10% / 0.55) 50%, hsl(195 58% 14% / 0.45) 100%)'}} />
+        <div className="absolute inset-x-0 bottom-0 h-2/3" style={{background: 'linear-gradient(to top, hsl(150 55% 6% / 0.85) 0%, transparent 100%)'}} />
         <Bubbles />
         <Plankton />
         <div className="container relative z-10 px-4 md:px-6 py-20">
