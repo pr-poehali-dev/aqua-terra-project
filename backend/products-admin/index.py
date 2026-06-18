@@ -5,6 +5,7 @@ import uuid
 import psycopg2
 import boto3
 
+SCHEMA = 't_p51549197_aqua_terra_project'
 
 def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'])
@@ -26,12 +27,12 @@ def check_auth(event: dict) -> bool:
 
 def handler(event: dict, context) -> dict:
     """
-    Админ API каталога товаров с загрузкой фото в S3.
-    GET /         → все товары
-    POST /        → создать товар (с опциональным фото в base64)
+    Админ API товаров.
+    GET /         → все товары (с section_id, category_id)
+    POST /        → создать товар
     PUT /?id=N    → обновить товар
     DELETE /?id=N → удалить товар
-    POST /upload?id=N → загрузить фото для товара (body: {photo_base64, ext})
+    POST /upload?id=N → загрузить фото
     """
     cors = {
         'Access-Control-Allow-Origin': '*',
@@ -53,16 +54,26 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor()
 
     if method == 'GET':
-        cur.execute("SELECT id, name, price, category, tag, icon, photo_url, in_stock, description, created_at FROM products ORDER BY created_at DESC")
+        cur.execute(f"""
+            SELECT p.id, p.name, p.price, p.category, p.tag, p.icon, p.photo_url,
+                   p.in_stock, p.description, p.created_at, p.section_id, p.category_id, p.sort_order,
+                   s.title as section_title, c.title as category_title
+            FROM {SCHEMA}.products p
+            LEFT JOIN {SCHEMA}.shop_sections s ON s.id = p.section_id
+            LEFT JOIN {SCHEMA}.shop_categories c ON c.id = p.category_id
+            ORDER BY p.created_at DESC
+        """)
         rows = cur.fetchall()
         conn.close()
-        keys = ['id', 'name', 'price', 'category', 'tag', 'icon', 'photo_url', 'in_stock', 'description', 'created_at']
+        keys = ['id', 'name', 'price', 'category', 'tag', 'icon', 'photo_url',
+                'in_stock', 'description', 'created_at', 'section_id', 'category_id', 'sort_order',
+                'section_title', 'category_title']
         products = []
         for row in rows:
             p = dict(zip(keys, row))
             p['created_at'] = p['created_at'].isoformat()
             products.append(p)
-        return {'statusCode': 200, 'headers': {**cors, 'Content-Type': 'application/json'}, 'body': json.dumps(products, ensure_ascii=False)}
+        return {'statusCode': 200, 'headers': {**cors, 'Content-Type': 'application/json'}, 'body': json.dumps(products, ensure_ascii=False, default=str)}
 
     if method == 'POST' and 'upload' in path:
         product_id = params.get('id')
@@ -86,7 +97,7 @@ def handler(event: dict, context) -> dict:
         access_key = os.environ['AWS_ACCESS_KEY_ID']
         cdn_url = f'https://cdn.poehali.dev/projects/{access_key}/files/{key}'
 
-        cur.execute("UPDATE products SET photo_url = %s WHERE id = %s", (cdn_url, product_id))
+        cur.execute(f"UPDATE {SCHEMA}.products SET photo_url = %s WHERE id = %s", (cdn_url, product_id))
         conn.commit()
         conn.close()
         return {'statusCode': 200, 'headers': {**cors, 'Content-Type': 'application/json'}, 'body': json.dumps({'photo_url': cdn_url})}
@@ -97,11 +108,18 @@ def handler(event: dict, context) -> dict:
         if not name:
             conn.close()
             return {'statusCode': 400, 'headers': {**cors, 'Content-Type': 'application/json'}, 'body': json.dumps({'error': 'name required'})}
+
+        section_id = data.get('section_id') or None
+        category_id = data.get('category_id') or None
+
         cur.execute(
-            "INSERT INTO products (name, price, category, tag, icon, photo_url, in_stock, description) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
-            (name, int(data.get('price', 0)), data.get('category', 'animals'),
+            f"""INSERT INTO {SCHEMA}.products
+                (name, price, category, tag, icon, photo_url, in_stock, description, section_id, category_id)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+            (name, int(data.get('price', 0)), data.get('category', ''),
              data.get('tag', ''), data.get('icon', 'Package'), data.get('photo_url'),
-             data.get('in_stock', True), data.get('description', ''))
+             data.get('in_stock', True), data.get('description', ''),
+             section_id, category_id)
         )
         new_id = cur.fetchone()[0]
         conn.commit()
@@ -115,17 +133,23 @@ def handler(event: dict, context) -> dict:
 
     if method == 'PUT':
         data = json.loads(event.get('body') or '{}')
+        section_id = data.get('section_id') or None
+        category_id = data.get('category_id') or None
         cur.execute(
-            "UPDATE products SET name=%s, price=%s, category=%s, tag=%s, icon=%s, in_stock=%s, description=%s WHERE id=%s",
-            (data.get('name'), int(data.get('price', 0)), data.get('category'), data.get('tag'),
-             data.get('icon'), data.get('in_stock', True), data.get('description', ''), product_id)
+            f"""UPDATE {SCHEMA}.products
+                SET name=%s, price=%s, category=%s, tag=%s, icon=%s,
+                    in_stock=%s, description=%s, section_id=%s, category_id=%s
+                WHERE id=%s""",
+            (data.get('name'), int(data.get('price', 0)), data.get('category', ''),
+             data.get('tag'), data.get('icon'), data.get('in_stock', True),
+             data.get('description', ''), section_id, category_id, product_id)
         )
         conn.commit()
         conn.close()
         return {'statusCode': 200, 'headers': {**cors, 'Content-Type': 'application/json'}, 'body': json.dumps({'success': True})}
 
     if method == 'DELETE':
-        cur.execute("DELETE FROM products WHERE id=%s", (product_id,))
+        cur.execute(f"DELETE FROM {SCHEMA}.products WHERE id=%s", (product_id,))
         conn.commit()
         conn.close()
         return {'statusCode': 200, 'headers': {**cors, 'Content-Type': 'application/json'}, 'body': json.dumps({'success': True})}

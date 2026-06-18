@@ -24,6 +24,7 @@ interface Article {
 interface Product {
   id: number; name: string; price: number; category: string;
   tag: string; icon: string; photo_url: string | null; in_stock: boolean; description: string;
+  section_id?: number | null; category_id?: number | null;
 }
 interface Service {
   id: number; icon: string; title: string; description: string;
@@ -37,7 +38,7 @@ interface PortfolioItem {
 const ARTICLE_CATS = ['Аквариумы', 'Террариумы', 'Флорариумы', 'Экзотика', 'Корма', 'Общее'];
 const PRODUCT_CATS = [{ id: 'animals', label: 'Животные' }, { id: 'food', label: 'Корма' }, { id: 'supplies', label: 'Материалы' }];
 const ICONS = ['Fish', 'Turtle', 'Bug', 'Wheat', 'Package', 'Lightbulb', 'Settings', 'Sprout', 'Waves', 'Wrench', 'Truck', 'Star'];
-const EMPTY_PRODUCT: Omit<Product, 'id'> = { name: '', price: 0, category: 'animals', tag: '', icon: 'Package', photo_url: null, in_stock: true, description: '' };
+const EMPTY_PRODUCT: Omit<Product, 'id'> = { name: '', price: 0, category: '', tag: '', icon: 'Package', photo_url: null, in_stock: true, description: '', section_id: null, category_id: null };
 const EMPTY_ARTICLE: Omit<Article, 'id' | 'slug' | 'created_at'> = { title: '', excerpt: '', content: '', category: 'Аквариумы', cover_url: null, published: false };
 const EMPTY_SERVICE: Omit<Service, 'id'> = { icon: 'Wrench', title: '', description: '', price_from: 0, price_unit: 'за работу', tags: [], sort_order: 99, active: true };
 const EMPTY_PORTFOLIO: Omit<PortfolioItem, 'id'> = { title: '', tag: '', description: '', icon: 'Fish', photo_url: null, sort_order: 99, active: true };
@@ -539,12 +540,38 @@ export default function Admin() {
                   <input value={editingProduct.tag || ''} onChange={(e) => setEditingProduct({ ...editingProduct, tag: e.target.value })}
                     className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Рептилия, Аквариум…" />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Категория</label>
-                  <select value={editingProduct.category || 'animals'} onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
-                    {PRODUCT_CATS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
+                <div className="col-span-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Раздел каталога</label>
+                    <select
+                      value={editingProduct.section_id ?? ''}
+                      onChange={(e) => {
+                        const sid = e.target.value ? Number(e.target.value) : null;
+                        setEditingProduct({ ...editingProduct, section_id: sid, category_id: null, category: '' });
+                      }}
+                      className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
+                      <option value="">— выберите раздел —</option>
+                      {catalogSections.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Категория</label>
+                    <select
+                      value={editingProduct.category_id ?? ''}
+                      onChange={(e) => {
+                        const cid = e.target.value ? Number(e.target.value) : null;
+                        const section = catalogSections.find(s => s.id === editingProduct.section_id);
+                        const cat = section?.categories.find(c => c.id === cid);
+                        setEditingProduct({ ...editingProduct, category_id: cid, category: cat?.slug || '' });
+                      }}
+                      disabled={!editingProduct.section_id}
+                      className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50">
+                      <option value="">— выберите категорию —</option>
+                      {(catalogSections.find(s => s.id === editingProduct.section_id)?.categories || []).map(c =>
+                        <option key={c.id} value={c.id}>{c.title}</option>
+                      )}
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Иконка</label>
@@ -584,7 +611,9 @@ export default function Admin() {
                     <div className="flex items-center gap-2 mb-0.5">
                       <h3 className="font-semibold text-primary truncate">{p.name}</h3>
                       <Badge variant={p.in_stock ? 'default' : 'secondary'} className="text-xs shrink-0">{p.in_stock ? 'В наличии' : 'Нет'}</Badge>
-                      <Badge variant="outline" className="text-xs shrink-0">{PRODUCT_CATS.find(c => c.id === p.category)?.label}</Badge>
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {catalogSections.flatMap(s => s.categories).find(c => c.id === p.category_id)?.title || p.category || '—'}
+                      </Badge>
                     </div>
                     <p className="text-secondary font-bold text-sm">{p.price.toLocaleString('ru')} ₽</p>
                   </div>
