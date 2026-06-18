@@ -49,7 +49,13 @@ def handler(event: dict, context) -> dict:
     chat_id = os.environ.get('TELEGRAM_CHAT_ID')
     if token and chat_id:
         emoji = '🛒' if source == 'cart' else '🐠'
-        text = f'{emoji} Новая заявка с сайта\n\nИмя: {name}\nКонтакт: {contact}\nСообщение: {message or "—"}'
+        source_label = {'cart': 'Корзина', 'form': 'Форма контактов'}.get(source, source)
+        text = (
+            f"{emoji} Новая заявка — {source_label}\n\n"
+            f"👤 Имя: {name}\n"
+            f"📞 Контакт: {contact}\n"
+            f"💬 Сообщение: {message or '—'}"
+        )
         tg_url = f'https://api.telegram.org/bot{token}/sendMessage'
         payload = urllib.parse.urlencode({'chat_id': chat_id, 'text': text}).encode()
         req = urllib.request.Request(tg_url, data=payload, method='POST')

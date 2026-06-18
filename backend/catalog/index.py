@@ -9,7 +9,7 @@ POST /?action=add_category   — добавить категорию
 POST /?action=toggle_section — вкл/выкл раздел
 POST /?action=order_form     — заявка на заказ
 """
-import json, os, psycopg2
+import json, os, psycopg2, urllib.request, urllib.parse
 
 SCHEMA = 't_p51549197_aqua_terra_project'
 CORS = {
@@ -117,6 +117,28 @@ def handler(event: dict, context) -> dict:
                     VALUES (%s, %s, %s, %s, NOW())
                 """, (name, contact, f"Заказ ({section}): {message}", 'shop_order'))
                 conn.commit()
+
+                # Telegram
+                token = os.environ.get('TELEGRAM_BOT_TOKEN')
+                chat_id = os.environ.get('TELEGRAM_CHAT_ID')
+                if token and chat_id:
+                    text = (
+                        f"🛍 Заявка из магазина\n\n"
+                        f"Раздел: {section or '—'}\n"
+                        f"Имя: {name}\n"
+                        f"Контакт: {contact}\n"
+                        f"Сообщение: {message or '—'}"
+                    )
+                    payload = urllib.parse.urlencode({'chat_id': chat_id, 'text': text}).encode()
+                    req = urllib.request.Request(
+                        f'https://api.telegram.org/bot{token}/sendMessage',
+                        data=payload, method='POST'
+                    )
+                    try:
+                        urllib.request.urlopen(req)
+                    except Exception:
+                        pass
+
                 return ok({'success': True})
 
             # Добавить раздел
