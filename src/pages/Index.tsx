@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import Bubbles from '@/components/Bubbles';
@@ -211,6 +212,7 @@ function CartOrderForm({ onSubmit, sending }: { onSubmit: (contact: string) => v
 
 const Index = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const cart = useCart();
   const { theme, toggle: toggleTheme } = useTheme();
   const [cat, setCat] = useState('all');
@@ -541,7 +543,7 @@ const Index = () => {
               <Button size="lg" onClick={() => scrollTo('services')} className="bg-sand text-primary hover:bg-sand/90 text-base">
                 Наши услуги
               </Button>
-              <Button size="lg" variant="outline" onClick={() => scrollTo('shop')} className="bg-white/10 border-white/40 text-white hover:bg-white/20 text-base">
+              <Button size="lg" variant="outline" onClick={() => navigate('/shop')} className="bg-white/10 border-white/40 text-white hover:bg-white/20 text-base">
                 В магазин <Icon name="ArrowRight" size={18} className="ml-1" />
               </Button>
             </div>
@@ -754,6 +756,11 @@ const Index = () => {
               </Card>
             </div>
           )}
+          <div className="text-center mt-10">
+            <Button size="lg" variant="outline" onClick={() => navigate('/shop')}>
+              Полный каталог <Icon name="ArrowRight" size={18} className="ml-2" />
+            </Button>
+          </div>
         </div>
       </section>
 

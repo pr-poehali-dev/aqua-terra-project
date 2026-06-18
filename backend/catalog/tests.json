@@ -1,0 +1,20 @@
+{
+  "tests": [
+    {
+      "name": "GET sections with categories",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {"id": 1},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET products by section",
+      "method": "GET",
+      "path": "/?section=terrarium",
+      "expectedStatus": 200,
+      "expectedBody": {"id": 1},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

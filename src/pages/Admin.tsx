@@ -7,6 +7,7 @@ import Logo from '@/components/Logo';
 import RichEditor from '@/components/RichEditor';
 import { useToast } from '@/hooks/use-toast';
 
+const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
 const SERVICES_ADMIN = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
@@ -46,6 +47,11 @@ interface PromoCode {
 }
 const EMPTY_PROMO: Omit<PromoCode, 'id' | 'uses_count'> = { code: '', discount: 10, description: '', active: true, max_uses: null };
 
+interface CatalogSection {
+  id: number; slug: string; title: string; description: string;
+  icon: string; sort_order: number; active: boolean; has_order_form: boolean;
+  categories: { id: number; slug: string; title: string; icon: string; sort_order: number; active: boolean }[];
+}
 interface Lead {
   id: number; name: string; contact: string; message: string;
   source: string; read: boolean; created_at: string;
@@ -61,7 +67,7 @@ export default function Admin() {
   const [token, setToken] = useState('');
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'analytics' | 'products' | 'portfolio' | 'services' | 'articles' | 'promos'>('analytics');
+  const [tab, setTab] = useState<'analytics' | 'products' | 'portfolio' | 'services' | 'articles' | 'promos' | 'catalog'>('analytics');
   const [stats, setStats] = useState<Stats | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [promos, setPromos] = useState<PromoCode[]>([]);
@@ -92,11 +98,17 @@ export default function Admin() {
   const [uploadingPortPhoto, setUploadingPortPhoto] = useState(false);
   const portFileRef = useRef<HTMLInputElement>(null);
 
+  // Catalog
+  const [catalogSections, setCatalogSections] = useState<CatalogSection[]>([]);
+  const [newSection, setNewSection] = useState({ slug: '', title: '', description: '', icon: 'Package', has_order_form: false });
+  const [newCategory, setNewCategory] = useState({ section_id: 0, slug: '', title: '', icon: 'Tag' });
+  const [savingCatalog, setSavingCatalog] = useState(false);
+
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token };
 
   const login = async () => {
     setLoading(true);
-    const [ra, rp, rs, rport, rstat, rleads, rpromo] = await Promise.all([
+    const [ra, rp, rs, rport, rstat, rleads, rpromo, rcat] = await Promise.all([
       fetch(ARTICLES_ADMIN, { headers }),
       fetch(PRODUCTS_ADMIN, { headers }),
       fetch(`${SERVICES_ADMIN}?admin=1`, { headers }),
@@ -104,6 +116,7 @@ export default function Admin() {
       fetch(`${ANALYTICS_URL}?type=stats`, { headers }),
       fetch(`${ANALYTICS_URL}?type=leads`, { headers }),
       fetch(PROMO_URL, { headers }),
+      fetch(CATALOG_URL),
     ]);
     if (ra.status === 401) { toast({ title: 'Неверный пароль', variant: 'destructive' }); setLoading(false); return; }
     setArticles(await ra.json());
@@ -113,6 +126,7 @@ export default function Admin() {
     setStats(await rstat.json());
     setLeads(await rleads.json());
     setPromos(await rpromo.json());
+    setCatalogSections(await rcat.json());
     setAuthed(true);
     setLoading(false);
   };
@@ -324,7 +338,7 @@ export default function Admin() {
       {/* Tabs */}
       <div className="border-b border-border bg-background">
         <div className="container px-4 md:px-6 flex gap-0">
-          {([['analytics','📊 Аналитика'], ['products','🛍 Товары'], ['portfolio','🖼 Портфолио'], ['services','💰 Услуги'], ['articles','📝 Статьи'], ['promos','🏷 Промокоды']] as const).map(([t, label]) => (
+          {([['analytics','📊 Аналитика'], ['products','🛍 Товары'], ['portfolio','🖼 Портфолио'], ['services','💰 Услуги'], ['articles','📝 Статьи'], ['promos','🏷 Промокоды'], ['catalog','🗂 Каталог']] as const).map(([t, label]) => (
             <button key={t} onClick={() => { setTab(t); setEditingProduct(null); setEditingPort(null); setEditingSvc(null); setEditingArticle(null); setEditingPromo(null); }}
               className={`relative px-5 py-3 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-primary'}`}>
               {label}
@@ -891,6 +905,118 @@ export default function Admin() {
               )}
             </div>
           )
+        )}
+        {/* === CATALOG TAB === */}
+        {tab === 'catalog' && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-display text-2xl font-bold text-primary">Разделы каталога</h2>
+                <p className="text-muted-foreground text-sm mt-1">Управляйте разделами и категориями магазина</p>
+              </div>
+              <a href="/shop" target="_blank"><Button variant="outline" size="sm"><Icon name="ExternalLink" size={14} className="mr-1" />Открыть магазин</Button></a>
+            </div>
+
+            {/* Список разделов */}
+            <div className="space-y-4">
+              {catalogSections.map(section => (
+                <Card key={section.id} className={`p-5 ${!section.active ? 'opacity-50' : ''}`}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 grid place-items-center">
+                      <Icon name={section.icon} size={20} className="text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">{section.title}</h3>
+                      <p className="text-xs text-muted-foreground">/{section.slug}{section.has_order_form && ' · форма заказа'}</p>
+                    </div>
+                    <Button size="sm" variant={section.active ? 'outline' : 'secondary'}
+                      onClick={async () => {
+                        const r = await fetch(`${CATALOG_URL}?action=toggle_section`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: section.id }) });
+                        const d = await r.json();
+                        setCatalogSections(prev => prev.map(s => s.id === section.id ? { ...s, active: d.active } : s));
+                      }}>
+                      {section.active ? 'Скрыть' : 'Показать'}
+                    </Button>
+                  </div>
+                  {/* Категории */}
+                  <div className="flex flex-wrap gap-2">
+                    {section.categories.map(cat => (
+                      <div key={cat.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm ${cat.active ? 'border-border bg-muted/50' : 'border-dashed opacity-40'}`}>
+                        <Icon name={cat.icon} size={13} className="text-muted-foreground" />
+                        <span>{cat.title}</span>
+                        <button className="ml-1 text-muted-foreground hover:text-primary"
+                          onClick={async () => {
+                            const r = await fetch(`${CATALOG_URL}?action=toggle_category`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: cat.id }) });
+                            const d = await r.json();
+                            setCatalogSections(prev => prev.map(s => s.id === section.id ? {
+                              ...s, categories: s.categories.map(c => c.id === cat.id ? { ...c, active: d.active } : c)
+                            } : s));
+                          }}>
+                          <Icon name={cat.active ? 'EyeOff' : 'Eye'} size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Добавить категорию */}
+                  <div className="mt-4 pt-4 border-t border-border flex gap-2">
+                    <input placeholder="slug" className="h-8 px-2 rounded border border-input bg-background text-sm w-24"
+                      value={newCategory.section_id === section.id ? newCategory.slug : ''}
+                      onChange={e => setNewCategory({ section_id: section.id, slug: e.target.value, title: newCategory.section_id === section.id ? newCategory.title : '', icon: 'Tag' })} />
+                    <input placeholder="Название" className="h-8 px-2 rounded border border-input bg-background text-sm flex-1"
+                      value={newCategory.section_id === section.id ? newCategory.title : ''}
+                      onChange={e => setNewCategory(p => ({ ...p, section_id: section.id, title: e.target.value }))} />
+                    <Button size="sm" disabled={savingCatalog}
+                      onClick={async () => {
+                        if (!newCategory.slug || !newCategory.title || newCategory.section_id !== section.id) return;
+                        setSavingCatalog(true);
+                        await fetch(`${CATALOG_URL}?action=add_category`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCategory) });
+                        const r = await fetch(CATALOG_URL);
+                        setCatalogSections(await r.json());
+                        setNewCategory({ section_id: 0, slug: '', title: '', icon: 'Tag' });
+                        setSavingCatalog(false);
+                        toast({ title: 'Категория добавлена' });
+                      }}>
+                      + Категория
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Добавить раздел */}
+            <Card className="p-5 border-dashed border-2 border-primary/20">
+              <h3 className="font-semibold text-foreground mb-4">Добавить новый раздел</h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <input placeholder="slug (напр: pond)" className="h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                  value={newSection.slug} onChange={e => setNewSection(p => ({ ...p, slug: e.target.value }))} />
+                <input placeholder="Название раздела" className="h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                  value={newSection.title} onChange={e => setNewSection(p => ({ ...p, title: e.target.value }))} />
+                <input placeholder="Описание" className="h-9 px-3 rounded-lg border border-input bg-background text-sm sm:col-span-2"
+                  value={newSection.description} onChange={e => setNewSection(p => ({ ...p, description: e.target.value }))} />
+                <div className="flex items-center gap-3">
+                  <input placeholder="Иконка (Package)" className="h-9 px-3 rounded-lg border border-input bg-background text-sm flex-1"
+                    value={newSection.icon} onChange={e => setNewSection(p => ({ ...p, icon: e.target.value }))} />
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={newSection.has_order_form}
+                      onChange={e => setNewSection(p => ({ ...p, has_order_form: e.target.checked }))} />
+                    Форма заказа
+                  </label>
+                </div>
+                <Button disabled={savingCatalog || !newSection.slug || !newSection.title}
+                  onClick={async () => {
+                    setSavingCatalog(true);
+                    await fetch(`${CATALOG_URL}?action=add_section`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newSection) });
+                    const r = await fetch(CATALOG_URL);
+                    setCatalogSections(await r.json());
+                    setNewSection({ slug: '', title: '', description: '', icon: 'Package', has_order_form: false });
+                    setSavingCatalog(false);
+                    toast({ title: 'Раздел добавлен' });
+                  }}>
+                  {savingCatalog ? 'Сохраняем...' : 'Добавить раздел'}
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
       </main>
     </div>
