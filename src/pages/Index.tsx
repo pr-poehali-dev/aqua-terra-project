@@ -214,6 +214,9 @@ const Index = () => {
   const [cat, setCat] = useState<string>('all');
   const [catalogSections, setCatalogSections] = useState<{id: number; slug: string; title: string; icon: string; active: boolean; categories: {id: number; slug: string; title: string; icon: string; active: boolean}[]}[]>([]);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+  const [shopSearch, setShopSearch] = useState('');
+  const [shopSort, setShopSort] = useState<'default' | 'price_asc' | 'price_desc' | 'name_asc'>('default');
+  const [shopView, setShopView] = useState<'grid3' | 'grid2' | 'list'>('grid3');
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -322,11 +325,17 @@ const Index = () => {
     .filter(s => s.active)
     .flatMap(s => s.categories.filter(c => c.active));
 
-  const filtered = cat === 'all'
-    ? products
-    : products.filter((p) => {
-        return (p as unknown as Record<string, string>)['category_slug'] === cat || p.category === cat;
-      });
+  const filtered = useMemo(() => {
+    const q = shopSearch.trim().toLowerCase();
+    let list = cat === 'all'
+      ? products
+      : products.filter(p => (p as unknown as Record<string, string>)['category_slug'] === cat || p.category === cat);
+    if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || p.tag.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
+    if (shopSort === 'price_asc')  list = [...list].sort((a, b) => a.price - b.price);
+    if (shopSort === 'price_desc') list = [...list].sort((a, b) => b.price - a.price);
+    if (shopSort === 'name_asc')   list = [...list].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    return list;
+  }, [cat, products, shopSearch, shopSort]);
 
   useEffect(() => {
     fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
@@ -798,54 +807,109 @@ const Index = () => {
             {/* Правая часть: мобильный скролл + сетка товаров */}
             <div className="flex-1 min-w-0">
               {/* Мобильный горизонтальный скролл */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-6 md:hidden scrollbar-hide">
-                <button onClick={() => setCat('all')}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
-                    cat === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'
-                  }`}>
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-4 md:hidden scrollbar-hide">
+                <button onClick={() => setCat('all')} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${cat === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
                   <Icon name="LayoutGrid" size={13} />Всё
                 </button>
                 {allCatalogCategories.map((c, i) => (
-                  <button key={`mob-${i}-${c.slug}`} onClick={() => setCat(c.slug)}
-                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
-                      cat === c.slug ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'
-                    }`}>
-                    <Icon name={c.icon} size={13} />
-                    {c.title}
+                  <button key={`mob-${i}-${c.slug}`} onClick={() => setCat(c.slug)} className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${cat === c.slug ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'}`}>
+                    <Icon name={c.icon} size={13} />{c.title}
                   </button>
                 ))}
               </div>
 
-              {filtered.length === 0 && (
-                <p className="text-center text-muted-foreground py-10">Товары загружаются…</p>
-              )}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.map((p) => (
-              <div key={p.id} className="glass-card rounded-2xl overflow-hidden hover-scale group cursor-pointer" onClick={() => setSelectedProduct(p)}>
-                <div className="aspect-[4/3] gradient-deep grid place-items-center text-white/90 relative overflow-hidden">
-                  {p.photo_url
-                    ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover absolute inset-0" />
-                    : <Icon name={p.icon} size={56} className="group-hover:animate-float" />
-                  }
-                  <Badge className="absolute top-3 left-3 bg-sand text-primary hover:bg-sand z-10">{p.tag}</Badge>
+              {/* Тулбар: поиск + сортировка + вид */}
+              <div className="flex flex-wrap items-center gap-2 mb-5">
+                {/* Поиск */}
+                <div className="relative flex-1 min-w-[160px]">
+                  <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <input
+                    value={shopSearch} onChange={e => setShopSearch(e.target.value)}
+                    placeholder="Поиск по товарам…"
+                    className="w-full h-9 pl-9 pr-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  {shopSearch && <button onClick={() => setShopSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><Icon name="X" size={13} /></button>}
                 </div>
-                <div className="p-5 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold text-primary">{p.name}</h3>
-                    <p className="text-secondary font-bold mt-1">{p.price.toLocaleString('ru')} ₽</p>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="shrink-0"
-                    onClick={(e) => { e.stopPropagation(); cart.add({ name: p.name, price: `${p.price}`, icon: p.icon, tag: p.tag }); }}
-                  >
-                    <Icon name="ShoppingCart" size={18} />
-                  </Button>
+
+                {/* Сортировка */}
+                <select value={shopSort} onChange={e => setShopSort(e.target.value as typeof shopSort)}
+                  className="h-9 px-3 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="default">По умолчанию</option>
+                  <option value="price_asc">Дешевле сначала</option>
+                  <option value="price_desc">Дороже сначала</option>
+                  <option value="name_asc">От А до Я</option>
+                </select>
+
+                {/* Вид */}
+                <div className="flex items-center rounded-lg border border-input overflow-hidden">
+                  {([['grid3','LayoutGrid'],['grid2','Grid2x2'],['list','List']] as const).map(([v, icon]) => (
+                    <button key={v} onClick={() => setShopView(v)}
+                      className={`h-9 w-9 grid place-items-center transition-colors ${shopView === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+                      <Icon name={icon} size={15} />
+                    </button>
+                  ))}
                 </div>
+
+                {/* Счётчик */}
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{filtered.length} товаров</span>
               </div>
+
+              {filtered.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  {shopSearch ? <><p className="font-medium mb-1">Ничего не найдено</p><p className="text-sm">Попробуйте другой запрос</p></> : <p>Товары загружаются…</p>}
+                </div>
+              )}
+
+              {/* Сетка / список */}
+              <div className={
+                shopView === 'grid3' ? 'grid sm:grid-cols-2 lg:grid-cols-3 gap-5' :
+                shopView === 'grid2' ? 'grid grid-cols-2 gap-4' :
+                'flex flex-col gap-3'
+              }>
+                {filtered.map((p) => (
+                  shopView === 'list' ? (
+                    /* Список */
+                    <div key={p.id} className="glass-card rounded-2xl overflow-hidden flex gap-4 items-center cursor-pointer hover:border-primary/30 transition-colors border border-transparent p-3" onClick={() => setSelectedProduct(p)}>
+                      <div className="w-20 h-20 rounded-xl shrink-0 gradient-deep grid place-items-center text-white/80 overflow-hidden">
+                        {p.photo_url ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" /> : <Icon name={p.icon} size={28} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <Badge className="bg-sand text-primary hover:bg-sand text-xs mb-1">{p.tag}</Badge>
+                        <h3 className="font-semibold text-primary text-sm leading-tight">{p.name}</h3>
+                        {p.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{p.description}</p>}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <p className="text-secondary font-bold text-sm">{p.price.toLocaleString('ru')} ₽</p>
+                        <Button size="icon" variant="secondary" className="h-8 w-8"
+                          onClick={(e) => { e.stopPropagation(); cart.add({ name: p.name, price: `${p.price}`, icon: p.icon, tag: p.tag }); }}>
+                          <Icon name="ShoppingCart" size={15} />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Сетка (2 или 3 колонки) */
+                    <div key={p.id} className="glass-card rounded-2xl overflow-hidden hover-scale group cursor-pointer" onClick={() => setSelectedProduct(p)}>
+                      <div className={`${shopView === 'grid2' ? 'aspect-square' : 'aspect-[4/3]'} gradient-deep grid place-items-center text-white/90 relative overflow-hidden`}>
+                        {p.photo_url
+                          ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover absolute inset-0" />
+                          : <Icon name={p.icon} size={shopView === 'grid2' ? 44 : 56} className="group-hover:animate-float" />
+                        }
+                        <Badge className="absolute top-3 left-3 bg-sand text-primary hover:bg-sand z-10 text-xs">{p.tag}</Badge>
+                      </div>
+                      <div className="p-4 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className={`font-semibold text-primary ${shopView === 'grid2' ? 'text-sm' : ''} leading-tight`}>{p.name}</h3>
+                          <p className="text-secondary font-bold mt-0.5 text-sm">{p.price.toLocaleString('ru')} ₽</p>
+                        </div>
+                        <Button size="icon" variant="secondary" className="shrink-0 h-9 w-9"
+                          onClick={(e) => { e.stopPropagation(); cart.add({ name: p.name, price: `${p.price}`, icon: p.icon, tag: p.tag }); }}>
+                          <Icon name="ShoppingCart" size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  )
                 ))}
-              </div>{/* grid */}
+              </div>{/* grid/list */}
             </div>{/* правая колонка */}
           </div>{/* flex дерево+товары */}
 
