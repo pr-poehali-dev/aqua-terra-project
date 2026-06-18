@@ -6,6 +6,7 @@ import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import RichEditor from '@/components/RichEditor';
 import ZoneEditor from '@/components/ZoneEditor';
+import PriceZoneEditor from '@/components/PriceZoneEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
@@ -1763,89 +1764,21 @@ export default function Admin() {
                 <Icon name="CircleDollarSign" size={18} />Ценовые зоны выезда
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Укажите центр и 4 зоны с коэффициентами. На карте они отобразятся концентрическими кругами: зелёный → жёлтый → оранжевый → красный.
+                Добавьте точки для каждой зоны — вбейте адрес или кликните на карте. Задайте радиус и коэффициент. Круги одного цвета сливаются.
               </p>
-
-              {/* Центр */}
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Центр (базовая точка)</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Широта</label>
-                    <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
-                      value={priceZones.center_lat}
-                      onChange={e => setPriceZones(p => ({...p, center_lat: parseFloat(e.target.value)}))} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Долгота</label>
-                    <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
-                      value={priceZones.center_lon}
-                      onChange={e => setPriceZones(p => ({...p, center_lon: parseFloat(e.target.value)}))} />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">По умолчанию: Звенигород (55.7328, 36.8517)</p>
-              </div>
-
-              {/* 4 зоны */}
-              <div className="space-y-2 mb-4">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Зоны (от ближней к дальней)</p>
-                {([
-                  { color: '#22c55e', bg: 'bg-green-500/10 border-green-500/30' },
-                  { color: '#eab308', bg: 'bg-yellow-500/10 border-yellow-500/30' },
-                  { color: '#f97316', bg: 'bg-orange-500/10 border-orange-500/30' },
-                  { color: '#ef4444', bg: 'bg-red-500/10 border-red-500/30' },
-                ] as const).map((meta, i) => (
-                  <div key={i} className={`rounded-xl border p-3 ${meta.bg}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
-                      <span className="text-xs font-medium">Зона {i + 1}</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Название</label>
-                        <input className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
-                          value={priceZones.zones[i]?.label || ''}
-                          onChange={e => setPriceZones(p => {
-                            const zones = [...p.zones];
-                            zones[i] = { ...zones[i], label: e.target.value };
-                            return { ...p, zones };
-                          })} />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Радиус (км)</label>
-                        <input type="number" step="5" min="1" className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
-                          value={priceZones.zones[i]?.radius || ''}
-                          onChange={e => setPriceZones(p => {
-                            const zones = [...p.zones];
-                            zones[i] = { ...zones[i], radius: parseFloat(e.target.value) };
-                            return { ...p, zones };
-                          })} />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Коэффициент</label>
-                        <input type="number" step="0.1" min="1" className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs"
-                          value={priceZones.zones[i]?.factor || ''}
-                          onChange={e => setPriceZones(p => {
-                            const zones = [...p.zones];
-                            zones[i] = { ...zones[i], factor: parseFloat(e.target.value) };
-                            return { ...p, zones };
-                          })} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Button disabled={savingPriceZones} onClick={async () => {
-                setSavingPriceZones(true);
-                await fetch(PRICE_ZONES_URL, { method: 'POST', headers, body: JSON.stringify(priceZones) });
-                await loadPriceZones();
-                setSavingPriceZones(false);
-                toast({ title: 'Ценовые зоны сохранены!' });
-              }}>
-                <Icon name="Check" size={14} className="mr-1.5" />
-                {savingPriceZones ? 'Сохраняем...' : 'Сохранить зоны'}
-              </Button>
+              <PriceZoneEditor
+                config={priceZones}
+                apiKey={siteSettings.yandex_maps_key || ''}
+                saving={savingPriceZones}
+                onChange={setPriceZones}
+                onSave={async () => {
+                  setSavingPriceZones(true);
+                  await fetch(PRICE_ZONES_URL, { method: 'POST', headers, body: JSON.stringify(priceZones) });
+                  await loadPriceZones();
+                  setSavingPriceZones(false);
+                  toast({ title: 'Ценовые зоны сохранены!' });
+                }}
+              />
             </Card>
 
             {/* Яндекс Метрика */}

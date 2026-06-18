@@ -75,24 +75,30 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
 
       mapInstance.current = map;
 
-      // Рисуем ценовые зоны — от большего к меньшему (чтобы маленькие были поверх)
+      // Рисуем ценовые зоны по точкам — от большего радиуса к меньшему
       if (hasPriceZones) {
-        const sorted = [...priceZones!.zones].sort((a, b) => b.radius - a.radius);
-        sorted.forEach(zone => {
-          const idx = priceZones!.zones.indexOf(zone);
-          const color = ZONE_COLORS[idx] || ZONE_COLORS[3];
+        const allCircles: { lat: number; lon: number; radius: number; zoneIdx: number; label: string; factor: number }[] = [];
+        priceZones!.zones.forEach((zone, zi) => {
+          (zone.points || []).forEach((pt: any) => {
+            allCircles.push({ lat: pt.lat, lon: pt.lon, radius: pt.radius, zoneIdx: zi, label: zone.label, factor: zone.factor });
+          });
+        });
+        allCircles.sort((a, b) => b.radius - a.radius);
+
+        allCircles.forEach(({ lat, lon, radius, zoneIdx, label, factor }) => {
+          const color = ZONE_COLORS[zoneIdx] || ZONE_COLORS[3];
           const circle = new window.ymaps.Circle(
-            [[centerLat, centerLon], zone.radius * 1000],
-            { hintContent: `${zone.label} — ×${zone.factor}` },
+            [[lat, lon], radius * 1000],
+            { hintContent: `${label} — ×${factor}` },
             {
               fillColor: color.fill + '33',
               strokeColor: color.stroke,
               strokeWidth: 2,
-              fillOpacity: 0.25,
+              fillOpacity: 0.28,
               cursor: 'default',
             }
           );
-          circle.events.add('mouseenter', () => setActiveZone({ label: zone.label, factor: zone.factor }));
+          circle.events.add('mouseenter', () => setActiveZone({ label, factor }));
           circle.events.add('mouseleave', () => setActiveZone(null));
           map.geoObjects.add(circle);
         });
