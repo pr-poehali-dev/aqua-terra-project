@@ -213,6 +213,7 @@ const Index = () => {
   const { theme, toggle: toggleTheme } = useTheme();
   const [cat, setCat] = useState<string>('all');
   const [catalogSections, setCatalogSections] = useState<{id: number; slug: string; title: string; icon: string; active: boolean; categories: {id: number; slug: string; title: string; icon: string; active: boolean}[]}[]>([]);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -330,7 +331,11 @@ const Index = () => {
   useEffect(() => {
     fetch(ARTICLES_URL).then((r) => r.json()).then(setArticles).catch(() => {});
     fetch(PRODUCTS_URL).then((r) => r.json()).then(setProducts).catch(() => {});
-    fetch(CATALOG_URL).then((r) => r.json()).then(setCatalogSections).catch(() => {});
+    fetch(CATALOG_URL).then((r) => r.json()).then((data) => {
+      setCatalogSections(data);
+      const first = data.find((s: {active: boolean; slug: string}) => s.active);
+      if (first) setOpenSections(new Set([first.slug]));
+    }).catch(() => {});
     fetch(PORTFOLIO_URL).then((r) => r.json()).then(setPortfolioItems).catch(() => {});
     fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
     fetch(SETTINGS_URL).then(r => r.json()).then(d => {
@@ -740,30 +745,82 @@ const Index = () => {
             <h2 className="font-display text-4xl md:text-5xl font-bold text-primary section-reveal" style={{animationDelay:'0.1s'}}>Каталог</h2>
             <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>Животные, корма и расходные материалы — фильтруйте по категориям.</p>
           </div>
-          <div className="flex flex-wrap justify-center gap-3 mb-10">
-            {/* Кнопка «Всё» */}
-            <button onClick={() => setCat('all')}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors border ${
-                cat === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'
-              }`}>
-              <Icon name="LayoutGrid" size={16} />Всё
-            </button>
-            {/* Категории из каталога */}
-            {allCatalogCategories.map((c) => (
-              <button key={c.slug} onClick={() => setCat(c.slug)}
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-colors border ${
-                  cat === c.slug ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/40'
+          {/* Дерево + товары */}
+          <div className="flex gap-8 items-start">
+
+            {/* Дерево категорий — сайдбар */}
+            <aside className="w-56 shrink-0 hidden md:block">
+              {/* Всё */}
+              <button onClick={() => setCat('all')}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all mb-1 ${
+                  cat === 'all' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
                 }`}>
-                <Icon name={c.icon} size={16} />
-                {c.title}
+                <Icon name="LayoutGrid" size={15} />
+                Всё
               </button>
-            ))}
-          </div>
-          {filtered.length === 0 && (
-            <p className="text-center text-muted-foreground py-10">Товары загружаются…</p>
-          )}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((p) => (
+
+              {/* Разделы с плюсиком */}
+              <div className="space-y-0.5">
+                {catalogSections.filter(s => s.active).map(section => {
+                  const isOpen = openSections.has(section.slug);
+                  const toggle = () => setOpenSections(prev => {
+                    const next = new Set(prev);
+                    if (isOpen) { next.delete(section.slug); } else { next.add(section.slug); }
+                    return next;
+                  });
+                  return (
+                    <div key={section.slug}>
+                      <button onClick={toggle}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-foreground hover:bg-muted group">
+                        <Icon name={section.icon} size={15} className="text-primary shrink-0" />
+                        <span className="flex-1 text-left">{section.title}</span>
+                        <Icon name={isOpen ? 'Minus' : 'Plus'} size={13} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                      </button>
+                      {isOpen && (
+                        <div className="ml-4 pl-3 border-l border-border space-y-0.5 mb-1">
+                          {section.categories.filter(c => c.active).map(c => (
+                            <button key={`${section.slug}-${c.slug}`} onClick={() => setCat(c.slug)}
+                              className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm transition-all text-left ${
+                                cat === c.slug ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              }`}>
+                              <Icon name={c.icon} size={13} className="shrink-0" />
+                              {c.title}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </aside>
+
+            {/* Правая часть: мобильный скролл + сетка товаров */}
+            <div className="flex-1 min-w-0">
+              {/* Мобильный горизонтальный скролл */}
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-6 md:hidden scrollbar-hide">
+                <button onClick={() => setCat('all')}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+                    cat === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'
+                  }`}>
+                  <Icon name="LayoutGrid" size={13} />Всё
+                </button>
+                {allCatalogCategories.map((c, i) => (
+                  <button key={`mob-${i}-${c.slug}`} onClick={() => setCat(c.slug)}
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${
+                      cat === c.slug ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground'
+                    }`}>
+                    <Icon name={c.icon} size={13} />
+                    {c.title}
+                  </button>
+                ))}
+              </div>
+
+              {filtered.length === 0 && (
+                <p className="text-center text-muted-foreground py-10">Товары загружаются…</p>
+              )}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filtered.map((p) => (
               <div key={p.id} className="glass-card rounded-2xl overflow-hidden hover-scale group cursor-pointer" onClick={() => setSelectedProduct(p)}>
                 <div className="aspect-[4/3] gradient-deep grid place-items-center text-white/90 relative overflow-hidden">
                   {p.photo_url
@@ -787,8 +844,10 @@ const Index = () => {
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
+                ))}
+              </div>{/* grid */}
+            </div>{/* правая колонка */}
+          </div>{/* flex дерево+товары */}
 
           {/* Product modal */}
           {selectedProduct && (
