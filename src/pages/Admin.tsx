@@ -7,6 +7,7 @@ import Logo from '@/components/Logo';
 import RichEditor from '@/components/RichEditor';
 import ZoneEditor from '@/components/ZoneEditor';
 import PriceZoneEditor from '@/components/PriceZoneEditor';
+import ClientLocationEditor from '@/components/ClientLocationEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
@@ -1778,6 +1779,20 @@ export default function Admin() {
                   setSavingPriceZones(false);
                   toast({ title: 'Ценовые зоны сохранены!' });
                 }}
+              />
+            </Card>
+
+            {/* Клиентские локации */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 mb-1">
+                <Icon name="Users" size={18} />География клиентов
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Добавьте адреса клиентов — на карте появятся синие зоны. Там где клиентов много, зоны сольются в одно пятно.
+              </p>
+              <ClientLocationEditor
+                apiKey={siteSettings.yandex_maps_key || ''}
+                adminToken={token}
               />
             </Card>
 
