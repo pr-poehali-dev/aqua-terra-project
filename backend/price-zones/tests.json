@@ -5,7 +5,7 @@
       "method": "GET",
       "path": "/",
       "expectedStatus": 200,
-      "expectedBody": {"ring1_km": 10.0, "active": true},
+      "expectedBody": {"ring1_factor": 1.0, "active": true},
       "bodyMatcher": "partial"
     }
   ]

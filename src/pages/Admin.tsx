@@ -164,18 +164,16 @@ export default function Admin() {
   const loadZones = () => fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
   // Ценовые зоны
   interface PriceZoneConfig {
-    ring1_km: number; ring1_factor: number; ring1_label: string;
-    ring2_km: number; ring2_factor: number; ring2_label: string;
-    ring3_km: number; ring3_factor: number; ring3_label: string;
-    ring4_km: number; ring4_factor: number; ring4_label: string;
-    points: { lat: number; lon: number; address: string }[];
+    ring1_factor: number; ring1_label: string;
+    ring2_factor: number; ring2_label: string;
+    ring3_factor: number; ring3_label: string;
+    points: { lat: number; lon: number; address: string; r1_km: number; r2_km: number; r3_km: number }[];
     active: boolean;
   }
   const DEFAULT_PRICE_ZONES: PriceZoneConfig = {
-    ring1_km: 10, ring1_factor: 1.0, ring1_label: 'Рядом',
-    ring2_km: 25, ring2_factor: 1.3, ring2_label: 'Недалеко',
-    ring3_km: 45, ring3_factor: 1.6, ring3_label: 'Далеко',
-    ring4_km: 70, ring4_factor: 2.0, ring4_label: 'Очень далеко',
+    ring1_factor: 1.0, ring1_label: 'Рядом',
+    ring2_factor: 1.5, ring2_label: 'Недалеко',
+    ring3_factor: 2.0, ring3_label: 'Далеко',
     points: [], active: true,
   };
   const [priceZones, setPriceZones] = useState<PriceZoneConfig>(DEFAULT_PRICE_ZONES);
