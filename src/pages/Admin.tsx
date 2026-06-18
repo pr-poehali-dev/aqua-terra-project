@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
 const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
+const ZONES_URL = 'https://functions.poehali.dev/0092227c-949a-4bfa-afca-6c591a34e572';
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
 const SERVICES_ADMIN = 'https://functions.poehali.dev/830e0abf-4c6e-434b-b914-bacffaa6c73f';
@@ -152,6 +153,12 @@ export default function Admin() {
   const [tgStatus, setTgStatus] = useState<{connected: boolean; bot_name: string | null; has_token: boolean; has_chat_id: boolean} | null>(null);
   const [tgTesting, setTgTesting] = useState(false);
   const [editingFaq, setEditingFaq] = useState<{id?: number; q: string; a: string; sort_order: number} | null>(null);
+  // Зоны обслуживания
+  interface ServiceZone { id: number; name: string; color: string; opacity: number; zone_type: 'circle' | 'polygon'; coordinates: [number,number][]; center_lat: number|null; center_lon: number|null; radius_km: number|null; sort_order: number; active: boolean; }
+  const [zones, setZones] = useState<ServiceZone[]>([]);
+  const [editingZone, setEditingZone] = useState<Partial<ServiceZone> | null>(null);
+  const [savingZone, setSavingZone] = useState(false);
+  const loadZones = () => fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
 
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token };
 
@@ -190,6 +197,7 @@ export default function Admin() {
     setQuizQuestions(sd.quiz || []);
     setQuizResults(sd.quiz_results || {});
     fetch(`${LEAD_URL}?action=status`, { headers }).then(r => r.json()).then(setTgStatus).catch(() => {});
+    fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
     setAuthed(true);
     setLoading(false);
   };
@@ -1640,6 +1648,142 @@ export default function Admin() {
                   ))}
                 </div>
               </div>
+            </Card>
+
+            {/* Зоны обслуживания */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2">
+                  <Icon name="MapPin" size={18} />Зоны обслуживания
+                </h3>
+                <Button size="sm" onClick={() => setEditingZone({ name: '', color: '#22c55e', opacity: 0.25, zone_type: 'circle', center_lat: 55.7328, center_lon: 36.8517, radius_km: 10, coordinates: [], sort_order: 99, active: true })}>
+                  + Добавить зону
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">Зоны отображаются на карте в секции «Контакты». Сначала добавьте ключ Яндекс Карт ниже.</p>
+
+              {/* Ключ Яндекс Карт */}
+              <div className="mb-5">
+                <label className="text-xs text-muted-foreground mb-1 block">Ключ Яндекс Карт (JavaScript API)</label>
+                <div className="flex gap-2">
+                  <input placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                    className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={siteSettings.yandex_maps_key || ''}
+                    onChange={e => setSiteSettings(p => ({...p, yandex_maps_key: e.target.value}))} />
+                  <Button size="sm" disabled={savingSettings} onClick={async () => {
+                    setSavingSettings(true);
+                    await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ yandex_maps_key: siteSettings.yandex_maps_key || '' }) });
+                    setSavingSettings(false); toast({ title: 'Ключ сохранён!' });
+                  }}>{savingSettings ? '...' : 'Сохранить'}</Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Получить бесплатно на <span className="text-primary">developer.tech.yandex.ru</span> → JavaScript API и HTTP Геокодер</p>
+              </div>
+
+              {/* Список зон */}
+              <div className="space-y-2">
+                {zones.map(zone => (
+                  <div key={zone.id} className={`flex items-center gap-3 p-3 rounded-xl border ${zone.active ? 'border-border' : 'border-dashed opacity-50'}`}>
+                    <span className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: zone.color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{zone.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {zone.zone_type === 'circle'
+                          ? `Круг · ${zone.radius_km} км · ${zone.center_lat?.toFixed(4)}, ${zone.center_lon?.toFixed(4)}`
+                          : `Полигон · ${zone.coordinates?.length || 0} точек`}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="sm" variant="ghost" onClick={() => setEditingZone({...zone})}>
+                        <Icon name="Pencil" size={13} />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={async () => {
+                        await fetch(`${ZONES_URL}?id=${zone.id}`, { method: 'PUT', headers, body: JSON.stringify({...zone, active: !zone.active}) });
+                        loadZones();
+                      }}>
+                        <Icon name={zone.active ? 'EyeOff' : 'Eye'} size={13} />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={async () => {
+                        if (!confirm(`Удалить зону «${zone.name}»?`)) return;
+                        await fetch(`${ZONES_URL}?id=${zone.id}`, { method: 'DELETE', headers });
+                        loadZones(); toast({ title: 'Зона удалена' });
+                      }}>
+                        <Icon name="Trash2" size={13} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {zones.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Зон пока нет</p>}
+              </div>
+
+              {/* Форма редактирования зоны */}
+              {editingZone && (
+                <div className="mt-4 p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
+                  <p className="text-sm font-semibold text-primary">{editingZone.id ? 'Редактировать зону' : 'Новая зона'}</p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground mb-1 block">Название</label>
+                      <input className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                        value={editingZone.name || ''} onChange={e => setEditingZone(p => ({...p, name: e.target.value}))} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Тип зоны</label>
+                      <select className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                        value={editingZone.zone_type || 'circle'} onChange={e => setEditingZone(p => ({...p, zone_type: e.target.value as 'circle' | 'polygon'}))}>
+                        <option value="circle">Круг (радиус)</option>
+                        <option value="polygon">Полигон (точки)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Цвет</label>
+                      <div className="flex gap-2">
+                        <input type="color" className="h-9 w-12 rounded-lg border border-input cursor-pointer"
+                          value={editingZone.color || '#22c55e'} onChange={e => setEditingZone(p => ({...p, color: e.target.value}))} />
+                        <span className="text-sm flex items-center text-muted-foreground">{editingZone.color}</span>
+                      </div>
+                    </div>
+                    {editingZone.zone_type === 'circle' && (<>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Широта центра</label>
+                        <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                          value={editingZone.center_lat ?? ''} onChange={e => setEditingZone(p => ({...p, center_lat: parseFloat(e.target.value)}))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Долгота центра</label>
+                        <input type="number" step="0.0001" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                          value={editingZone.center_lon ?? ''} onChange={e => setEditingZone(p => ({...p, center_lon: parseFloat(e.target.value)}))} />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Радиус (км)</label>
+                        <input type="number" step="1" className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm"
+                          value={editingZone.radius_km ?? ''} onChange={e => setEditingZone(p => ({...p, radius_km: parseFloat(e.target.value)}))} />
+                      </div>
+                    </>)}
+                    {editingZone.zone_type === 'polygon' && (
+                      <div className="sm:col-span-2">
+                        <label className="text-xs text-muted-foreground mb-1 block">Координаты точек (JSON, формат: [[lat,lon], ...])</label>
+                        <textarea rows={3} className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+                          value={JSON.stringify(editingZone.coordinates || [])}
+                          onChange={e => { try { setEditingZone(p => ({...p, coordinates: JSON.parse(e.target.value)})); } catch (err) { void err; } }} />
+                        <p className="text-xs text-muted-foreground mt-1">Пример: [[55.72,37.20],[55.72,37.55],[55.87,37.55],[55.87,37.20]]</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button disabled={savingZone || !editingZone.name} onClick={async () => {
+                      setSavingZone(true);
+                      if (editingZone.id) {
+                        await fetch(`${ZONES_URL}?id=${editingZone.id}`, { method: 'PUT', headers, body: JSON.stringify(editingZone) });
+                      } else {
+                        await fetch(ZONES_URL, { method: 'POST', headers, body: JSON.stringify(editingZone) });
+                      }
+                      await loadZones();
+                      setEditingZone(null); setSavingZone(false);
+                      toast({ title: editingZone.id ? 'Зона обновлена!' : 'Зона добавлена!' });
+                    }}>{savingZone ? 'Сохраняем...' : editingZone.id ? 'Сохранить' : 'Добавить'}</Button>
+                    <Button variant="outline" onClick={() => setEditingZone(null)}>Отмена</Button>
+                  </div>
+                </div>
+              )}
             </Card>
 
             {/* Яндекс Метрика */}

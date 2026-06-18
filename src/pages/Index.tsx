@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
 import { useTheme } from '@/hooks/use-theme';
+import ServiceZoneMap from '@/components/ServiceZoneMap';
 
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
@@ -1168,7 +1169,8 @@ const Index = () => {
 
       {/* Contacts */}
       <section id="contacts" className="py-24 container px-4 md:px-6">
-        <Card className="overflow-hidden grid md:grid-cols-2">
+        <Card className="overflow-hidden">
+        <div className="grid md:grid-cols-2">
           <div className="gradient-deep p-10 md:p-12 text-white">
             <h2 className="font-display text-4xl font-bold mb-4">Свяжитесь с нами</h2>
             <p className="text-white/80 mb-8">Расскажите о задаче — подберём решение под ваш интерьер и бюджет.</p>
@@ -1230,6 +1232,22 @@ const Index = () => {
               {sending ? 'Отправляем…' : 'Отправить заявку'}
             </Button>
           </form>
+        </div>
+        {/* Карта зон обслуживания */}
+        <div className="border-t border-border">
+          <div className="p-6 pb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+              <p className="font-semibold text-foreground">Зоны выезда</p>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Зелёным отмечены районы, куда мы выезжаем. Наведи на зону, чтобы узнать её название.</p>
+          </div>
+          <ServiceZoneMap
+            apiKey={siteSettings.yandex_maps_key}
+            height="380px"
+            className="rounded-none"
+          />
+        </div>
         </Card>
       </section>
 
