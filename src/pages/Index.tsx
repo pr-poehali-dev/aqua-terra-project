@@ -1172,12 +1172,18 @@ const Index = () => {
           <div className="gradient-deep p-10 md:p-12 text-white">
             <h2 className="font-display text-4xl font-bold mb-4">Свяжитесь с нами</h2>
             <p className="text-white/80 mb-8">Расскажите о задаче — подберём решение под ваш интерьер и бюджет.</p>
-            <p className="text-white/70 text-sm mb-5 -mt-4">Алексей Мосягин</p>
+            <p className="text-white/70 text-sm mb-5 -mt-4">{siteSettings.contacts_name || 'MAX'}</p>
             <ul className="space-y-4 text-white/90">
               <li className="flex items-center gap-3">
                 <Icon name="Phone" size={20} />
                 <a href={`tel:${(siteSettings.contacts_phone || '+79055337226').replace(/\s/g,'')}`} className="hover:text-white transition-colors">{siteSettings.contacts_phone || '+7 905 533 7226'}</a>
               </li>
+              {siteSettings.contacts_telegram && (
+              <li className="flex items-center gap-3">
+                <Icon name="Send" size={20} />
+                <a href={`https://t.me/${siteSettings.contacts_telegram}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">@{siteSettings.contacts_telegram}</a>
+              </li>
+              )}
               {siteSettings.contacts_email && (
               <li className="flex items-center gap-3">
                 <Icon name="Mail" size={20} />
@@ -1191,18 +1197,14 @@ const Index = () => {
               </li>
               )}
             </ul>
-            <div className="flex gap-3 mt-8">
-              {siteSettings.contacts_telegram && (
-              <a href={`https://t.me/${siteSettings.contacts_telegram}`} target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-                <Icon name="Send" size={20} />
+            {siteSettings.contacts_telegram && (
+            <div className="mt-8">
+              <a href={`https://t.me/${siteSettings.contacts_telegram}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium">
+                <Icon name="Send" size={18} />Написать в Telegram
               </a>
-              )}
-              {siteSettings.contacts_whatsapp && (
-              <a href={`https://wa.me/${siteSettings.contacts_whatsapp}`} target="_blank" rel="noopener noreferrer" className="grid place-items-center w-11 h-11 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-                <Icon name="MessageCircle" size={20} />
-              </a>
-              )}
             </div>
+            )}
           </div>
           <form className="p-10 md:p-12 space-y-4" onSubmit={submitLead}>
             <input
@@ -1215,7 +1217,7 @@ const Index = () => {
               value={form.contact}
               onChange={(e) => setForm({ ...form, contact: e.target.value })}
               className="w-full h-12 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Телефон или email"
+              placeholder="Телефон или Telegram"
             />
             <textarea
               rows={4}
