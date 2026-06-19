@@ -96,62 +96,73 @@ function drawFish(ctx:CanvasRenderingContext2D,x:number,y:number,angle:number,wa
 }
 
 // Сачок аквариумиста — вид сверху, опускается в воду вертикально
-// x,y — позиция центра рамки сачка; depth — насколько опущен (0=у поверхности,1=полностью внутри)
 function drawNet(ctx:CanvasRenderingContext2D,x:number,y:number,_angle:number,lunge:number) {
-  ctx.save();ctx.translate(x,y);
+  const W2=22, H2=20;
+  const netDip = lunge * 60;
+  // Позиция рамки сачка (двигается вниз при броске)
+  const frameY = y + netDip;
 
-  const depth = lunge; // 0..1
-  const netDip = depth * 60;  // сколько пикселей сачок опустился вниз
-  const W2=22, H2=20; // полуразмеры квадратной рамки
+  // Рука всегда у верхнего края canvas (абсолютная Y=28)
+  const handAbsY = 28;
+  const handX = x;
 
-  // ── РУЧКА (уходит вверх за экран) ──────────────────────────────────────
-  // Витая ручка — имитируем скруткой чередующихся полос
-  const handleLen = 90 + netDip; // ручка длиннее когда опускается
-  const hx0=0, hy0=-H2-netDip;  // начало у рамки
-  const hx1=0, hy1=hy0-handleLen; // конец ручки (уходит за верх)
-
-  // Основной стержень ручки
-  ctx.beginPath();ctx.moveTo(hx0,hy0);ctx.lineTo(hx1,hy1);
+  // ── РУЧКА от рамки до руки ────────────────────────────────────────────
+  ctx.save();
+  // Основной стержень
+  ctx.beginPath();ctx.moveTo(x, frameY - H2);ctx.lineTo(handX, handAbsY + 12);
   ctx.strokeStyle='#16a34a';ctx.lineWidth=5;ctx.lineCap='round';ctx.stroke();
-  // Витая текстура
-  for(let i=0;i<14;i++){
-    const t=i/13;
-    const hy=hy0+(hy1-hy0)*t;
+  // Витая текстура — точки вдоль ручки
+  const steps=16;
+  for(let i=0;i<steps;i++){
+    const t=i/steps;
+    const px=handX+(x-handX)*0;
+    const py=handAbsY+12+(frameY-H2-(handAbsY+12))*t;
     const off=(i%2===0)?-3:3;
-    ctx.beginPath();ctx.arc(hx0+off,hy,2,0,Math.PI*2);
+    ctx.beginPath();ctx.arc(px+off,py,2,0,Math.PI*2);
     ctx.fillStyle='#15803d';ctx.fill();
   }
-  // Петля на конце ручки
-  ctx.beginPath();ctx.ellipse(hx1,hy1-6,7,5,0,0,Math.PI*2);
-  ctx.strokeStyle='#16a34a';ctx.lineWidth=4;ctx.stroke();
+  ctx.restore();
 
-  // ── РУКА, держащая ручку (видна у верхнего края) ───────────────────────
-  const handY = hy1 + 10;
-  // Ладонь
-  ctx.beginPath();ctx.ellipse(hx1,handY,13,9,0.15,0,Math.PI*2);
-  const skinG=ctx.createRadialGradient(hx1,handY,0,hx1,handY,13);
-  skinG.addColorStop(0,'#fcd5a8');skinG.addColorStop(1,'#e8a87c');
-  ctx.fillStyle=skinG;ctx.fill();
-  ctx.strokeStyle='#c8875a';ctx.lineWidth=1;ctx.stroke();
-  // Пальцы (4 штуки)
+  // ── РУКА (зафиксирована у верхнего края) ──────────────────────────────
+  ctx.save();ctx.translate(handX, handAbsY);
+
+  // Манжета рукава (рисуем первой — она сзади)
+  ctx.beginPath();ctx.ellipse(0,14,18,9,0,0,Math.PI*2);
+  ctx.fillStyle='#1d4ed8';ctx.fill();
+  ctx.strokeStyle='#1e40af';ctx.lineWidth=1;ctx.stroke();
+  // Полоска манжеты
+  ctx.beginPath();ctx.ellipse(0,14,18,9,0,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=2;ctx.stroke();
+
+  // Пальцы
   for(let f=0;f<4;f++){
-    const fx=hx1-9+f*6,fy=handY-7;
-    ctx.beginPath();ctx.ellipse(fx,fy,3,5,f*0.05-0.1,0,Math.PI*2);
+    const fx=-9+f*6,fy=-9;
+    ctx.beginPath();ctx.ellipse(fx,fy,3.5,6,f*0.06-0.12,0,Math.PI*2);
     ctx.fillStyle='#fcd5a8';ctx.fill();
     ctx.strokeStyle='#c8875a';ctx.lineWidth=0.8;ctx.stroke();
+    // сустав
+    ctx.beginPath();ctx.moveTo(fx-2,fy+2);ctx.lineTo(fx+2,fy+2);
+    ctx.strokeStyle='#d4956a';ctx.lineWidth=0.7;ctx.stroke();
   }
-  // Большой палец
-  ctx.beginPath();ctx.ellipse(hx1+12,handY+2,4,3,0.5,0,Math.PI*2);
+  // Большой палец (сбоку)
+  ctx.beginPath();ctx.ellipse(14,4,4,3.5,1.1,0,Math.PI*2);
   ctx.fillStyle='#fcd5a8';ctx.fill();
   ctx.strokeStyle='#c8875a';ctx.lineWidth=0.8;ctx.stroke();
 
-  // Манжета рукава
-  ctx.beginPath();ctx.ellipse(hx1,handY+8,14,6,0,0,Math.PI*2);
-  ctx.fillStyle='#1d4ed8';ctx.fill();
-  ctx.strokeStyle='#1e40af';ctx.lineWidth=1;ctx.stroke();
+  // Ладонь
+  ctx.beginPath();ctx.ellipse(0,4,13,10,0,0,Math.PI*2);
+  const sg=ctx.createRadialGradient(0,4,0,0,4,13);
+  sg.addColorStop(0,'#fde5c4');sg.addColorStop(1,'#e8a87c');
+  ctx.fillStyle=sg;ctx.fill();
+  ctx.strokeStyle='#c8875a';ctx.lineWidth=1;ctx.stroke();
+  // Линии ладони
+  ctx.beginPath();ctx.moveTo(-8,2);ctx.quadraticCurveTo(0,6,8,2);
+  ctx.strokeStyle='rgba(180,100,60,0.3)';ctx.lineWidth=1;ctx.stroke();
 
-  // ── КВАДРАТНАЯ РАМКА САЧКА ─────────────────────────────────────────────
-  ctx.translate(0, netDip);  // опускаем на глубину
+  ctx.restore();
+
+  // ── КВАДРАТНАЯ РАМКА САЧКА (в абсолютных координатах) ─────────────────
+  ctx.save();ctx.translate(x, frameY);
 
   // Тень рамки
   ctx.beginPath();ctx.rect(-W2+2,-H2+2,W2*2,H2*2);
@@ -169,11 +180,7 @@ function drawNet(ctx:CanvasRenderingContext2D,x:number,y:number,_angle:number,lu
   // ── СЕТКА внутри рамки ─────────────────────────────────────────────────
   ctx.save();
   ctx.beginPath();ctx.rect(-W2,-H2,W2*2,H2*2);ctx.clip();
-
-  // Фон сетки — зелёный полупрозрачный
   ctx.fillStyle='rgba(20,160,60,0.15)';ctx.fillRect(-W2,-H2,W2*2,H2*2);
-
-  // Нити сетки — диагональная сетка как у настоящего сачка
   ctx.strokeStyle='rgba(22,163,74,0.65)';ctx.lineWidth=0.8;
   const step=7;
   for(let d=-W2*2;d<W2*2;d+=step){
@@ -182,22 +189,12 @@ function drawNet(ctx:CanvasRenderingContext2D,x:number,y:number,_angle:number,lu
   for(let d=-W2*2;d<W2*2;d+=step){
     ctx.beginPath();ctx.moveTo(d+H2,-H2);ctx.lineTo(d-H2,H2);ctx.stroke();
   }
-
-  // Мешок сетки (провисание)
-  const sag = 8+depth*6;
+  // Мешок сетки
+  const sag=8+lunge*6;
   ctx.beginPath();
-  ctx.moveTo(-W2,H2);
-  ctx.quadraticCurveTo(-W2+8,H2+sag,0,H2+sag);
-  ctx.quadraticCurveTo(W2-8,H2+sag,W2,H2);
+  ctx.moveTo(-W2,H2);ctx.quadraticCurveTo(0,H2+sag*2,W2,H2);
   ctx.strokeStyle='rgba(22,163,74,0.5)';ctx.lineWidth=1.5;ctx.stroke();
   ctx.restore();
-
-  // Соединительные тросики рамки с ручкой
-  ctx.translate(0,-netDip); // возвращаем координаты
-  ctx.beginPath();
-  ctx.moveTo(-W2+2,-H2);ctx.lineTo(hx0-3,hy0+2);
-  ctx.moveTo(W2-2,-H2);ctx.lineTo(hx0+3,hy0+2);
-  ctx.strokeStyle='#16a34a';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();
 
   ctx.restore();
 }
