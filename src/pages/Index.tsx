@@ -1260,15 +1260,16 @@ const Index = () => {
             </Button>
           </form>
         </div>
-        {/* Карта зон обслуживания */}
-        <div className="border-t border-border">
-          <div className="p-6 pb-2">
+        </Card>
+        {/* Карта зон обслуживания — вне Card чтобы overflow-hidden не блокировал контролы */}
+        <div className="border border-border border-t-0 rounded-b-2xl" style={{ overflow: 'clip' }}>
+          <div className="p-6 pb-2 bg-card">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
               <p className="font-semibold text-foreground">Зоны выезда</p>
             </div>
             <p className="text-sm text-muted-foreground mb-2">Зелёные зоны — работаем здесь постоянно. Чем дальше от них — тем выше коэффициент выезда. Наведи на зону, чтобы узнать.</p>
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3 mb-2">
               {[
                 { color: 'bg-green-500',  hint: 'работаем постоянно' },
                 { color: 'bg-yellow-500', hint: 'чуть дороже' },
@@ -1284,10 +1285,9 @@ const Index = () => {
           <ServiceZoneMap
             apiKey={siteSettings.yandex_maps_key}
             height="380px"
-            className="rounded-none"
+            className="rounded-none border-0"
           />
         </div>
-        </Card>
       </section>
 
       {/* Quiz */}
