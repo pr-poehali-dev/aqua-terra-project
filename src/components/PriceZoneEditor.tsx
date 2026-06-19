@@ -84,43 +84,39 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       return [gp[0] - mapGlobalCenter[0] + W/2, gp[1] - mapGlobalCenter[1] + H/2];
     };
 
-    const maxR = config.r3_km * 1000;
-    const pts = config.points.map(pt => {
-      const [cx, cy] = toPage([pt.lat, pt.lon]);
-      const edgeCoord = (window as any).ymaps.coordSystem.geo.solveDirectProblem([pt.lat, pt.lon], [0, 1], maxR).endPoint;
-      const [ex, ey] = toPage(edgeCoord);
-      const rPx = Math.sqrt((ex-cx)**2 + (ey-cy)**2);
-      return { cx, cy, rPx };
-    });
+    const getR = (coord: number[], distM: number) => {
+      const edge = (window as any).ymaps.coordSystem.geo.solveDirectProblem(coord, [0, 1], distM).endPoint;
+      return Math.abs(toPage(edge)[0] - toPage(coord)[0]);
+    };
 
-    const imgData = ctx.createImageData(W, H);
-    const data = imgData.data;
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        let minT = Infinity;
-        for (const { cx, cy, rPx } of pts) {
-          const t = Math.sqrt((x-cx)**2 + (y-cy)**2) / rPx;
-          if (t < minT) minT = t;
-        }
-        if (minT >= 1) continue;
-        let r, g, b;
-        if (minT < 0.5) {
-          const t2 = minT / 0.5;
-          r = Math.round(20 + (230-20)*t2);
-          g = Math.round(200 + (180-200)*t2);
-          b = Math.round(80 + (0-80)*t2);
-        } else {
-          const t2 = (minT-0.5)/0.5;
-          r = Math.round(230 + (220-230)*t2);
-          g = Math.round(180 + (50-180)*t2);
-          b = Math.round(0 + (50-0)*t2);
-        }
-        const a = Math.round(Math.pow(1 - minT, 0.7) * 0.38 * 255);
-        const i = (y*W + x)*4;
-        data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    config.points.forEach(pt => {
+      const [cx, cy] = toPage([pt.lat, pt.lon]);
+      const r1 = getR([pt.lat, pt.lon], (config.r1_km ?? 10) * 1000);
+      const r2 = getR([pt.lat, pt.lon], (config.r2_km ?? 25) * 1000);
+      const r3 = getR([pt.lat, pt.lon], (config.r3_km ?? 50) * 1000);
+
+      const g3 = ctx.createRadialGradient(cx, cy, r2, cx, cy, r3);
+      g3.addColorStop(0,   'rgba(239,68,68,0)');
+      g3.addColorStop(0.3, 'rgba(239,68,68,0.32)');
+      g3.addColorStop(1,   'rgba(239,68,68,0)');
+      ctx.beginPath(); ctx.arc(cx, cy, r3, 0, Math.PI*2);
+      ctx.fillStyle = g3; ctx.fill();
+
+      const g2 = ctx.createRadialGradient(cx, cy, r1, cx, cy, r2);
+      g2.addColorStop(0,   'rgba(234,179,8,0)');
+      g2.addColorStop(0.3, 'rgba(234,179,8,0.38)');
+      g2.addColorStop(1,   'rgba(234,179,8,0)');
+      ctx.beginPath(); ctx.arc(cx, cy, r2, 0, Math.PI*2);
+      ctx.fillStyle = g2; ctx.fill();
+
+      const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, r1);
+      g1.addColorStop(0,   'rgba(34,197,94,0.45)');
+      g1.addColorStop(0.6, 'rgba(34,197,94,0.35)');
+      g1.addColorStop(1,   'rgba(34,197,94,0)');
+      ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI*2);
+      ctx.fillStyle = g1; ctx.fill();
+    });
   }, [config]);
 
   // Инициализация карты
