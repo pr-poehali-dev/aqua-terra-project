@@ -54,6 +54,7 @@ function gradientColor(t: number): string {
 
 export default function ServiceZoneMap({ apiKey, height = '420px', className = '' }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const mapBuilt = useRef(false);
   const zonesRef = useRef<ServiceZone[]>([]);
@@ -62,7 +63,16 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
   const [priceConfig, setPriceConfig] = useState<PriceConfig | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
-  const [hovered, setHovered] = useState<{ label: string; factor: number } | null>(null);
+
+  const showTooltip = (label: string, factor: number) => {
+    if (!tooltipRef.current) return;
+    tooltipRef.current.textContent = `${label} — коэффициент ×${factor}`;
+    tooltipRef.current.style.display = 'block';
+  };
+  const hideTooltip = () => {
+    if (!tooltipRef.current) return;
+    tooltipRef.current.style.display = 'none';
+  };
 
   useEffect(() => {
     fetch(ZONES_URL).then(r => r.json()).then(d => { zonesRef.current = d; setZones(d); }).catch(() => {});
@@ -159,8 +169,8 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
                 cursor: 'default',
               }
             );
-            hit.events.add('mouseenter', () => setHovered({ label, factor }));
-            hit.events.add('mouseleave', () => setHovered(null));
+            hit.events.add('mouseenter', () => showTooltip(label, factor));
+            hit.events.add('mouseleave', () => hideTooltip());
             map.geoObjects.add(hit);
           });
         });
@@ -210,11 +220,7 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
 
 
 
-      {hovered && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-foreground text-background text-sm font-medium px-4 py-2 rounded-xl shadow-lg pointer-events-none whitespace-nowrap">
-          {hovered.label} — коэффициент ×{hovered.factor}
-        </div>
-      )}
+      <div ref={tooltipRef} style={{ display: 'none' }} className="absolute top-4 left-1/2 -translate-x-1/2 bg-foreground text-background text-sm font-medium px-4 py-2 rounded-xl shadow-lg pointer-events-none whitespace-nowrap" />
 
       {!loaded && (
         <div className="absolute inset-0 bg-muted/80 flex items-center justify-center rounded-2xl">
