@@ -491,7 +491,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground pb-14 md:pb-0">
       {/* Search overlay */}
       {searchOpen && (
         <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 px-4" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
@@ -564,7 +564,7 @@ const Index = () => {
 
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-background/80 border-b border-border">
-        <div className="container flex items-center justify-between h-20 px-4 md:px-6">
+        <div className="container flex items-center justify-between h-14 md:h-20 px-4 md:px-6">
           <button onClick={() => scrollTo('home')}>
             <Logo size="sm" />
           </button>
@@ -575,62 +575,62 @@ const Index = () => {
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             <Button onClick={() => scrollTo('contacts')} className="hidden md:inline-flex">Связаться</Button>
             {/* Search */}
-            <button onClick={() => setSearchOpen(true)} className="grid place-items-center w-11 h-11 rounded-xl border border-border hover:bg-muted transition-colors">
-              <Icon name="Search" size={20} />
+            <button onClick={() => setSearchOpen(true)} className="grid place-items-center w-9 h-9 md:w-11 md:h-11 rounded-xl border border-border hover:bg-muted transition-colors">
+              <Icon name="Search" size={18} />
             </button>
             {/* Theme toggle */}
-            <button onClick={toggleTheme} className="grid place-items-center w-11 h-11 rounded-xl border border-border hover:bg-muted transition-colors" title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
-              <Icon name={theme === 'dark' ? 'Sun' : 'Moon'} size={20} />
+            <button onClick={toggleTheme} className="grid place-items-center w-9 h-9 md:w-11 md:h-11 rounded-xl border border-border hover:bg-muted transition-colors" title={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
+              <Icon name={theme === 'dark' ? 'Sun' : 'Moon'} size={18} />
             </button>
             <button
               onClick={() => cart.setOpen(true)}
-              className="relative grid place-items-center w-11 h-11 rounded-xl border border-border hover:bg-muted transition-colors"
+              className="relative grid place-items-center w-9 h-9 md:w-11 md:h-11 rounded-xl border border-border hover:bg-muted transition-colors"
             >
-              <Icon name="ShoppingCart" size={22} />
+              <Icon name="ShoppingCart" size={19} />
               {cart.count > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 bg-secondary text-white text-xs font-bold rounded-full grid place-items-center">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-secondary text-white text-[10px] font-bold rounded-full grid place-items-center">
                   {cart.count}
                 </span>
               )}
             </button>
-            <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-              <Icon name={menuOpen ? 'X' : 'Menu'} size={26} />
+            <button className="md:hidden ml-0.5" onClick={() => setMenuOpen(!menuOpen)}>
+              <Icon name={menuOpen ? 'X' : 'Menu'} size={24} />
             </button>
           </div>
         </div>
         {menuOpen && (
-          <div className="md:hidden fixed inset-0 top-20 z-40 bg-background flex flex-col border-t border-border">
-            <nav className="flex flex-col px-6 pt-6 pb-8 gap-1 flex-1">
+          <div className="md:hidden fixed inset-0 top-14 z-40 bg-background flex flex-col border-t border-border">
+            <nav className="flex flex-col px-6 pt-4 pb-6 gap-0 flex-1 overflow-y-auto">
               {NAV.map((n, i) => (
                 <button
                   key={n.id}
                   onClick={() => { scrollTo(n.id); setMenuOpen(false); }}
-                  className="flex items-center justify-between py-4 border-b border-border/50 text-left group"
+                  className="flex items-center justify-between py-3.5 border-b border-border/50 text-left group"
                   style={{ animationDelay: `${i * 40}ms` }}
                 >
-                  <span className="font-display text-2xl font-semibold text-primary group-hover:text-secondary transition-colors">{n.label}</span>
-                  <Icon name="ArrowRight" size={18} className="text-muted-foreground group-hover:text-secondary group-hover:translate-x-1 transition-all" />
+                  <span className="font-display text-xl font-semibold text-primary group-hover:text-secondary transition-colors">{n.label}</span>
+                  <Icon name="ArrowRight" size={16} className="text-muted-foreground group-hover:text-secondary group-hover:translate-x-1 transition-all" />
                 </button>
               ))}
             </nav>
-            <div className="px-6 pb-8 space-y-3">
-              <a href="tel:+79055337226" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors">
-                <Icon name="Phone" size={18} /> +7 905 533 7226
+            <div className="px-6 pb-6 pt-4 space-y-3 border-t border-border">
+              <a href="tel:+79055337226" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
+                <Icon name="Phone" size={16} /> +7 905 533 7226
               </a>
-              <a href="https://t.me/aquascale" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors">
-                <Icon name="Send" size={18} /> Telegram
+              <a href="https://t.me/aquascale" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
+                <Icon name="Send" size={16} /> Telegram
               </a>
-              <Button className="w-full mt-2" onClick={() => { scrollTo('contacts'); setMenuOpen(false); }}>Оставить заявку</Button>
+              <Button className="w-full" size="sm" onClick={() => { scrollTo('contacts'); setMenuOpen(false); }}>Оставить заявку</Button>
             </div>
           </div>
         )}
       </header>
 
       {/* Hero */}
-      <section id="home" className="relative pt-20 min-h-[92vh] flex items-center overflow-hidden">
+      <section id="home" className="relative pt-14 md:pt-20 min-h-[100svh] md:min-h-[92vh] flex items-center overflow-hidden">
         <img
           ref={heroImgRef}
           src={HERO_IMG}
@@ -638,29 +638,30 @@ const Index = () => {
           className="absolute inset-0 w-full h-full object-cover"
           style={{ willChange: 'transform', transformOrigin: 'center top', height: '130%', top: '-15%', objectPosition: 'center 30%' }}
         />
-        {/* Левый градиент — зона текста */}
-        <div className="absolute inset-0" style={{background: 'linear-gradient(to right, hsl(150 50% 5% / 0.95) 0%, hsl(150 50% 5% / 0.75) 40%, hsl(150 50% 5% / 0.2) 70%, transparent 100%)'}} />
+        {/* Градиент — на мобиле темнее снизу, на десктопе — слева */}
+        <div className="absolute inset-0 md:hidden" style={{background: 'linear-gradient(to top, hsl(150 50% 5% / 0.97) 0%, hsl(150 50% 5% / 0.7) 50%, hsl(150 50% 5% / 0.4) 100%)'}} />
+        <div className="absolute inset-0 hidden md:block" style={{background: 'linear-gradient(to right, hsl(150 50% 5% / 0.95) 0%, hsl(150 50% 5% / 0.75) 40%, hsl(150 50% 5% / 0.2) 70%, transparent 100%)'}} />
         {/* Нижний градиент — волна */}
         <div className="absolute inset-x-0 bottom-0 h-1/2" style={{background: 'linear-gradient(to top, hsl(150 50% 5% / 0.95) 0%, transparent 100%)'}} />
-        <div className="container relative z-10 px-4 md:px-6 py-20">
+        <div className="container relative z-10 px-4 md:px-6 py-10 md:py-20 pb-24 md:pb-20">
           <div className="max-w-lg animate-fade-in">
-            <div className="mb-6">
-              <Logo size="lg" light className="mb-5" />
-              <Badge className="bg-white/95 text-primary hover:bg-white border-0 text-sm font-semibold px-4 py-1.5 shadow-md">
+            <div className="mb-4 md:mb-6">
+              <Logo size="lg" light className="mb-4 hidden md:block" />
+              <Badge className="bg-white/95 text-primary hover:bg-white border-0 text-xs md:text-sm font-semibold px-3 md:px-4 py-1 md:py-1.5 shadow-md">
                 {siteSettings.hero_badge || 'Аквариумы · Террариумы · Экзотика'}
               </Badge>
             </div>
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-white leading-[1.05] text-balance">
+            <h1 className="font-display text-4xl md:text-7xl font-bold text-white leading-[1.05] text-balance">
               {siteSettings.hero_title || 'Живая природа в вашем доме'}
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-white/85 max-w-xl">
+            <p className="mt-4 md:mt-6 text-base md:text-xl text-white/80 max-w-xl line-clamp-3 md:line-clamp-none">
               {siteSettings.hero_subtitle || 'Оформление, обслуживание и перевозка аквариумов и террариумов любой сложности. Магазин экзотических животных, кормов и материалов.'}
             </p>
-            <div className="mt-9 flex flex-wrap gap-4">
-              <Button size="lg" onClick={() => scrollTo('services')} className="bg-sand text-primary hover:bg-sand/90 text-base">
+            <div className="mt-6 md:mt-9 flex flex-col sm:flex-row gap-3 md:gap-4">
+              <Button size="lg" onClick={() => scrollTo('services')} className="bg-sand text-primary hover:bg-sand/90 text-base w-full sm:w-auto">
                 Наши услуги
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/shop')} className="bg-white/10 border-white/40 text-white hover:bg-white/20 text-base">
+              <Button size="lg" variant="outline" onClick={() => navigate('/shop')} className="bg-white/10 border-white/40 text-white hover:bg-white/20 text-base w-full sm:w-auto">
                 В магазин <Icon name="ArrowRight" size={18} className="ml-1" />
               </Button>
             </div>
@@ -690,7 +691,7 @@ const Index = () => {
               aria-label={label}
               className="group z-20 animate-wiggle
                 md:absolute md:bottom-14 md:right-12
-                absolute bottom-0 left-0 right-0 md:left-auto md:right-12 md:bottom-14"
+                fixed bottom-0 left-0 right-0 md:fixed-none md:left-auto md:right-12 md:bottom-14"
             >
               <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-30 hidden md:block" />
               <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-20 hidden md:block" style={{ animationDelay: '0.5s' }} />

@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Смещение якорных ссылок под фиксированный хедер */
+section[id] {
+  scroll-margin-top: 56px;
+}
+@media (min-width: 768px) {
+  section[id] {
+    scroll-margin-top: 80px;
+  }
+}
+
 @layer base {
   :root {
     /* Светлая тема — природный бежево-молочный фон */
