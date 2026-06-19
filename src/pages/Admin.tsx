@@ -210,7 +210,6 @@ export default function Admin() {
     setQuizQuestions(sd.quiz || []);
     setQuizResults(sd.quiz_results || {});
     fetch(`${LEAD_URL}?action=status`, { headers }).then(r => r.json()).then(setTgStatus).catch(() => {});
-    fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
     fetch(PRICE_ZONES_URL).then(r => r.json()).then(d => { if (d) setPriceZones(d); }).catch(() => {});
     setAuthed(true);
     setLoading(false);
