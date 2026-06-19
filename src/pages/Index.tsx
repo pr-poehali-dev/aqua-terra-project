@@ -1268,7 +1268,7 @@ const Index = () => {
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
               <p className="font-semibold text-foreground">Зоны выезда</p>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">Зелёные зоны — работаем здесь постоянно. Чем дальше от них — тем выше коэффициент выезда. Наведи на зону, чтобы узнать.</p>
+            <p className="text-sm text-muted-foreground mb-2">Зелёные зоны — работаем здесь постоянно. Чем дальше от центра — тем выше коэффициент выезда.</p>
             <div className="flex flex-wrap gap-3 mb-2">
               {[
                 { color: 'bg-green-500',  hint: 'работаем постоянно' },
