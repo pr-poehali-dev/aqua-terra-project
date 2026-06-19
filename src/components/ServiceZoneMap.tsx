@@ -208,27 +208,7 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
     <div className={`relative rounded-2xl border border-border ${className}`} style={{ height, overflow: 'clip' }}>
       <div ref={mapRef} className="w-full h-full" />
 
-      {/* Легенда */}
-      {priceConfig?.active && priceConfig.points.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-xl shadow-lg p-3 max-w-[190px] pointer-events-none">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Зоны выезда</p>
-          <div className="space-y-1.5">
-            {[
-              { label: priceConfig.ring1_label, factor: priceConfig.ring1_factor, color: '#22c55e' },
-              { label: priceConfig.ring2_label, factor: priceConfig.ring2_factor, color: '#eab308' },
-              { label: priceConfig.ring3_label, factor: priceConfig.ring3_factor, color: '#ef4444' },
-            ].map((r, i) => (
-              <div key={i} className={`flex items-center justify-between gap-2 text-xs transition-colors ${hovered?.label === r.label ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                  {r.label}
-                </div>
-                <span className="font-mono text-[11px] opacity-70">×{r.factor}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {hovered && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-foreground text-background text-sm font-medium px-4 py-2 rounded-xl shadow-lg pointer-events-none whitespace-nowrap">
