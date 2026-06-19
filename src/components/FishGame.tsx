@@ -153,9 +153,9 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
       s.netY = pivotY + Math.sin(ang) * clamp;
     }
 
-    // Поймал: рыбка внутри обруча (R=28) — при броске ИЛИ если сама заплыла
+    // Поймал: рыбка вошла в обруч сачка — всегда, независимо от фазы броска
     const catchRadius = 30;
-    if (ndist < catchRadius && (s.netLunging || s.netLunge > 0.3)) {
+    if (ndist < catchRadius) {
       s.alive = false; s.dead = true; s.deadTimer = 0;
       s.animId = requestAnimationFrame(gameLoop); return;
     }
