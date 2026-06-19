@@ -651,44 +651,52 @@ const Index = () => {
         </div>
 
 
-        {/* Quiz promo button — десктоп: справа; мобиле: горизонтальная полоска снизу */}
-        <button
-          onClick={() => scrollTo('quiz')}
-          aria-label="Пройти тест и получить скидку"
-          className="group z-20 animate-wiggle
-            md:absolute md:bottom-14 md:right-12
-            absolute bottom-0 left-0 right-0 md:left-auto md:right-12 md:bottom-14"
-        >
-          {/* pulse rings — только десктоп */}
-          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-30 hidden md:block" />
-          <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-20 hidden md:block" style={{ animationDelay: '0.5s' }} />
-
-          {/* Десктоп-версия: карточка */}
-          <div className="hidden md:flex relative rounded-2xl px-5 py-4 shadow-2xl flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200 border border-secondary/40 backdrop-blur-md" style={{ background: 'linear-gradient(135deg, hsl(162 48% 14%) 0%, hsl(195 58% 18%) 100%)' }}>
-            <Icon name="Tag" size={22} className="text-secondary mb-0.5" />
-            <span className="font-bold text-base leading-tight text-center text-white">Скидка 10%</span>
-            <span className="text-xs font-medium text-white/70 text-center leading-tight">Пройди тест и получи<br />промокод + розыгрыш</span>
-            <span className="mt-1 flex items-center gap-1 text-xs font-bold bg-secondary/20 text-secondary rounded-full px-3 py-0.5">
-              Попробовать <Icon name="ArrowRight" size={12} />
-            </span>
-          </div>
-
-          {/* Мобильная версия: горизонтальная полоска */}
-          <div className="flex md:hidden items-center justify-between px-5 py-3 border-t border-secondary/30 backdrop-blur-md" style={{ background: 'linear-gradient(90deg, hsl(162 48% 10% / 0.95) 0%, hsl(195 58% 14% / 0.95) 100%)' }}>
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-secondary/20 grid place-items-center shrink-0">
-                <Icon name="Tag" size={16} className="text-secondary" />
+        {/* Promo button — адаптируется под включённую акцию */}
+        {(() => {
+          const gameOn = siteSettings.section_game !== 'false';
+          const quizOn = siteSettings.section_quiz !== 'false';
+          if (!gameOn && !quizOn) return null;
+          const isGame = gameOn;
+          const icon = isGame ? '🐟' : '🎯';
+          const title = isGame ? 'Сыграй и получи скидку!' : `Скидка ${siteSettings.game_promo_code ? '' : '10%'}`;
+          const sub = isGame ? `Набери 25 очков — получи промокод` : 'Пройди тест и получи\nпромокод + розыгрыш';
+          const label = isGame ? 'Играть' : 'Попробовать';
+          const target = isGame ? 'game' : 'quiz';
+          return (
+            <button
+              onClick={() => scrollTo(target)}
+              aria-label={label}
+              className="group z-20 animate-wiggle
+                md:absolute md:bottom-14 md:right-12
+                absolute bottom-0 left-0 right-0 md:left-auto md:right-12 md:bottom-14"
+            >
+              <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-30 hidden md:block" />
+              <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-20 hidden md:block" style={{ animationDelay: '0.5s' }} />
+              {/* Десктоп */}
+              <div className="hidden md:flex relative rounded-2xl px-5 py-4 shadow-2xl flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200 border border-secondary/40 backdrop-blur-md" style={{ background: 'linear-gradient(135deg, hsl(162 48% 14%) 0%, hsl(195 58% 18%) 100%)' }}>
+                <span className="text-2xl mb-0.5">{icon}</span>
+                <span className="font-bold text-base leading-tight text-center text-white">{title}</span>
+                <span className="text-xs font-medium text-white/70 text-center leading-tight whitespace-pre-line">{sub}</span>
+                <span className="mt-1 flex items-center gap-1 text-xs font-bold bg-secondary/20 text-secondary rounded-full px-3 py-0.5">
+                  {label} <Icon name="ArrowRight" size={12} />
+                </span>
               </div>
-              <div className="text-left">
-                <p className="text-white font-semibold text-sm leading-tight">Скидка 10% на первый заказ</p>
-                <p className="text-white/60 text-xs">Пройди тест — получи промокод</p>
+              {/* Мобайл */}
+              <div className="flex md:hidden items-center justify-between px-5 py-3 border-t border-secondary/30 backdrop-blur-md" style={{ background: 'linear-gradient(90deg, hsl(162 48% 10% / 0.95) 0%, hsl(195 58% 14% / 0.95) 100%)' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-secondary/20 grid place-items-center shrink-0 text-xl">{icon}</div>
+                  <div className="text-left">
+                    <p className="text-white font-semibold text-sm leading-tight">{title}</p>
+                    <p className="text-white/60 text-xs">{isGame ? 'Сыграй и получи промокод' : 'Пройди тест — получи промокод'}</p>
+                  </div>
+                </div>
+                <span className="flex items-center gap-1 text-xs font-bold text-secondary shrink-0 ml-3">
+                  {label} <Icon name="ArrowRight" size={12} />
+                </span>
               </div>
-            </div>
-            <span className="flex items-center gap-1 text-xs font-bold text-secondary shrink-0 ml-3">
-              Участвовать <Icon name="ArrowRight" size={12} />
-            </span>
-          </div>
-        </button>
+            </button>
+          );
+        })()}
       </section>
 
       {/* Stats */}
@@ -1370,7 +1378,7 @@ const Index = () => {
       </section>)}
 
       {/* Fish Game */}
-      {siteSettings.section_game !== 'false' && (<section className="py-20 bg-gradient-to-b from-[#0c4a6e]/10 to-transparent">
+      {siteSettings.section_game !== 'false' && (<section id="game" className="py-20 bg-gradient-to-b from-[#0c4a6e]/10 to-transparent">
         <div className="container px-4 md:px-6">
           <div className="max-w-2xl mx-auto text-center mb-8">
             <Badge variant="secondary" className="mb-4">Акция</Badge>
