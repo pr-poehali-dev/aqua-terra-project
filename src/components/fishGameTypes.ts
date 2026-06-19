@@ -7,13 +7,29 @@ export interface Weed { x:number;segments:number;totalH:number;color:string;phas
 let _id = 0;
 export function mkFood(foods: Food[]) {
   const type: Food['type'] = Math.random() > 0.38 ? 'flake' : 'worm';
-  const side = Math.floor(Math.random() * 4);
   let x = 0, y = 0, vx = 0, vy = 0;
-  const spd = 1.6 + Math.random() * 2;
-  if (side === 0) { x = 40 + Math.random() * (W - 80); y = -16; vx = (Math.random() - .5) * 1.2; vy = spd; }
-  else if (side === 1) { x = W + 16; y = 20 + Math.random() * (H - 40); vx = -spd; vy = (Math.random() - .5) * 1.2; }
-  else if (side === 2) { x = 40 + Math.random() * (W - 80); y = H + 16; vx = (Math.random() - .5) * 1.2; vy = -spd; }
-  else { x = -16; y = 20 + Math.random() * (H - 40); vx = spd; vy = (Math.random() - .5) * 1.2; }
+  const spd = 1.2 + Math.random() * 1.4;
+
+  // 80% еды появляется в левой части (зона досягаемости рыбки вдали от сачка)
+  // 20% — с правого или нижнего края для разнообразия
+  const zone = Math.random();
+  if (zone < 0.45) {
+    // Сверху, в левой половине экрана
+    x = 20 + Math.random() * (W * 0.65);
+    y = -16; vx = (Math.random() - 0.5) * 1.0; vy = spd;
+  } else if (zone < 0.75) {
+    // Слева
+    x = -16; y = 30 + Math.random() * (H - 60);
+    vx = spd; vy = (Math.random() - 0.5) * 0.8;
+  } else if (zone < 0.88) {
+    // Снизу, в левой половине
+    x = 20 + Math.random() * (W * 0.65);
+    y = H + 16; vx = (Math.random() - 0.5) * 1.0; vy = -spd;
+  } else {
+    // Справа (редко)
+    x = W + 16; y = 30 + Math.random() * (H - 60);
+    vx = -spd; vy = (Math.random() - 0.5) * 0.8;
+  }
   foods.push({ x, y, vx, vy, type, id: _id++, angle: Math.random() * Math.PI * 2, wobble: Math.random() * Math.PI * 2 });
 }
 

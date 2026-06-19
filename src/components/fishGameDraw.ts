@@ -163,59 +163,58 @@ export function drawNet(
   ctx.strokeStyle = '#e8a878'; ctx.lineWidth = 6; ctx.stroke();
   ctx.restore();
 
-  // ── САЧОК (полукруг, открытый вперёд) ──
+  // ── САЧОК — полный круглый обруч с сеткой внутри ──
   ctx.save(); ctx.translate(nx, ny);
 
-  // Ориентация: открытый край смотрит в сторону движения (от pivot к сачку)
-  // При броске сачок «черпает» — открыт в направлении движения рыбки
-  ctx.rotate(armAngle + Math.PI / 2);
-
   const R = 56;
-  const bagDepth = R * 0.9 + lunge * R * 0.5;
 
-  // ── Мешок сетки ──
+  // ── Сетка внутри (clip по кругу) ──
   ctx.save();
-  // Clip: нижний полукруг + мешок
-  ctx.beginPath();
-  ctx.arc(0, 0, R, 0, Math.PI);       // нижний полукруг
-  ctx.lineTo(R, bagDepth);
-  ctx.bezierCurveTo(R * 0.5, bagDepth + R * 0.35, -R * 0.5, bagDepth + R * 0.35, -R, bagDepth);
-  ctx.closePath();
-  ctx.clip();
+  ctx.beginPath(); ctx.arc(0, 0, R - 3, 0, Math.PI * 2); ctx.clip();
 
-  // Фон мешка — тёмный с лёгкой прозрачностью
-  ctx.fillStyle = 'rgba(5, 50, 80, 0.6)';
-  ctx.fillRect(-R, 0, R * 2, bagDepth + R + 5);
+  // Фон мешка
+  ctx.fillStyle = 'rgba(4, 40, 65, 0.55)';
+  ctx.fillRect(-R, -R, R * 2, R * 2);
 
-  // Сетка — ромбовидная
-  const cell = 9;
-  ctx.strokeStyle = 'rgba(20, 160, 200, 0.65)'; ctx.lineWidth = 1;
-  for (let d = -R * 2; d < R * 2 + bagDepth + 20; d += cell) {
-    ctx.beginPath(); ctx.moveTo(d, -5); ctx.lineTo(d + bagDepth + R + 20, bagDepth + R + 20); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(d, -5); ctx.lineTo(d - bagDepth - R - 20, bagDepth + R + 20); ctx.stroke();
+  // Ромбовидная сетка
+  const cell = 11;
+  ctx.strokeStyle = 'rgba(30, 180, 220, 0.55)'; ctx.lineWidth = 1;
+  for (let d = -R * 2; d < R * 2; d += cell) {
+    ctx.beginPath(); ctx.moveTo(d, -R); ctx.lineTo(d + R * 2, R); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(d, -R); ctx.lineTo(d - R * 2, R); ctx.stroke();
   }
-  ctx.restore();
 
-  // Обруч — нижний полукруг (открытый)
-  ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI);
-  const rg = ctx.createLinearGradient(-R, 0, R, 0);
-  rg.addColorStop(0, '#1e3a5f'); rg.addColorStop(0.5, '#475569'); rg.addColorStop(1, '#1e3a5f');
-  ctx.strokeStyle = rg; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
-  // Блик на обруче
-  ctx.beginPath(); ctx.arc(0, 0, R, Math.PI * 0.1, Math.PI * 0.5);
-  ctx.strokeStyle = 'rgba(148,163,184,0.5)'; ctx.lineWidth = 2; ctx.stroke();
-
-  // Перекладина (закрытый край — крепление к ручке)
-  ctx.beginPath(); ctx.moveTo(-R, 0); ctx.lineTo(R, 0);
-  const bg2 = ctx.createLinearGradient(-R, 0, R, 0);
-  bg2.addColorStop(0, '#334155'); bg2.addColorStop(0.5, '#64748b'); bg2.addColorStop(1, '#334155');
-  ctx.strokeStyle = bg2; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
+  // Тень глубины внутри мешка
+  const innerGrad = ctx.createRadialGradient(0, 0, R * 0.3, 0, 0, R);
+  innerGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  innerGrad.addColorStop(1, 'rgba(0,0,0,0.35)');
+  ctx.fillStyle = innerGrad;
+  ctx.fillRect(-R, -R, R * 2, R * 2);
 
   ctx.restore();
 
-  // ── Отладочная зона поимки (убрать для прода) ──
-  // ctx.save(); ctx.beginPath(); ctx.arc(nx, ny, R, 0, Math.PI*2);
-  // ctx.strokeStyle='rgba(255,0,0,0.3)'; ctx.lineWidth=1; ctx.stroke(); ctx.restore();
+  // ── Металлический обруч ──
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2);
+  const rimGrad = ctx.createLinearGradient(-R, -R, R, R);
+  rimGrad.addColorStop(0, '#64748b');
+  rimGrad.addColorStop(0.3, '#cbd5e1');
+  rimGrad.addColorStop(0.6, '#94a3b8');
+  rimGrad.addColorStop(1, '#475569');
+  ctx.strokeStyle = rimGrad; ctx.lineWidth = 7; ctx.stroke();
+
+  // Блик сверху-слева
+  ctx.beginPath(); ctx.arc(0, 0, R, -Math.PI * 0.85, -Math.PI * 0.15);
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Крепление к ручке — утолщение в точке соединения с армAngle
+  const jx = Math.cos(armAngle + Math.PI) * R;
+  const jy = Math.sin(armAngle + Math.PI) * R;
+  ctx.beginPath(); ctx.arc(jx, jy, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#475569'; ctx.fill();
+  ctx.beginPath(); ctx.arc(jx, jy, 7, 0, Math.PI * 2);
+  ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.restore();
 }
 
 export function drawWeeds(ctx: CanvasRenderingContext2D, weeds: Weed[], time: number) {
