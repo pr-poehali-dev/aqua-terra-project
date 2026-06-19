@@ -1179,7 +1179,48 @@ const Index = () => {
         </div>
       )}
 
-      {/* Articles — перенесены на /wiki */}
+      {/* Articles tease — последние 3 статьи */}
+      {siteSettings.section_articles !== 'false' && articles.length > 0 && (
+        <section id="articles" className="py-20 px-4 md:px-6 bg-background">
+          <div className="container">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
+              <div>
+                <Badge variant="secondary" className="mb-3">База знаний</Badge>
+                <h2 className="font-display text-3xl md:text-4xl font-bold text-primary">Полезные материалы</h2>
+              </div>
+              <button
+                onClick={() => navigate('/wiki')}
+                className="inline-flex items-center gap-2 text-secondary font-medium hover:gap-3 transition-all shrink-0"
+              >
+                Читать все <Icon name="ArrowRight" size={16} />
+              </button>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.slice(0, 3).map((a) => (
+                <div
+                  key={a.id}
+                  className="glass-card rounded-2xl overflow-hidden hover-scale group cursor-pointer"
+                  onClick={() => navigate('/wiki')}
+                >
+                  <div className="aspect-[16/9] gradient-deep grid place-items-center text-white/40 overflow-hidden">
+                    {a.cover_url
+                      ? <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      : <Icon name="BookOpen" size={48} />}
+                  </div>
+                  <div className="p-5">
+                    <Badge variant="outline" className="text-xs mb-3">{a.category}</Badge>
+                    <h3 className="font-display text-xl font-semibold text-primary mb-2 leading-snug">{a.title}</h3>
+                    <p className="text-muted-foreground text-sm line-clamp-2">{a.excerpt}</p>
+                    <span className="inline-flex items-center gap-1 text-secondary text-sm font-medium mt-4">
+                      Читать <Icon name="ArrowRight" size={14} />
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {siteSettings.section_faq !== 'false' && (<section id="faq" className="relative bg-muted/50">
         <WaveDivider fill="hsl(var(--muted) / 0.5)" flip />
