@@ -37,6 +37,8 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<any>(null);
   const circlesRef = useRef<any[]>([]);
+  const configRef = useRef(config);
+  configRef.current = config;
   const [mapReady, setMapReady] = useState(false);
   const [addressInput, setAddressInput] = useState('');
   const [geocoding, setGeocoding] = useState(false);
@@ -116,7 +118,8 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       if (!clickMode) return;
       const [lat, lon] = e.get('coords');
       const pt: WorkPoint = { lat, lon, address: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, ...DEFAULT_RADII };
-      onChange({ ...config, points: [...config.points, pt] });
+      const cur = configRef.current;
+      onChange({ ...cur, points: [...cur.points, pt] });
       setClickMode(false);
     };
     map.events.add('click', handler);
@@ -133,10 +136,11 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       const [lat, lon] = obj.geometry.getCoordinates();
       const address = obj.getAddressLine();
       const pt: WorkPoint = { lat, lon, address, ...DEFAULT_RADII };
-      onChange({ ...config, points: [...config.points, pt] });
+      const cur = configRef.current;
+      onChange({ ...cur, points: [...cur.points, pt] });
       setAddressInput('');
       if (mapInst.current) mapInst.current.setCenter([lat, lon], 10);
-      setExpandedPoint(config.points.length); // открываем новую точку
+      setExpandedPoint(cur.points.length); // открываем новую точку
     } finally {
       setGeocoding(false);
     }
