@@ -84,38 +84,31 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       return [gp[0] - mapGlobalCenter[0] + W/2, gp[1] - mapGlobalCenter[1] + H/2];
     };
 
-    const getR = (coord: number[], distM: number) => {
+    const toRpx = (coord: number[], distM: number) => {
       const edge = (window as any).ymaps.coordSystem.geo.solveDirectProblem(coord, [0, 1], distM).endPoint;
-      return Math.abs(toPage(edge)[0] - toPage(coord)[0]);
+      const [ex, ey] = toPage(edge);
+      const [bx, by] = toPage(coord);
+      return Math.sqrt((ex-bx)**2 + (ey-by)**2);
     };
 
-    ctx.globalCompositeOperation = 'source-over';
     config.points.forEach(pt => {
       const [cx, cy] = toPage([pt.lat, pt.lon]);
-      const r1 = getR([pt.lat, pt.lon], (config.r1_km ?? 10) * 1000);
-      const r2 = getR([pt.lat, pt.lon], (config.r2_km ?? 25) * 1000);
-      const r3 = getR([pt.lat, pt.lon], (config.r3_km ?? 50) * 1000);
+      const r1 = toRpx([pt.lat, pt.lon], (config.r1_km ?? 10) * 1000);
+      const r2 = toRpx([pt.lat, pt.lon], (config.r2_km ?? 25) * 1000);
+      const r3 = toRpx([pt.lat, pt.lon], (config.r3_km ?? 50) * 1000);
 
-      const g3 = ctx.createRadialGradient(cx, cy, r2, cx, cy, r3);
-      g3.addColorStop(0,   'rgba(239,68,68,0)');
-      g3.addColorStop(0.3, 'rgba(239,68,68,0.32)');
-      g3.addColorStop(1,   'rgba(239,68,68,0)');
-      ctx.beginPath(); ctx.arc(cx, cy, r3, 0, Math.PI*2);
-      ctx.fillStyle = g3; ctx.fill();
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r3);
+      grad.addColorStop(0,          'rgba(34,197,94,0.55)');
+      grad.addColorStop(r1/r3,      'rgba(34,197,94,0.45)');
+      grad.addColorStop(r1/r3+0.01, 'rgba(234,179,8,0.42)');
+      grad.addColorStop(r2/r3,      'rgba(234,179,8,0.35)');
+      grad.addColorStop(r2/r3+0.01, 'rgba(239,68,68,0.32)');
+      grad.addColorStop(1,          'rgba(239,68,68,0)');
 
-      const g2 = ctx.createRadialGradient(cx, cy, r1, cx, cy, r2);
-      g2.addColorStop(0,   'rgba(234,179,8,0)');
-      g2.addColorStop(0.3, 'rgba(234,179,8,0.38)');
-      g2.addColorStop(1,   'rgba(234,179,8,0)');
-      ctx.beginPath(); ctx.arc(cx, cy, r2, 0, Math.PI*2);
-      ctx.fillStyle = g2; ctx.fill();
-
-      const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, r1);
-      g1.addColorStop(0,   'rgba(34,197,94,0.45)');
-      g1.addColorStop(0.6, 'rgba(34,197,94,0.35)');
-      g1.addColorStop(1,   'rgba(34,197,94,0)');
-      ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI*2);
-      ctx.fillStyle = g1; ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r3, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
     });
   }, [config]);
 
