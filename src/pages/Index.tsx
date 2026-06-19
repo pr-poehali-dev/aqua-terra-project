@@ -294,6 +294,7 @@ const Index = () => {
   const [svcCategories, setSvcCategories] = useState<ServiceCategory[]>([]);
   const [activeCatId, setActiveCatId] = useState<number | null>(null);
   const [expandedSvc, setExpandedSvc] = useState<number | null>(null);
+  const [expandedType, setExpandedType] = useState<number | null>(null);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [lightboxItem, setLightboxItem] = useState<PortfolioItem | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState(0);
@@ -751,7 +752,7 @@ const Index = () => {
             <div className="text-center max-w-2xl mx-auto mb-10 section-reveal">
               <Badge variant="secondary" className="mb-4">Услуги и цены</Badge>
               <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Что мы делаем</h2>
-              <p className="mt-4 text-muted-foreground">Выберите категорию — внутри увидите типы работ и цены.</p>
+              <p className="mt-4 text-muted-foreground">Выберите категорию, затем тип работ — раскроются варианты с ценами.</p>
             </div>
 
             {(() => {
@@ -785,7 +786,7 @@ const Index = () => {
                     {topCats.map((cat) => (
                       <button
                         key={cat.id}
-                        onClick={() => { setActiveCatId(cat.id); setExpandedSvc(null); }}
+                        onClick={() => { setActiveCatId(cat.id); setExpandedSvc(null); setExpandedType(null); }}
                         className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                           activeCatId === cat.id
                             ? 'bg-primary text-primary-foreground border-primary shadow-md'
@@ -798,37 +799,52 @@ const Index = () => {
                     ))}
                   </div>
 
-                  {/* Группировка по типам */}
+                  {/* Типы-аккордеон */}
                   {typeCats.length > 0 ? (
-                    <div className="space-y-10">
+                    <div className="max-w-4xl mx-auto space-y-3">
                       {typeCats.map((type) => {
                         const typeServices = servicesInCat.filter((s) => s.category_id === type.id);
                         if (typeServices.length === 0) return null;
+                        const open = expandedType === type.id;
                         return (
-                          <div key={type.id}>
-                            <div className="flex items-center gap-2 mb-4">
-                              <span className="grid place-items-center w-9 h-9 rounded-lg bg-secondary/15 text-secondary">
-                                <Icon name={type.icon} size={18} />
+                          <div key={type.id} className="glass-card rounded-2xl overflow-hidden">
+                            {/* Заголовок типа — кликабельный */}
+                            <button
+                              onClick={() => { setExpandedType(open ? null : type.id); setExpandedSvc(null); }}
+                              className="w-full flex items-center gap-3 p-5 text-left hover:bg-primary/[0.03] transition-colors"
+                            >
+                              <span className="grid place-items-center w-11 h-11 rounded-xl bg-secondary/15 text-secondary shrink-0">
+                                <Icon name={type.icon} size={22} />
                               </span>
-                              <h3 className="font-display text-xl font-bold text-primary">{type.name}</h3>
-                            </div>
-                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                              {typeServices.map((s) => (
-                                <ServiceCard
-                                  key={s.id}
-                                  s={s}
-                                  expanded={expandedSvc === s.id}
-                                  onToggle={() => setExpandedSvc(expandedSvc === s.id ? null : s.id)}
-                                  onOrder={() => scrollTo('contacts')}
-                                />
-                              ))}
-                            </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-display text-lg font-bold text-primary">{type.name}</h3>
+                                <p className="text-xs text-muted-foreground">{typeServices.length} {typeServices.length === 1 ? 'вариант' : 'вариантов'} оформления</p>
+                              </div>
+                              <Icon name={open ? 'ChevronUp' : 'ChevronDown'} size={20} className="text-muted-foreground shrink-0 transition-transform" />
+                            </button>
+
+                            {/* Карточки субкатегорий — раскрываются */}
+                            {open && (
+                              <div className="px-5 pb-5 pt-1 border-t border-border/60">
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+                                  {typeServices.map((s) => (
+                                    <ServiceCard
+                                      key={s.id}
+                                      s={s}
+                                      expanded={expandedSvc === s.id}
+                                      onToggle={() => setExpandedSvc(expandedSvc === s.id ? null : s.id)}
+                                      onOrder={() => scrollTo('contacts')}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
                       {/* Услуги прямо в категории без типа */}
                       {servicesInCat.filter((s) => s.category_id === activeCatId).length > 0 && (
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-3">
                           {servicesInCat.filter((s) => s.category_id === activeCatId).map((s) => (
                             <ServiceCard key={s.id} s={s} onOrder={() => scrollTo('contacts')} />
                           ))}
