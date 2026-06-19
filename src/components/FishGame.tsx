@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 interface Props {
   tgChannel: string;
   scoreToWin?: number;
-  onWin?: () => void;
+  promoCode?: string;
 }
 
 const SCORE_TO_WIN = 25;
@@ -21,7 +21,7 @@ interface Food {
 
 let foodId = 0;
 
-export default function FishGame({ tgChannel, scoreToWin = SCORE_TO_WIN }: Props) {
+export default function FishGame({ tgChannel, scoreToWin = SCORE_TO_WIN, promoCode = 'AQUA10' }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef({
     fishX: CANVAS_W / 2, fishY: CANVAS_H / 2,
@@ -37,6 +37,8 @@ export default function FishGame({ tgChannel, scoreToWin = SCORE_TO_WIN }: Props
   const [phase, setPhase] = useState<'idle' | 'playing' | 'dead' | 'won'>('idle');
   const [score, setScore] = useState(0);
   const [won, setWon] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const spawnFood = () => {
     const types: Food['type'][] = ['fish', 'bubble', 'star'];
@@ -262,24 +264,44 @@ export default function FishGame({ tgChannel, scoreToWin = SCORE_TO_WIN }: Props
       {/* Won */}
       {phase === 'won' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-[#0c4a6e]/95 text-white text-center p-6">
-          <div className="text-5xl mb-3">🏆</div>
-          <h3 className="text-2xl font-bold mb-1">Ты набрал {score} очков!</h3>
-          <p className="text-white/70 text-sm mb-5">Подпишись на наш Telegram-канал и получи промокод на скидку</p>
-          <a
-            href={`https://t.me/${tgChannel.replace('@', '')}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-6 py-3 bg-[#2AABEE] hover:bg-[#1a9ad4] text-white font-bold rounded-xl transition-colors text-base mb-4"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
-            Подписаться на Telegram
-          </a>
-          <button
-            onClick={startGame}
-            className="text-sm text-white/50 hover:text-white/80 underline transition-colors"
-          >
-            Сыграть ещё раз
-          </button>
+          {!subscribed ? (<>
+            <div className="text-5xl mb-3">🏆</div>
+            <h3 className="text-2xl font-bold mb-1">Ты набрал {score} очков!</h3>
+            <p className="text-white/70 text-sm mb-5">Подпишись на наш Telegram-канал и получи промокод на скидку</p>
+            <a
+              href={`https://t.me/${tgChannel.replace('@', '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setTimeout(() => setSubscribed(true), 1500)}
+              className="flex items-center gap-2 px-6 py-3 bg-[#2AABEE] hover:bg-[#1a9ad4] text-white font-bold rounded-xl transition-colors text-base mb-3"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+              Подписаться на Telegram
+            </a>
+            <button onClick={() => setSubscribed(true)} className="text-xs text-white/30 hover:text-white/50 transition-colors">
+              Уже подписан
+            </button>
+          </>) : (<>
+            <div className="text-5xl mb-3">🎉</div>
+            <h3 className="text-xl font-bold mb-1">Твой промокод:</h3>
+            <div className="flex items-center gap-3 bg-white/10 border border-white/20 rounded-xl px-5 py-3 mb-2 mt-2">
+              <span className="text-3xl font-mono font-black tracking-widest text-cyan-300">{promoCode}</span>
+              <button
+                onClick={() => { navigator.clipboard.writeText(promoCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                className="ml-1 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                title="Скопировать"
+              >
+                {copied ? <span className="text-green-400 text-xs font-bold">✓</span> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>}
+              </button>
+            </div>
+            <p className="text-white/60 text-xs mb-5">Введи при оформлении заказа</p>
+            <button
+              onClick={() => { startGame(); setSubscribed(false); }}
+              className="text-sm text-white/50 hover:text-white/80 underline transition-colors"
+            >
+              Сыграть ещё раз
+            </button>
+          </>)}
         </div>
       )}
     </div>

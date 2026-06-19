@@ -1378,7 +1378,7 @@ const Index = () => {
             <p className="text-muted-foreground">Набери {25} очков в игре, подпишись на наш Telegram и получи промокод на скидку</p>
           </div>
           <div className="flex justify-center">
-            <FishGame tgChannel={siteSettings.contacts_telegram || 'aquascale'} scoreToWin={25} />
+            <FishGame tgChannel={siteSettings.contacts_telegram || 'aquascale'} scoreToWin={25} promoCode={siteSettings.game_promo_code || 'AQUA10'} />
           </div>
         </div>
       </section>)}

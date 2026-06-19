@@ -1545,6 +1545,26 @@ export default function Admin() {
               )}
             </Card>
 
+            {/* Game promo */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="Gamepad2" size={18} />Игра — промокод</h3>
+              <p className="text-sm text-muted-foreground mb-3">Промокод, который получит клиент после победы в игре и подписки на Telegram</p>
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-sm font-mono uppercase tracking-widest"
+                  value={siteSettings.game_promo_code || ''}
+                  placeholder="AQUA10"
+                  onChange={e => setSiteSettings(p => ({ ...p, game_promo_code: e.target.value.toUpperCase() }))}
+                />
+                <Button disabled={savingSettings} onClick={async () => {
+                  setSavingSettings(true);
+                  await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ game_promo_code: siteSettings.game_promo_code }) });
+                  setSavingSettings(false);
+                  toast({ title: 'Промокод сохранён!' });
+                }}>Сохранить</Button>
+              </div>
+            </Card>
+
             {/* Quiz questions */}
             <Card className="p-6">
               <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="ListChecks" size={18} />Квиз — вопросы и ответы</h3>
