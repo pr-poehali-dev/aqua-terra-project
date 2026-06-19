@@ -692,7 +692,7 @@ const Index = () => {
       </section>
 
       {/* Stats */}
-      <section className="py-14 bg-background">
+      {siteSettings.section_stats !== 'false' && (<section className="py-14 bg-background">
         <div className="container px-4 md:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 section-reveal">
             {[
@@ -705,10 +705,10 @@ const Index = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section>)}
 
       {/* Services */}
-      <section id="services" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
+      {siteSettings.section_services !== 'false' && (<><section id="services" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
         <DecoIcons items={[
           { emoji: '🐠', top: '8%',    left: '2%',  size: 36, dur: 7,  delay: 0,   swim: true },
           { emoji: '🦎', top: '12%',   right: '3%', size: 34, dur: 9,  delay: 1.5 },
@@ -736,8 +736,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* Prices */}
       <section id="prices" className="relative bg-muted/50 overflow-hidden">
         <DecoIcons items={[
           { emoji: '🦎', top: '10%',   right: '2%',  size: 32, dur: 9,  delay: 0.5 },
@@ -783,10 +781,10 @@ const Index = () => {
           </p>
         </div>
         <WaveDivider fill="hsl(var(--background))" />
-      </section>
+      </section></>)}
 
       {/* Shop */}
-      <section id="shop" className="pb-24 bg-background relative overflow-hidden">
+      {siteSettings.section_shop !== 'false' && (<section id="shop" className="pb-24 bg-background relative overflow-hidden">
         <DecoIcons items={[
           { emoji: '🐠', top: '5%',    left: '1%',   size: 32, dur: 9,  delay: 1, swim: true },
           { emoji: '🦎', top: '8%',    right: '2%',  size: 30, dur: 7,  delay: 0 },
@@ -991,10 +989,10 @@ const Index = () => {
             </Button>
           </div>
         </div>
-      </section>
+      </section>)}
 
       {/* Portfolio */}
-      <section id="portfolio" className="py-24 px-4 md:px-6 relative bg-leaves overflow-hidden">
+      {siteSettings.section_portfolio !== 'false' && (<section id="portfolio" className="py-24 px-4 md:px-6 relative bg-leaves overflow-hidden">
         <DecoIcons items={[
           { emoji: '🦎', top: '5%',    right: '4%',  size: 36, dur: 10, delay: 0 },
           { emoji: '🐠', bottom: '8%', left: '3%',   size: 32, dur: 8,  delay: 2, swim: true },
@@ -1038,7 +1036,7 @@ const Index = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section>)}
 
       {/* Portfolio Lightbox */}
       {lightboxItem && (
@@ -1087,7 +1085,7 @@ const Index = () => {
       )}
 
       {/* Articles */}
-      <section id="articles" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
+      {siteSettings.section_articles !== 'false' && (<section id="articles" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
         <DecoIcons items={[
           { emoji: '🦎', top: '6%',    right: '3%',  size: 30, dur: 10, delay: 0 },
           { emoji: '🐠', bottom: '8%', left: '2%',   size: 28, dur: 8,  delay: 1.5, swim: true },
@@ -1124,7 +1122,7 @@ const Index = () => {
             </div>
           )}
         </div>
-      </section>
+      </section>)}
 
       {/* Article modal */}
       {selectedArticle && (
@@ -1149,7 +1147,7 @@ const Index = () => {
         </div>
       )}
 
-      <section id="faq" className="relative bg-muted/50">
+      {siteSettings.section_faq !== 'false' && (<section id="faq" className="relative bg-muted/50">
         <WaveDivider fill="hsl(var(--muted) / 0.5)" flip />
         <div className="container px-4 md:px-6 max-w-3xl py-16">
           <div className="text-center mb-12">
@@ -1166,7 +1164,7 @@ const Index = () => {
           </Accordion>
         </div>
         <WaveDivider fill="hsl(var(--background))" />
-      </section>
+      </section>)}
 
       {/* Contacts */}
       <section id="contacts" className="py-24 container px-4 md:px-6">
@@ -1263,7 +1261,7 @@ const Index = () => {
         </div>
         </Card>
         {/* Карта зон обслуживания — вне Card чтобы overflow-hidden не блокировал контролы */}
-        <div className="border border-border border-t-0 rounded-b-2xl">
+        {siteSettings.section_map !== 'false' && <div className="border border-border border-t-0 rounded-b-2xl">
           <div className="p-6 pb-2 bg-card">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
@@ -1292,11 +1290,11 @@ const Index = () => {
             <span className="text-sm text-muted-foreground">📍 Не нашли свой район?</span>
             <span className="text-sm text-foreground">Локации за пределами зон согласовываются индивидуально — просто напишите нам.</span>
           </div>
-        </div>
+        </div>}
       </section>
 
       {/* Quiz */}
-      {siteSettings.quiz_enabled !== 'false' && (<section id="quiz" className="py-24 container px-4 md:px-6">
+      {siteSettings.section_quiz !== 'false' && (<section id="quiz" className="py-24 container px-4 md:px-6">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <Badge variant="secondary" className="mb-4">Тест</Badge>
@@ -1372,7 +1370,7 @@ const Index = () => {
       </section>)}
 
       {/* Fish Game */}
-      <section className="py-20 bg-gradient-to-b from-[#0c4a6e]/10 to-transparent">
+      {siteSettings.section_game !== 'false' && (<section className="py-20 bg-gradient-to-b from-[#0c4a6e]/10 to-transparent">
         <div className="container px-4 md:px-6">
           <div className="max-w-2xl mx-auto text-center mb-8">
             <Badge variant="secondary" className="mb-4">Акция</Badge>
@@ -1383,7 +1381,7 @@ const Index = () => {
             <FishGame tgChannel={siteSettings.contacts_telegram || 'aquascale'} scoreToWin={25} />
           </div>
         </div>
-      </section>
+      </section>)}
 
       {/* Cart Sheet */}
       <Sheet open={cart.open} onOpenChange={cart.setOpen}>

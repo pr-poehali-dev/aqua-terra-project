@@ -1381,6 +1381,42 @@ export default function Admin() {
         {tab === 'settings' && (
           <div className="space-y-8">
 
+            {/* Visibility */}
+            <Card className="p-6">
+              <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="LayoutDashboard" size={18} />Видимость блоков</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {([
+                  { key: 'section_stats',     label: 'Статистика' },
+                  { key: 'section_services',  label: 'Услуги и цены' },
+                  { key: 'section_shop',      label: 'Магазин' },
+                  { key: 'section_portfolio', label: 'Портфолио' },
+                  { key: 'section_articles',  label: 'Статьи' },
+                  { key: 'section_faq',       label: 'FAQ' },
+                  { key: 'section_map',       label: 'Карта зон выезда' },
+                  { key: 'section_quiz',      label: 'Квиз' },
+                  { key: 'section_game',      label: 'Игра (рыбка)' },
+                ] as const).map(({ key, label }) => {
+                  const enabled = siteSettings[key] !== 'false';
+                  return (
+                    <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-muted/20">
+                      <span className="text-sm font-medium">{label}</span>
+                      <div
+                        className={`w-11 h-6 rounded-full transition-colors cursor-pointer ${enabled ? 'bg-primary' : 'bg-muted'}`}
+                        onClick={async () => {
+                          const next = enabled ? 'false' : 'true';
+                          setSiteSettings(p => ({ ...p, [key]: next }));
+                          await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ [key]: next }) });
+                          toast({ title: `${label}: ${next === 'true' ? 'включён' : 'выключен'}` });
+                        }}
+                      >
+                        <div className={`w-5 h-5 bg-white rounded-full shadow m-0.5 transition-transform ${enabled ? 'translate-x-5' : ''}`} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
             {/* Hero */}
             <Card className="p-6">
               <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="Sparkles" size={18} />Главный экран (Hero)</h3>
@@ -1507,27 +1543,6 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-            </Card>
-
-            {/* Quiz toggle */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2"><Icon name="ListChecks" size={18} />Квиз</h3>
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <span className="text-sm text-muted-foreground">{siteSettings.quiz_enabled === 'false' ? 'Выключен' : 'Включён'}</span>
-                  <div
-                    className={`w-11 h-6 rounded-full transition-colors ${siteSettings.quiz_enabled === 'false' ? 'bg-muted' : 'bg-primary'}`}
-                    onClick={async () => {
-                      const next = siteSettings.quiz_enabled === 'false' ? 'true' : 'false';
-                      setSiteSettings(p => ({ ...p, quiz_enabled: next }));
-                      await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ quiz_enabled: next }) });
-                      toast({ title: next === 'true' ? 'Квиз включён' : 'Квиз выключен' });
-                    }}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full shadow m-0.5 transition-transform ${siteSettings.quiz_enabled === 'false' ? '' : 'translate-x-5'}`} />
-                  </div>
-                </label>
-              </div>
             </Card>
 
             {/* Quiz questions */}
