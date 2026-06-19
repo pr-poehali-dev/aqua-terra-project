@@ -118,21 +118,16 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
           const H = mapEl.offsetHeight;
 
           // Удаляем старый canvas если есть
-          const old = mapEl.querySelector('canvas.zone-canvas');
-          if (old) old.remove();
-
-          // Вставляем canvas в слой тайлов — под контролами Яндекса
-          const tileLayer = mapEl.querySelector('[class*="ground-pane"]') as HTMLElement
-            || mapEl.querySelector('[class*="layer"]') as HTMLElement
-            || mapEl;
-          const container = tileLayer.parentElement || mapEl;
+          document.querySelectorAll('canvas.zone-canvas').forEach(el => el.remove());
 
           const canvas = document.createElement('canvas');
           canvas.className = 'zone-canvas';
           canvas.width = W;
           canvas.height = H;
-          canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:0;opacity:0.9;';
-          container.appendChild(canvas);
+          canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
+
+          // Первый дочерний элемент — под всеми слоями Яндекса
+          mapEl.insertBefore(canvas, mapEl.firstChild);
 
           const ctx = canvas.getContext('2d')!;
 

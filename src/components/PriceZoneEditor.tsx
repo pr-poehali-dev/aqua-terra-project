@@ -65,15 +65,14 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
     const H = mapEl.offsetHeight;
     if (!W || !H) return;
 
-    const old = mapEl.querySelector('canvas.zone-canvas');
-    if (old) old.remove();
+    document.querySelectorAll('canvas.zone-canvas').forEach(el => el.remove());
     if (config.points.length === 0) return;
 
     const canvas = document.createElement('canvas');
     canvas.className = 'zone-canvas';
     canvas.width = W; canvas.height = H;
     canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1;';
-    mapEl.appendChild(canvas);
+    mapEl.insertBefore(canvas, mapEl.firstChild);
 
     const ctx = canvas.getContext('2d')!;
     const proj = map.options.get('projection');
