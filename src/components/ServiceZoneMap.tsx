@@ -112,7 +112,6 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
       // Рисуем градиентные зоны через Canvas-оверлей поверх тайлов (не перехватывает мышь)
       if (hasPoints) {
         const drawZones = () => {
-          const projection = map.options.get('projection') || window.ymaps.projection.wgs84Mercator;
           const mapEl = mapRef.current!;
           const W = mapEl.offsetWidth;
           const H = mapEl.offsetHeight;
@@ -134,19 +133,15 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
             const maxR = pt.r3_km * 1000;
 
             // Переводим центр точки в пиксели экрана
-            const centerPx = map.converter.globalToPage(
-              map.converter.coordsToGlobal([pt.lat, pt.lon], map.getZoom())
-            );
+            const centerPx = map.converter.geoToPage([pt.lat, pt.lon]);
             const cx = centerPx[0];
             const cy = centerPx[1];
 
-            // Считаем радиус в пикселях: берём точку на расстоянии maxR метров по горизонтали
+            // Считаем радиус в пикселях через соседнюю точку на maxR метров восточнее
             const edgeCoord = window.ymaps.coordSystem.geo.solveDirectProblem(
               [pt.lat, pt.lon], [0, 1], maxR
             ).endPoint;
-            const edgePx = map.converter.globalToPage(
-              map.converter.coordsToGlobal(edgeCoord, map.getZoom())
-            );
+            const edgePx = map.converter.geoToPage(edgeCoord);
             const rPx = Math.sqrt((edgePx[0]-cx)**2 + (edgePx[1]-cy)**2);
 
             // Радиальный градиент: зелёный в центре → жёлтый → красный на краю
