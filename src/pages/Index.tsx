@@ -601,33 +601,35 @@ const Index = () => {
             </button>
           </div>
         </div>
-        {menuOpen && (
-          <div className="md:hidden fixed left-0 right-0 top-14 bottom-0 z-[55] flex flex-col border-t border-border" style={{ backgroundColor: 'hsl(var(--background))' }}>
-            <nav className="flex flex-col px-6 pt-4 pb-2 gap-0 flex-1 overflow-y-auto">
-              {NAV.map((n, i) => (
-                <button
-                  key={n.id}
-                  onClick={() => { scrollTo(n.id); setMenuOpen(false); }}
-                  className="flex items-center justify-between py-3.5 border-b border-border/50 text-left group"
-                  style={{ animationDelay: `${i * 40}ms` }}
-                >
-                  <span className="font-display text-xl font-semibold text-primary group-hover:text-secondary transition-colors">{n.label}</span>
-                  <Icon name="ArrowRight" size={16} className="text-muted-foreground group-hover:text-secondary group-hover:translate-x-1 transition-all" />
-                </button>
-              ))}
-            </nav>
-            <div className="px-6 pb-8 pt-4 space-y-3 border-t border-border shrink-0">
-              <a href="tel:+79055337226" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
-                <Icon name="Phone" size={16} /> +7 905 533 7226
-              </a>
-              <a href="https://t.me/aquascale" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
-                <Icon name="Send" size={16} /> Telegram
-              </a>
-              <Button className="w-full" size="sm" onClick={() => { scrollTo('contacts'); setMenuOpen(false); }}>Оставить заявку</Button>
-            </div>
-          </div>
-        )}
       </header>
+
+      {/* Mobile menu — вне header чтобы не ограничиваться его stacking context */}
+      {menuOpen && (
+        <div className="md:hidden fixed left-0 right-0 top-14 bottom-0 z-[60] flex flex-col border-t border-border" style={{ backgroundColor: 'hsl(var(--background))' }}>
+          <nav className="flex flex-col px-6 pt-4 pb-2 gap-0 flex-1 overflow-y-auto">
+            {NAV.map((n, i) => (
+              <button
+                key={n.id}
+                onClick={() => { scrollTo(n.id); setMenuOpen(false); }}
+                className="flex items-center justify-between py-3.5 border-b border-border/50 text-left group"
+                style={{ animationDelay: `${i * 40}ms` }}
+              >
+                <span className="font-display text-xl font-semibold text-primary group-hover:text-secondary transition-colors">{n.label}</span>
+                <Icon name="ArrowRight" size={16} className="text-muted-foreground group-hover:text-secondary group-hover:translate-x-1 transition-all" />
+              </button>
+            ))}
+          </nav>
+          <div className="px-6 pb-8 pt-4 space-y-3 border-t border-border shrink-0">
+            <a href="tel:+79055337226" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
+              <Icon name="Phone" size={16} /> +7 905 533 7226
+            </a>
+            <a href="https://t.me/aquascale" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
+              <Icon name="Send" size={16} /> Telegram
+            </a>
+            <Button className="w-full" size="sm" onClick={() => { scrollTo('contacts'); setMenuOpen(false); }}>Оставить заявку</Button>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section id="home" className="relative pt-14 md:pt-20 min-h-[100svh] md:min-h-[92vh] flex items-center overflow-hidden">
