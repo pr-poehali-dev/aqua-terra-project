@@ -5,14 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import RichEditor from '@/components/RichEditor';
-import ZoneEditor from '@/components/ZoneEditor';
 import PriceZoneEditor from '@/components/PriceZoneEditor';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
 const SETTINGS_URL = 'https://functions.poehali.dev/9257c1cb-d389-4e76-a3a9-69b452c12431';
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
-const ZONES_URL = 'https://functions.poehali.dev/0092227c-949a-4bfa-afca-6c591a34e572';
 const PRICE_ZONES_URL = 'https://functions.poehali.dev/03fb0c39-d302-40a1-82c6-b87dcc1b4071';
 const ARTICLES_ADMIN = 'https://functions.poehali.dev/e8098f3c-29db-4ad6-a1d7-eeb57eb5dea7';
 const PRODUCTS_ADMIN = 'https://functions.poehali.dev/56ecfcae-0ead-4151-b546-411ce113bde1';
@@ -156,12 +154,7 @@ export default function Admin() {
   const [tgStatus, setTgStatus] = useState<{connected: boolean; bot_name: string | null; has_token: boolean; has_chat_id: boolean} | null>(null);
   const [tgTesting, setTgTesting] = useState(false);
   const [editingFaq, setEditingFaq] = useState<{id?: number; q: string; a: string; sort_order: number} | null>(null);
-  // Зоны обслуживания
-  interface ServiceZone { id: number; name: string; color: string; opacity: number; zone_type: 'circle' | 'polygon'; coordinates: [number,number][]; center_lat: number|null; center_lon: number|null; radius_km: number|null; sort_order: number; active: boolean; }
-  const [zones, setZones] = useState<ServiceZone[]>([]);
-  const [editingZone, setEditingZone] = useState<Partial<ServiceZone> | null>(null);
-  const [savingZone, setSavingZone] = useState(false);
-  const loadZones = () => fetch(`${ZONES_URL}?admin=1`, { headers }).then(r => r.json()).then(setZones).catch(() => {});
+
   // Ценовые зоны
   interface PriceZoneConfig {
     ring1_factor: number; ring1_label: string;
@@ -1671,15 +1664,17 @@ export default function Admin() {
               </div>
             </Card>
 
-            {/* Зоны обслуживания */}
+            {/* Карта зон выезда */}
             <Card className="p-6">
               <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 mb-1">
-                <Icon name="MapPin" size={18} />Зона выезда на карте
+                <Icon name="MapPin" size={18} />Карта зон выезда
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">Нарисуйте одну зону — она отобразится зелёным на сайте в разделе «Контакты».</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Добавьте районы, где уже работаете — вокруг каждого появится градиент: зелёный (дёшево) → жёлтый → красный (далеко). Клиенты сразу поймут географию.
+              </p>
 
               {/* Ключ Яндекс Карт */}
-              <div className="mb-5">
+              <div className="mb-5 pb-5 border-b border-border">
                 <label className="text-xs text-muted-foreground mb-1 block">Ключ Яндекс Карт (JavaScript API)</label>
                 <div className="flex gap-2">
                   <input placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -1692,82 +1687,9 @@ export default function Admin() {
                     setSavingSettings(false); toast({ title: 'Ключ сохранён!' });
                   }}>{savingSettings ? '...' : 'Сохранить'}</Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Получить бесплатно на <span className="text-primary">developer.tech.yandex.ru</span> → JavaScript API и HTTP Геокодер</p>
+                <p className="text-xs text-muted-foreground mt-1">Получить бесплатно на <a href="https://developer.tech.yandex.ru" target="_blank" rel="noreferrer" className="text-primary hover:underline">developer.tech.yandex.ru</a> → JavaScript API и HTTP Геокодер</p>
               </div>
 
-              {/* Одна активная зона */}
-              {(() => {
-                const activeZone = zones.find(z => z.active);
-                if (!editingZone) {
-                  return (
-                    <div className="space-y-3">
-                      {activeZone ? (
-                        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
-                          <span className="w-4 h-4 rounded shrink-0 bg-green-500" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{activeZone.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {activeZone.zone_type === 'circle'
-                                ? `Круг · ${activeZone.radius_km} км`
-                                : `Полигон · ${activeZone.coordinates?.length || 0} точек`}
-                            </p>
-                          </div>
-                          <Button size="sm" onClick={() => setEditingZone({...activeZone})}>
-                            <Icon name="Pencil" size={13} className="mr-1.5" />Редактировать
-                          </Button>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-3">Зона ещё не нарисована</p>
-                      )}
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => setEditingZone({
-                        id: activeZone?.id,
-                        name: 'Зона выезда',
-                        color: '#22c55e', opacity: 0.22,
-                        zone_type: 'polygon', coordinates: [],
-                        center_lat: null, center_lon: null, radius_km: null,
-                        sort_order: 1, active: true,
-                      })}>
-                        <Icon name="Pencil" size={14} className="mr-1.5" />
-                        {activeZone ? 'Нарисовать заново' : 'Нарисовать зону'}
-                      </Button>
-                    </div>
-                  );
-                }
-                return (
-                  <ZoneEditor
-                    zone={editingZone}
-                    apiKey={siteSettings.yandex_maps_key || ''}
-                    saving={savingZone}
-                    onChange={setEditingZone}
-                    onSave={async () => {
-                      setSavingZone(true);
-                      // Скрываем все остальные зоны, сохраняем текущую
-                      for (const z of zones.filter(z => z.active && z.id !== editingZone.id)) {
-                        await fetch(`${ZONES_URL}?id=${z.id}`, { method: 'PUT', headers, body: JSON.stringify({...z, active: false}) });
-                      }
-                      if (editingZone.id) {
-                        await fetch(`${ZONES_URL}?id=${editingZone.id}`, { method: 'PUT', headers, body: JSON.stringify(editingZone) });
-                      } else {
-                        await fetch(ZONES_URL, { method: 'POST', headers, body: JSON.stringify(editingZone) });
-                      }
-                      await loadZones();
-                      setEditingZone(null); setSavingZone(false);
-                      toast({ title: 'Зона сохранена!' });
-                    }}
-                    onCancel={() => setEditingZone(null)}
-                  />
-                );
-              })()}
-            </Card>
-
-            {/* Ценовые зоны по радиусу */}
-            <Card className="p-6">
-              <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 mb-1">
-                <Icon name="CircleDollarSign" size={18} />Ценовые зоны выезда
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Добавьте точки для каждой зоны — вбейте адрес или кликните на карте. Задайте радиус и коэффициент. Круги одного цвета сливаются.
-              </p>
               <PriceZoneEditor
                 config={priceZones}
                 apiKey={siteSettings.yandex_maps_key || ''}
@@ -1778,7 +1700,7 @@ export default function Admin() {
                   await fetch(PRICE_ZONES_URL, { method: 'POST', headers, body: JSON.stringify(priceZones) });
                   await loadPriceZones();
                   setSavingPriceZones(false);
-                  toast({ title: 'Ценовые зоны сохранены!' });
+                  toast({ title: 'Зоны сохранены!' });
                 }}
               />
             </Card>
