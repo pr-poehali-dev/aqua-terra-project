@@ -166,11 +166,9 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
               <button className="pointer-events-auto ml-1 opacity-60 hover:opacity-100" onClick={() => setClickMode(false)}>✕</button>
             </div>
           )}
-          <div
-            ref={mapRef}
-            className={`w-full rounded-xl overflow-hidden border-2 transition-colors ${clickMode ? 'border-primary cursor-crosshair' : 'border-border'}`}
-            style={{ height: 300 }}
-          />
+          <div className={`w-full rounded-xl border-2 transition-colors overflow-hidden ${clickMode ? 'border-primary cursor-crosshair' : 'border-border'}`} style={{ height: 300 }}>
+            <div ref={mapRef} className="w-full h-full" />
+          </div>
         </div>
       ) : (
         <div className="rounded-xl bg-muted p-4 text-sm text-muted-foreground text-center">

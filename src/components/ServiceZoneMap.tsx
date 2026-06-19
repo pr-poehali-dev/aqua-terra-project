@@ -197,8 +197,8 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
   }
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`} style={{ height }}>
-      <div ref={mapRef} className="w-full h-full" />
+    <div className={`relative rounded-2xl border border-border ${className}`} style={{ height }}>
+      <div ref={mapRef} className="w-full h-full rounded-2xl overflow-hidden" />
 
       {/* Легенда */}
       {priceConfig?.active && priceConfig.points.length > 0 && (
