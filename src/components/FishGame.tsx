@@ -95,33 +95,51 @@ function drawFish(ctx:CanvasRenderingContext2D,x:number,y:number,angle:number,wa
   ctx.restore();
 }
 
-function drawShark(ctx:CanvasRenderingContext2D,x:number,y:number,angle:number,wag:number) {
+// Сачок аквариумиста: ручка + обруч + сетка
+function drawNet(ctx:CanvasRenderingContext2D,x:number,y:number,angle:number,lunge:number) {
   ctx.save();ctx.translate(x,y);ctx.rotate(angle);
-  // Хвост
-  ctx.beginPath();ctx.moveTo(-35,0);
-  ctx.bezierCurveTo(-50,-18+wag*12,-62,-16+wag*18,-60,wag*8);
-  ctx.bezierCurveTo(-62,16+wag*18,-50,18+wag*12,-35,0);ctx.closePath();
-  ctx.fillStyle='#475569';ctx.fill();
-  // Тело
-  ctx.beginPath();ctx.ellipse(0,0,40,18,0,0,Math.PI*2);
-  const bg=ctx.createLinearGradient(-40,-18,40,18);
-  bg.addColorStop(0,'#64748b');bg.addColorStop(0.5,'#475569');bg.addColorStop(1,'#334155');
-  ctx.fillStyle=bg;ctx.fill();
-  ctx.beginPath();ctx.ellipse(5,7,30,9,0.1,0,Math.PI*2);ctx.fillStyle='rgba(226,232,240,0.35)';ctx.fill();
-  // Спинной плавник
-  ctx.beginPath();ctx.moveTo(-5,-18);ctx.bezierCurveTo(0,-40,18,-38,22,-18);ctx.closePath();ctx.fillStyle='#3d5068';ctx.fill();
-  // Боковой плавник
-  ctx.beginPath();ctx.moveTo(5,14);ctx.bezierCurveTo(10,28,22,30,24,16);ctx.closePath();ctx.fillStyle='#3d5068';ctx.fill();
-  // Жабры
-  for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(-4+i*5,-16);ctx.quadraticCurveTo(-2+i*5,0,-4+i*5,16);ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=1.5;ctx.stroke();}
-  // Пасть
-  ctx.beginPath();ctx.moveTo(38,2);ctx.bezierCurveTo(46,-6,48,-12,42,-16);ctx.bezierCurveTo(52,-8,52,10,42,16);ctx.bezierCurveTo(48,12,46,8,38,2);ctx.fillStyle='#1e293b';ctx.fill();
-  // Зубы
-  for(let i=0;i<4;i++){const tx=39+i*2,ty=-8+i*2.5;ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx+3,ty+6);ctx.lineTo(tx+6,ty);ctx.fillStyle='#f8fafc';ctx.fill();}
-  for(let i=0;i<4;i++){const tx=39+i*2,ty=8-i*2.5;ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx+3,ty-6);ctx.lineTo(tx+6,ty);ctx.fillStyle='#f8fafc';ctx.fill();}
-  // Глаз
-  ctx.beginPath();ctx.arc(22,-7,5,0,Math.PI*2);ctx.fillStyle='#0f172a';ctx.fill();
-  ctx.beginPath();ctx.arc(23,-8,1.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fill();
+  // Небольшой рывок вперёд при «броске»
+  ctx.translate(lunge*18,0);
+
+  const R=22; // радиус обруча
+
+  // Ручка — длинная палка уходит назад
+  ctx.beginPath();ctx.moveTo(-R-2,0);ctx.lineTo(-R-70,0);
+  ctx.strokeStyle='#92400e';ctx.lineWidth=5;ctx.lineCap='round';ctx.stroke();
+  // Обмотка ручки
+  for(let i=0;i<6;i++){
+    const hx=-R-12-i*10;
+    ctx.beginPath();ctx.moveTo(hx,-3);ctx.lineTo(hx+4,3);
+    ctx.strokeStyle='#78350f';ctx.lineWidth=2;ctx.stroke();
+  }
+
+  // Обруч (металлический)
+  ctx.beginPath();ctx.arc(0,0,R,Math.PI*0.5,Math.PI*1.5);
+  ctx.strokeStyle='#c0c0c0';ctx.lineWidth=4;ctx.lineCap='butt';ctx.stroke();
+  ctx.beginPath();ctx.arc(0,0,R,Math.PI*0.5,Math.PI*1.5);
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Соединение обруча с ручкой
+  ctx.beginPath();ctx.moveTo(0,R);ctx.lineTo(-R-2,0);ctx.moveTo(0,-R);ctx.lineTo(-R-2,0);
+  ctx.strokeStyle='#a0a0a0';ctx.lineWidth=3;ctx.stroke();
+
+  // Сетка — полупрозрачные ячейки
+  ctx.save();
+  ctx.beginPath();ctx.arc(0,0,R,Math.PI*0.5,Math.PI*1.5);ctx.lineTo(-R-2,0);ctx.closePath();
+  ctx.clip();
+  ctx.strokeStyle='rgba(150,220,255,0.5)';ctx.lineWidth=1;
+  // вертикальные нити
+  for(let xi=-R;xi<=4;xi+=8){
+    ctx.beginPath();ctx.moveTo(xi,-R);ctx.lineTo(xi,R);ctx.stroke();
+  }
+  // горизонтальные нити
+  for(let yi=-R;yi<=R;yi+=8){
+    ctx.beginPath();ctx.moveTo(-R,yi);ctx.lineTo(4,yi);ctx.stroke();
+  }
+  // заливка сетки
+  ctx.fillStyle='rgba(100,200,240,0.08)';ctx.fillRect(-R,-R,R+4,R*2);
+  ctx.restore();
+
   ctx.restore();
 }
 
@@ -211,7 +229,12 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     fishX:W/2,fishY:H/2,fishVx:0,fishVy:0,
     targetX:W/2,targetY:H/2,
     fishAngle:0,wag:0,wagDir:1,
-    sharkX:-80,sharkY:H/2,sharkVx:0,sharkVy:0,sharkAngle:0,sharkWag:0,sharkWagDir:1,
+    // Сачок
+    netX:W+80,netY:H/2,netAngle:0,
+    netLunge:0,          // 0..1 — бросок сачка вперёд
+    netLunging:false,    // активный бросок
+    netLungeTimer:0,     // таймер до следующего броска
+    netPauseTimer:0,     // пауза после броска
     foods:[] as Food[],score:0,alive:false,
     dead:false,deadTimer:0,
     animId:0,foodTimer:0,lastTime:0,
@@ -245,7 +268,8 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     const s=stateRef.current;
     s.fishX=W/2;s.fishY=H/2;s.fishVx=0;s.fishVy=0;
     s.targetX=W/2;s.targetY=H/2;s.fishAngle=0;s.wag=0;
-    s.sharkX=-80;s.sharkY=H/2+30;s.sharkVx=0;s.sharkVy=0;
+    s.netX=W+80;s.netY=H/2;s.netAngle=0;
+    s.netLunge=0;s.netLunging=false;s.netLungeTimer=3000;s.netPauseTimer=0;
     if(!keepScore){s.score=0;setScore(0);}
     s.foods=[];s.alive=true;s.dead=false;s.deadTimer=0;
     s.foodTimer=0;s.lastTime=performance.now();
@@ -263,16 +287,16 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
       s.deadTimer+=dt*0.001;
       drawBg(ctx,time,s.bubbles);drawWeeds(ctx,s.weeds,time*0.001);drawBubbles(ctx,s.bubbles);
       s.foods.forEach(f=>f.type==='flake'?drawFlake(ctx,f.x,f.y,f.angle):drawWorm(ctx,f.x,f.y,f.wobble,f.vx,f.vy));
-      drawShark(ctx,s.sharkX,s.sharkY,s.sharkAngle,s.sharkWag);
+      drawNet(ctx,s.netX,s.netY,s.netAngle,1);
       drawFish(ctx,s.fishX,s.fishY,s.fishAngle,s.wag,1,true,s.deadTimer);
       ctx.save();ctx.globalAlpha=Math.min(1,s.deadTimer*2);
       ctx.fillStyle='rgba(0,0,0,0.5)';ctx.beginPath();
-      if(ctx.roundRect) ctx.roundRect(W/2-125,H/2-32,250,64,12);
-      else ctx.rect(W/2-125,H/2-32,250,64);
+      if(ctx.roundRect)ctx.roundRect(W/2-135,H/2-32,270,64,12);
+      else ctx.rect(W/2-135,H/2-32,270,64);
       ctx.fill();
       ctx.strokeStyle='rgba(239,68,68,0.7)';ctx.lineWidth=1.5;ctx.stroke();
       ctx.fillStyle='#fff';ctx.font='bold 19px sans-serif';ctx.textAlign='center';
-      ctx.fillText('Акула съела рыбку!',W/2,H/2-8);
+      ctx.fillText('Аквариумист поймал рыбку!',W/2,H/2-8);
       ctx.font='13px sans-serif';ctx.fillStyle='rgba(255,255,255,0.65)';
       ctx.fillText('Начинаем заново...',W/2,H/2+16);ctx.restore();
       if(s.deadTimer>2){restartGame(true);s.animId=requestAnimationFrame(gameLoop);return;}
@@ -293,18 +317,39 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     if(spd>0.5)s.fishAngle=Math.atan2(s.fishVy,s.fishVx);
     s.wag+=s.wagDir*0.14*(0.5+spd*0.25);if(Math.abs(s.wag)>1)s.wagDir*=-1;
 
-    // Акула
-    const sdx=s.fishX-s.sharkX,sdy=s.fishY-s.sharkY;
-    const sdist=Math.sqrt(sdx**2+sdy**2);
-    const sharkSpd=0.65;
-    s.sharkVx=(s.sharkVx+sdx/Math.max(sdist,1)*sharkSpd*0.04)*0.96;
-    s.sharkVy=(s.sharkVy+sdy/Math.max(sdist,1)*sharkSpd*0.04)*0.96;
-    s.sharkX+=s.sharkVx;s.sharkY+=s.sharkVy;
-    const sharkSpeedCur=Math.sqrt(s.sharkVx**2+s.sharkVy**2);
-    if(sharkSpeedCur>0.3)s.sharkAngle=Math.atan2(s.sharkVy,s.sharkVx);
-    s.sharkWag+=s.sharkWagDir*0.08;if(Math.abs(s.sharkWag)>0.7)s.sharkWagDir*=-1;
+    // Сачок — медленно следует за рыбкой, иногда резко бросается
+    const ndx=s.fishX-s.netX,ndy=s.fishY-s.netY;
+    const ndist=Math.sqrt(ndx**2+ndy**2);
+    s.netAngle=Math.atan2(ndy,ndx);
 
-    if(sdist<52){s.alive=false;s.dead=true;s.deadTimer=0;s.animId=requestAnimationFrame(gameLoop);return;}
+    if(s.netPauseTimer>0){
+      // Пауза после броска — медленно отступает
+      s.netPauseTimer-=dt;
+      s.netLunge=Math.max(0,s.netLunge-dt*0.003);
+      s.netX+=(s.fishX-s.netX)*0.004;
+      s.netY+=(s.fishY-s.netY)*0.004;
+    } else if(s.netLunging){
+      // Активный бросок
+      s.netLunge=Math.min(1,s.netLunge+dt*0.006);
+      s.netX+=(s.fishX-s.netX)*0.08;
+      s.netY+=(s.fishY-s.netY)*0.08;
+      if(s.netLunge>=1){s.netLunging=false;s.netPauseTimer=1800;}
+    } else {
+      // Обычное медленное следование
+      s.netLungeTimer-=dt;
+      s.netLunge*=0.92;
+      s.netX+=(s.fishX-s.netX)*0.012;
+      s.netY+=(s.fishY-s.netY)*0.012;
+      if(s.netLungeTimer<=0){
+        s.netLunging=true;s.netLungeTimer=4000+Math.random()*3000;
+      }
+    }
+
+    // Поймал рыбку — только во время броска (lunge>0.6) и близко
+    if(s.netLunging&&s.netLunge>0.6&&ndist<45){
+      s.alive=false;s.dead=true;s.deadTimer=0;
+      s.animId=requestAnimationFrame(gameLoop);return;
+    }
 
     // Еда
     s.foods.forEach(f=>{f.x+=f.vx;f.y+=f.vy;f.wobble+=0.12;f.angle+=0.015;});
@@ -323,7 +368,7 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     drawWeeds(ctx,s.weeds,time*0.001);
     drawBubbles(ctx,s.bubbles);
     s.foods.forEach(f=>f.type==='flake'?drawFlake(ctx,f.x,f.y,f.angle):drawWorm(ctx,f.x,f.y,f.wobble,f.vx,f.vy));
-    drawShark(ctx,s.sharkX,s.sharkY,s.sharkAngle,s.sharkWag);
+    drawNet(ctx,s.netX,s.netY,s.netAngle,s.netLunge);
     drawFish(ctx,s.fishX,s.fishY,s.fishAngle,s.wag);
 
     // HUD счёт
@@ -334,14 +379,13 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     ctx.fillStyle='rgba(255,255,255,0.9)';ctx.font='bold 14px sans-serif';ctx.textAlign='left';
     ctx.fillText(`${s.score} / ${scoreToWin}`,38,28);
 
-    // Danger indicator
-    const danger=Math.max(0,1-sdist/180);
-    if(danger>0.1){
-      ctx.save();ctx.globalAlpha=danger*0.7;
-      ctx.fillStyle=`rgba(239,68,68,${danger*0.12})`;ctx.fillRect(0,0,W,H);
-      ctx.globalAlpha=Math.min(1,danger*2);
-      ctx.fillStyle='rgba(239,68,68,0.95)';ctx.font=`bold 12px sans-serif`;ctx.textAlign='center';
-      ctx.fillText('⚠ Акула близко!',W/2,20);ctx.restore();
+    // Предупреждение о броске
+    if(s.netLunging&&s.netLunge>0.3){
+      ctx.save();ctx.globalAlpha=s.netLunge*0.8;
+      ctx.fillStyle=`rgba(251,191,36,${s.netLunge*0.1})`;ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha=Math.min(1,s.netLunge*2);
+      ctx.fillStyle='rgba(251,191,36,0.95)';ctx.font='bold 12px sans-serif';ctx.textAlign='center';
+      ctx.fillText('⚠ Аквариумист бросает сачок!',W/2,20);ctx.restore();
     }
 
     s.animId=requestAnimationFrame(gameLoop);
@@ -380,7 +424,7 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
             <h3 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">Накорми рыбку!</h3>
             <p className="text-white/70 text-sm mb-1">Веди мышью — рыбка плывёт следом</p>
             <p className="text-white/70 text-sm mb-1">Собери <strong className="text-cyan-300">{scoreToWin} очков</strong> — получи промокод</p>
-            <p className="text-red-300/80 text-xs mb-4">Осторожно — акула охотится за рыбкой!</p>
+            <p className="text-yellow-300/80 text-xs mb-4">Осторожно — аквариумист иногда бросает сачок!</p>
             <div className="flex gap-5 text-xs text-white/60 mb-5">
               <span>✦ хлопья = 1 очко</span><span>● червяк = 2 очка</span>
             </div>
