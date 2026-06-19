@@ -358,7 +358,7 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
       ctx.fillText('Аквариумист поймал рыбку!',W/2,H/2-8);
       ctx.font='13px sans-serif';ctx.fillStyle='rgba(255,255,255,0.65)';
       ctx.fillText('Начинаем заново...',W/2,H/2+16);ctx.restore();
-      if(s.deadTimer>2){restartGame(true);s.animId=requestAnimationFrame(gameLoop);return;}
+      if(s.deadTimer>2){restartGame(false);s.animId=requestAnimationFrame(gameLoop);return;}
       s.animId=requestAnimationFrame(gameLoop);return;
     }
 
