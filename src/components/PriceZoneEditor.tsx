@@ -25,18 +25,11 @@ interface Props {
   onSave: () => void;
 }
 
-const RINGS = [
-  { color: '#22c55e', stroke: '#16a34a', dot: 'bg-green-500',  label: 'Зелёная' },
-  { color: '#eab308', stroke: '#ca8a04', dot: 'bg-yellow-500', label: 'Жёлтая' },
-  { color: '#ef4444', stroke: '#dc2626', dot: 'bg-red-500',    label: 'Красная' },
-];
-
 const DEFAULT_RADII = { r1_km: 10, r2_km: 25, r3_km: 50 };
 
 export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSave }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInst = useRef<any>(null);
-  const circlesRef = useRef<any[]>([]);
   const configRef = useRef(config);
   configRef.current = config;
   const [mapReady, setMapReady] = useState(false);
@@ -58,36 +51,71 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
     document.head.appendChild(s);
   }, [apiKey]);
 
-  // Перерисовка кругов (от большего к меньшему, градиент через несколько слоёв)
+  // Перерисовка зон через canvas (не перехватывает мышь)
   const redraw = useCallback(() => {
-    if (!mapInst.current) return;
-    const ymaps = (window as any).ymaps;
-    circlesRef.current.forEach(c => mapInst.current.geoObjects.remove(c));
-    circlesRef.current = [];
+    if (!mapInst.current || !mapRef.current) return;
+    const map = mapInst.current;
+    const mapEl = mapRef.current;
+    const W = mapEl.offsetWidth;
+    const H = mapEl.offsetHeight;
+    if (!W || !H) return;
 
-    config.points.forEach(pt => {
-      const radii = [
-        { km: pt.r3_km, ri: 2 },
-        { km: pt.r2_km, ri: 1 },
-        { km: pt.r1_km, ri: 0 },
-      ];
-      radii.forEach(({ km, ri }) => {
-        const ring = RINGS[ri];
-        const circle = new ymaps.Circle(
-          [[pt.lat, pt.lon], km * 1000],
-          {},
-          {
-            fillColor: ring.color + '28',
-            strokeColor: 'transparent',
-            strokeWidth: 0,
-            fillOpacity: 0.32,
-            interactivityModel: 'default#transparent',
-          }
-        );
-        mapInst.current.geoObjects.add(circle);
-        circlesRef.current.push(circle);
-      });
+    const old = mapEl.querySelector('canvas.zone-canvas');
+    if (old) old.remove();
+    if (config.points.length === 0) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'zone-canvas';
+    canvas.width = W; canvas.height = H;
+    canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:10;';
+    mapEl.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d')!;
+    const proj = map.options.get('projection');
+    const zoom = map.getZoom();
+    const mapGlobalCenter = proj.toGlobalPixels(map.getCenter(), zoom);
+    const toPage = (coord: number[]) => {
+      const gp = proj.toGlobalPixels(coord, zoom);
+      return [gp[0] - mapGlobalCenter[0] + W/2, gp[1] - mapGlobalCenter[1] + H/2];
+    };
+
+    const pts = config.points.map(pt => {
+      const maxR = pt.r3_km * 1000;
+      const [cx, cy] = toPage([pt.lat, pt.lon]);
+      const edgeCoord = (window as any).ymaps.coordSystem.geo.solveDirectProblem([pt.lat, pt.lon], [0, 1], maxR).endPoint;
+      const [ex, ey] = toPage(edgeCoord);
+      const rPx = Math.sqrt((ex-cx)**2 + (ey-cy)**2);
+      return { cx, cy, rPx };
     });
+
+    const imgData = ctx.createImageData(W, H);
+    const data = imgData.data;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let minT = Infinity;
+        for (const { cx, cy, rPx } of pts) {
+          const t = Math.sqrt((x-cx)**2 + (y-cy)**2) / rPx;
+          if (t < minT) minT = t;
+        }
+        if (minT >= 1) continue;
+        let r, g, b;
+        if (minT < 0.5) {
+          const t2 = minT / 0.5;
+          r = Math.round(34 + (234-34)*t2);
+          g = Math.round(197 + (179-197)*t2);
+          b = Math.round(94 + (8-94)*t2);
+        } else {
+          const t2 = (minT-0.5)/0.5;
+          r = Math.round(234 + (239-234)*t2);
+          g = Math.round(179 + (68-179)*t2);
+          b = Math.round(8 + (68-8)*t2);
+        }
+        const a = Math.round((1 - minT) * 0.55 * 255);
+        const i = (y*W + x)*4;
+        data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
   }, [config]);
 
   // Инициализация карты
@@ -102,6 +130,7 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       center, zoom: 9, controls: ['zoomControl'],
     }, { suppressMapOpenBlock: true });
     map.behaviors.disable('scrollZoom');
+    map.events.add(['boundschange', 'sizechange'], () => redraw());
     mapInst.current = map;
     redraw();
     return () => { if (mapInst.current) { mapInst.current.destroy(); mapInst.current = null; } };
