@@ -332,6 +332,8 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
   });
   const [phase,setPhase]=useState<'idle'|'playing'|'won'>('idle');
   const [score,setScore]=useState(0);
+  const [paused,setPaused]=useState(false);
+  const pausedRef=useRef(false);
   const [subscribed,setSubscribed]=useState(false);
   const [copied,setCopied]=useState(false);
   const idleAnimRef=useRef(0);
@@ -366,6 +368,12 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     const s=stateRef.current;
     const canvas=canvasRef.current;if(!canvas)return;
     const ctx=canvas.getContext('2d')!;
+
+    if(pausedRef.current){
+      s.lastTime=time; // сбрасываем время чтобы не было рывка после паузы
+      s.animId=requestAnimationFrame(gameLoop);return;
+    }
+
     const dt=Math.min(time-s.lastTime,50);s.lastTime=time;
 
     if(s.dead){
@@ -475,8 +483,14 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     s.animId=requestAnimationFrame(gameLoop);
   },[scoreToWin,restartGame]);
 
+  const togglePause=useCallback(()=>{
+    pausedRef.current=!pausedRef.current;
+    setPaused(p=>!p);
+  },[]);
+
   const startGame=useCallback(()=>{
     cancelAnimationFrame(idleAnimRef.current);
+    pausedRef.current=false;setPaused(false);
     restartGame(false);
     setPhase('playing');setSubscribed(false);setCopied(false);
     const s=stateRef.current;
@@ -496,11 +510,35 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     <div className="relative w-full" style={{maxWidth:W}}>
       <canvas ref={canvasRef} width={W} height={H}
         className="w-full rounded-2xl block"
-        style={{aspectRatio:`${W}/${H}`,cursor:phase==='playing'?'crosshair':'default'}}
-        onMouseMove={e=>onMove(e.clientX,e.clientY)}
-        onTouchMove={e=>{e.preventDefault();onMove(e.touches[0].clientX,e.touches[0].clientY);}}
-        onTouchStart={e=>{e.preventDefault();onMove(e.touches[0].clientX,e.touches[0].clientY);}}
+        style={{aspectRatio:`${W}/${H}`,cursor:phase==='playing'&&!paused?'crosshair':'default'}}
+        onMouseMove={e=>{ if(!paused) onMove(e.clientX,e.clientY); }}
+        onTouchMove={e=>{e.preventDefault(); if(!paused) onMove(e.touches[0].clientX,e.touches[0].clientY);}}
+        onTouchStart={e=>{e.preventDefault(); if(!paused) onMove(e.touches[0].clientX,e.touches[0].clientY);}}
       />
+
+      {/* Кнопка паузы */}
+      {phase==='playing'&&(
+        <button
+          onClick={togglePause}
+          className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center transition-colors text-white"
+        >
+          {paused
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          }
+        </button>
+      )}
+
+      {/* Оверлей паузы */}
+      {phase==='playing'&&paused&&(
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl" style={{background:'rgba(8,47,73,0.82)',backdropFilter:'blur(4px)'}}>
+          <div className="text-5xl mb-3">⏸</div>
+          <h3 className="text-2xl font-bold text-white mb-4">Пауза</h3>
+          <button onClick={togglePause} className="px-8 py-3 bg-cyan-400 hover:bg-cyan-300 text-[#0c4a6e] font-bold rounded-xl transition-colors text-base shadow-lg">
+            Продолжить
+          </button>
+        </div>
+      )}
 
       {phase==='idle'&&(
         <div className="absolute inset-0 flex flex-col items-end justify-end rounded-2xl p-6 pb-8">
