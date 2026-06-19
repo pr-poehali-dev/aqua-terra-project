@@ -91,25 +91,46 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       return Math.sqrt((ex-bx)**2 + (ey-by)**2);
     };
 
-    config.points.forEach(pt => {
+    const r1m = (config.r1_km ?? 10) * 1000;
+    const r2m = (config.r2_km ?? 25) * 1000;
+    const r3m = (config.r3_km ?? 50) * 1000;
+
+    const points2d = config.points.map(pt => {
       const [cx, cy] = toPage([pt.lat, pt.lon]);
-      const r1 = toRpx([pt.lat, pt.lon], (config.r1_km ?? 10) * 1000);
-      const r2 = toRpx([pt.lat, pt.lon], (config.r2_km ?? 25) * 1000);
-      const r3 = toRpx([pt.lat, pt.lon], (config.r3_km ?? 50) * 1000);
-
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r3);
-      grad.addColorStop(0,          'rgba(34,197,94,0.55)');
-      grad.addColorStop(r1/r3,      'rgba(34,197,94,0.45)');
-      grad.addColorStop(r1/r3+0.01, 'rgba(234,179,8,0.42)');
-      grad.addColorStop(r2/r3,      'rgba(234,179,8,0.35)');
-      grad.addColorStop(r2/r3+0.01, 'rgba(239,68,68,0.32)');
-      grad.addColorStop(1,          'rgba(239,68,68,0)');
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, r3, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
+      const rPx = toRpx([pt.lat, pt.lon], r3m);
+      return { cx, cy, rPx };
     });
+
+    const imgData = ctx.createImageData(W, H);
+    const data = imgData.data;
+
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let minDist = Infinity, minRpx = 1;
+        for (const pt of points2d) {
+          const dist = Math.sqrt((x - pt.cx) ** 2 + (y - pt.cy) ** 2);
+          if (dist < minDist) { minDist = dist; minRpx = pt.rPx; }
+        }
+        const t = minDist / minRpx;
+        if (t >= 1) continue;
+
+        const t1 = r1m / r3m, t2 = r2m / r3m;
+        let r, g, b;
+        if (t < t1) {
+          r = 34; g = 197; b = 94;
+        } else if (t < t2) {
+          const f = (t - t1) / (t2 - t1);
+          r = Math.round(34 + (234-34)*f); g = Math.round(197 + (179-197)*f); b = Math.round(94 + (8-94)*f);
+        } else {
+          const f = (t - t2) / (1 - t2);
+          r = Math.round(234 + (239-234)*f); g = Math.round(179 + (68-179)*f); b = Math.round(8 + (50-8)*f);
+        }
+        const a = Math.round((1 - t) * (1 - t) * 0.55 * 255);
+        const i = (y * W + x) * 4;
+        data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
   }, [config]);
 
   // Инициализация карты
