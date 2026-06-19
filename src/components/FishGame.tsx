@@ -95,106 +95,114 @@ function drawFish(ctx:CanvasRenderingContext2D,x:number,y:number,angle:number,wa
   ctx.restore();
 }
 
-// Сачок аквариумиста — вид сверху, опускается в воду вертикально
+// Сачок аквариумиста в профиль — зачерпывающее движение по дуге
+// lunge: 0=покой (сачок справа-сверху), 1=конец броска (сачок под рыбкой)
 function drawNet(ctx:CanvasRenderingContext2D,x:number,y:number,_angle:number,lunge:number) {
-  const W2=22, H2=20;
-  const netDip = lunge * 60;
-  // Позиция рамки сачка (двигается вниз при броске)
-  const frameY = y + netDip;
+  // Pivot — точка вращения (правый верхний угол, где рука)
+  // Сачок описывает дугу: от ~-40° (покой, справа) до ~30° (бросок, снизу)
+  const pivotX = x + 90;          // рука всегда правее рыбки
+  const pivotY = y - 60;           // и выше
+  const armLen = 95;               // длина ручки
+  const sweepAngle = (-Math.PI*0.42) + lunge * (Math.PI*0.72); // дуга броска
 
-  // Рука всегда у верхнего края canvas (абсолютная Y=28)
-  const handAbsY = 28;
-  const handX = x;
+  // Конец ручки (где крепится сачок)
+  const netTipX = pivotX + Math.cos(sweepAngle) * armLen;
+  const netTipY = pivotY + Math.sin(sweepAngle) * armLen;
 
-  // ── РУЧКА от рамки до руки ────────────────────────────────────────────
+  // Угол сачка — перпендикулярен ручке, открыт вперёд
+  const netFaceAngle = sweepAngle + Math.PI * 0.5;
+
+  // ── РУЧКА ──────────────────────────────────────────────────────────────
   ctx.save();
   // Основной стержень
-  ctx.beginPath();ctx.moveTo(x, frameY - H2);ctx.lineTo(handX, handAbsY + 12);
-  ctx.strokeStyle='#16a34a';ctx.lineWidth=5;ctx.lineCap='round';ctx.stroke();
-  // Витая текстура — точки вдоль ручки
-  const steps=16;
-  for(let i=0;i<steps;i++){
-    const t=i/steps;
-    const px=handX+(x-handX)*0;
-    const py=handAbsY+12+(frameY-H2-(handAbsY+12))*t;
+  ctx.beginPath();ctx.moveTo(netTipX,netTipY);ctx.lineTo(pivotX,pivotY);
+  ctx.strokeStyle='#334155';ctx.lineWidth=6;ctx.lineCap='round';ctx.stroke();
+  // Витая текстура
+  for(let i=1;i<12;i++){
+    const t=i/12;
+    const hx=netTipX+(pivotX-netTipX)*t;
+    const hy=netTipY+(pivotY-netTipY)*t;
+    const perp=sweepAngle+Math.PI/2;
     const off=(i%2===0)?-3:3;
-    ctx.beginPath();ctx.arc(px+off,py,2,0,Math.PI*2);
-    ctx.fillStyle='#15803d';ctx.fill();
+    ctx.beginPath();ctx.moveTo(hx+Math.cos(perp)*off,hy+Math.sin(perp)*off);
+    ctx.lineTo(hx+Math.cos(perp)*(off+0.5),hy+Math.sin(perp)*(off+0.5));
+    ctx.strokeStyle='#1e293b';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();
   }
   ctx.restore();
 
-  // ── РУКА (зафиксирована у верхнего края) ──────────────────────────────
-  ctx.save();ctx.translate(handX, handAbsY);
-
-  // Манжета рукава (рисуем первой — она сзади)
-  ctx.beginPath();ctx.ellipse(0,14,18,9,0,0,Math.PI*2);
-  ctx.fillStyle='#1d4ed8';ctx.fill();
-  ctx.strokeStyle='#1e40af';ctx.lineWidth=1;ctx.stroke();
-  // Полоска манжеты
-  ctx.beginPath();ctx.ellipse(0,14,18,9,0,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=2;ctx.stroke();
-
-  // Пальцы
-  for(let f=0;f<4;f++){
-    const fx=-9+f*6,fy=-9;
-    ctx.beginPath();ctx.ellipse(fx,fy,3.5,6,f*0.06-0.12,0,Math.PI*2);
-    ctx.fillStyle='#fcd5a8';ctx.fill();
-    ctx.strokeStyle='#c8875a';ctx.lineWidth=0.8;ctx.stroke();
-    // сустав
-    ctx.beginPath();ctx.moveTo(fx-2,fy+2);ctx.lineTo(fx+2,fy+2);
-    ctx.strokeStyle='#d4956a';ctx.lineWidth=0.7;ctx.stroke();
-  }
-  // Большой палец (сбоку)
-  ctx.beginPath();ctx.ellipse(14,4,4,3.5,1.1,0,Math.PI*2);
-  ctx.fillStyle='#fcd5a8';ctx.fill();
-  ctx.strokeStyle='#c8875a';ctx.lineWidth=0.8;ctx.stroke();
-
-  // Ладонь
-  ctx.beginPath();ctx.ellipse(0,4,13,10,0,0,Math.PI*2);
-  const sg=ctx.createRadialGradient(0,4,0,0,4,13);
-  sg.addColorStop(0,'#fde5c4');sg.addColorStop(1,'#e8a87c');
-  ctx.fillStyle=sg;ctx.fill();
+  // ── РУКА (держит ручку у pivot) ────────────────────────────────────────
+  ctx.save();ctx.translate(pivotX, pivotY);
+  // Рукав (уходит за правый край/верх)
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(28,-22);
+  ctx.strokeStyle='#1d4ed8';ctx.lineWidth=20;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(28,-22);
+  ctx.strokeStyle='#2563eb';ctx.lineWidth=16;ctx.lineCap='round';ctx.stroke();
+  // Манжета
+  ctx.beginPath();ctx.ellipse(0,0,14,10,sweepAngle+0.3,0,Math.PI*2);
+  ctx.fillStyle='#e8a87c';ctx.fill();
   ctx.strokeStyle='#c8875a';ctx.lineWidth=1;ctx.stroke();
-  // Линии ладони
-  ctx.beginPath();ctx.moveTo(-8,2);ctx.quadraticCurveTo(0,6,8,2);
-  ctx.strokeStyle='rgba(180,100,60,0.3)';ctx.lineWidth=1;ctx.stroke();
-
-  ctx.restore();
-
-  // ── КВАДРАТНАЯ РАМКА САЧКА (в абсолютных координатах) ─────────────────
-  ctx.save();ctx.translate(x, frameY);
-
-  // Тень рамки
-  ctx.beginPath();ctx.rect(-W2+2,-H2+2,W2*2,H2*2);
-  ctx.strokeStyle='rgba(0,80,0,0.3)';ctx.lineWidth=6;ctx.stroke();
-
-  // Рамка — зелёный пластик
-  ctx.beginPath();ctx.rect(-W2,-H2,W2*2,H2*2);
-  const frameG=ctx.createLinearGradient(-W2,-H2,W2,H2);
-  frameG.addColorStop(0,'#4ade80');frameG.addColorStop(0.5,'#16a34a');frameG.addColorStop(1,'#166534');
-  ctx.strokeStyle=frameG;ctx.lineWidth=5;ctx.lineJoin='round';ctx.stroke();
-  // Блик на рамке
-  ctx.beginPath();ctx.moveTo(-W2,-H2);ctx.lineTo(W2,-H2);
-  ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=2;ctx.stroke();
-
-  // ── СЕТКА внутри рамки ─────────────────────────────────────────────────
-  ctx.save();
-  ctx.beginPath();ctx.rect(-W2,-H2,W2*2,H2*2);ctx.clip();
-  ctx.fillStyle='rgba(20,160,60,0.15)';ctx.fillRect(-W2,-H2,W2*2,H2*2);
-  ctx.strokeStyle='rgba(22,163,74,0.65)';ctx.lineWidth=0.8;
-  const step=7;
-  for(let d=-W2*2;d<W2*2;d+=step){
-    ctx.beginPath();ctx.moveTo(d-H2,-H2);ctx.lineTo(d+H2,H2);ctx.stroke();
-  }
-  for(let d=-W2*2;d<W2*2;d+=step){
-    ctx.beginPath();ctx.moveTo(d+H2,-H2);ctx.lineTo(d-H2,H2);ctx.stroke();
-  }
-  // Мешок сетки
-  const sag=8+lunge*6;
+  // Ладонь (в профиль — вытянутая форма)
   ctx.beginPath();
-  ctx.moveTo(-W2,H2);ctx.quadraticCurveTo(0,H2+sag*2,W2,H2);
-  ctx.strokeStyle='rgba(22,163,74,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.moveTo(-6,-8);ctx.bezierCurveTo(-10,-4,-10,8,-4,12);
+  ctx.bezierCurveTo(4,16,12,10,12,2);ctx.bezierCurveTo(12,-6,6,-12,-6,-8);
+  ctx.fillStyle='#fcd5a8';ctx.fill();ctx.strokeStyle='#c8875a';ctx.lineWidth=1;ctx.stroke();
+  // Пальцы (в профиль, загнуты вокруг ручки)
+  for(let f=0;f<4;f++){
+    ctx.beginPath();ctx.ellipse(-8+f*2, -6+f*4, 4, 3, 0.8, 0, Math.PI*2);
+    ctx.fillStyle='#fcd5a8';ctx.fill();ctx.strokeStyle='#c8875a';ctx.lineWidth=0.7;ctx.stroke();
+  }
+  // Большой палец
+  ctx.beginPath();ctx.ellipse(8,-2,5,3,-0.4,0,Math.PI*2);
+  ctx.fillStyle='#fcd5a8';ctx.fill();ctx.strokeStyle='#c8875a';ctx.lineWidth=0.7;ctx.stroke();
   ctx.restore();
+
+  // ── КВАДРАТНАЯ РАМКА САЧКА в профиль ───────────────────────────────────
+  ctx.save();ctx.translate(netTipX, netTipY);ctx.rotate(netFaceAngle);
+
+  const fw=26, fh=22; // ширина и высота рамки
+
+  // Мешок сетки (сзади рамки, провисает)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-fw,0);
+  ctx.bezierCurveTo(-fw+4,fh+8+lunge*10, fw-4,fh+8+lunge*10, fw,0);
+  ctx.lineTo(fw,0);ctx.lineTo(-fw,0);
+  ctx.fillStyle='rgba(15,40,90,0.55)';ctx.fill();
+  // Сетка поверх мешка
+  ctx.beginPath();
+  ctx.moveTo(-fw,0);
+  ctx.bezierCurveTo(-fw+4,fh+8+lunge*10, fw-4,fh+8+lunge*10, fw,0);
+  ctx.strokeStyle='rgba(30,70,160,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+  // Нити сетки
+  for(let i=1;i<5;i++){
+    const t=i/5;
+    const mx=-fw+(fw*2)*t;
+    const my=fh*(Math.sin(t*Math.PI)*0.5)*(1+lunge*0.5)+lunge*8;
+    ctx.beginPath();ctx.moveTo(mx,0);ctx.lineTo(mx-2,my+5);
+    ctx.strokeStyle='rgba(30,80,180,0.35)';ctx.lineWidth=1;ctx.stroke();
+  }
+  ctx.restore();
+
+  // Рамка
+  ctx.beginPath();ctx.rect(-fw,-4,fw*2,8);
+  const fg=ctx.createLinearGradient(-fw,0,fw,0);
+  fg.addColorStop(0,'#334155');fg.addColorStop(0.5,'#475569');fg.addColorStop(1,'#334155');
+  ctx.fillStyle=fg;ctx.fill();
+  ctx.strokeStyle='#1e293b';ctx.lineWidth=1;ctx.stroke();
+  // Блик на рамке
+  ctx.beginPath();ctx.moveTo(-fw,-2);ctx.lineTo(fw,-2);
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Боковые стойки рамки
+  ctx.beginPath();
+  ctx.moveTo(-fw,-4);ctx.lineTo(-fw+2,fh*0.6+lunge*8);
+  ctx.moveTo(fw,-4);ctx.lineTo(fw-2,fh*0.6+lunge*8);
+  ctx.strokeStyle='#475569';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke();
+
+  // Передняя грань рамки (ближняя к зрителю)
+  ctx.beginPath();ctx.rect(-fw,0,fw*2,6);
+  ctx.fillStyle='#64748b';ctx.fill();
+  ctx.strokeStyle='#334155';ctx.lineWidth=1;ctx.stroke();
 
   ctx.restore();
 }
@@ -324,7 +332,7 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     const s=stateRef.current;
     s.fishX=W/2;s.fishY=H/2;s.fishVx=0;s.fishVy=0;
     s.targetX=W/2;s.targetY=H/2;s.fishAngle=0;s.wag=0;
-    s.netX=W/2;s.netY=H*0.15;s.netAngle=0;
+    s.netX=W*0.6;s.netY=H*0.4;s.netAngle=0;
     s.netLunge=0;s.netLunging=false;s.netLungeTimer=3500;s.netPauseTimer=0;
     if(!keepScore){s.score=0;setScore(0);}
     s.foods=[];s.alive=true;s.dead=false;s.deadTimer=0;
@@ -373,36 +381,36 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     if(spd>0.5)s.fishAngle=Math.atan2(s.fishVy,s.fishVx);
     s.wag+=s.wagDir*0.14*(0.5+spd*0.25);if(Math.abs(s.wag)>1)s.wagDir*=-1;
 
-    // Сачок — следит по X за рыбкой, бросок строго вниз
-    const ndist=Math.sqrt((s.fishX-s.netX)**2+(s.fishY-s.netY)**2);
-    s.netAngle=0; // всегда вертикально
+    // Сачок — pivot следит за рыбкой, бросок по дуге
+    // netX/netY = позиция рыбки на момент броска (цель дуги)
+    const ndx=s.fishX-s.netX, ndy=s.fishY-s.netY;
+    const ndist=Math.sqrt(ndx**2+ndy**2);
 
     if(s.netPauseTimer>0){
-      // Пауза — медленно поднимается обратно
       s.netPauseTimer-=dt;
-      s.netLunge=Math.max(0,s.netLunge-dt*0.004);
-      // Немного смещается к рыбке по X пока поднимается
-      s.netX+=(s.fishX-s.netX)*0.006;
+      s.netLunge=Math.max(0,s.netLunge-dt*0.003);
+      // Следим за рыбкой пока отдыхаем
+      s.netX+=(s.fishX-s.netX)*0.008;
+      s.netY+=(s.fishY-s.netY)*0.008;
     } else if(s.netLunging){
-      // Бросок — двигается к рыбке по X и опускается вниз
-      s.netLunge=Math.min(1,s.netLunge+dt*0.005);
-      s.netX+=(s.fishX-s.netX)*0.06; // следит по X
-      s.netY+=(s.fishY-s.netY)*0.05; // опускается к рыбке
-      if(s.netLunge>=1){s.netLunging=false;s.netPauseTimer=2000;}
+      // Бросок — lunge растёт, pivot летит к рыбке
+      s.netLunge=Math.min(1,s.netLunge+dt*0.004);
+      s.netX+=(s.fishX-s.netX)*0.05;
+      s.netY+=(s.fishY-s.netY)*0.05;
+      if(s.netLunge>=1){s.netLunging=false;s.netPauseTimer=2200;}
     } else {
-      // Ожидание — парит сверху, следит по X
       s.netLungeTimer-=dt;
-      s.netLunge*=0.88;
-      s.netX+=(s.fishX-s.netX)*0.015; // плавно следит по X
-      s.netY+=(s.fishY*0.2+H*0.0-s.netY)*0.01; // держится у верхней четверти
+      s.netLunge*=0.9;
+      s.netX+=(s.fishX-s.netX)*0.012;
+      s.netY+=(s.fishY-s.netY)*0.012;
       if(s.netLungeTimer<=0){
         s.netLunging=true;
         s.netLungeTimer=4000+Math.random()*4000;
       }
     }
 
-    // Поймал рыбку — только во время броска и близко
-    if(s.netLunging&&s.netLunge>0.55&&ndist<50){
+    // Поймал — только в конце дуги и близко
+    if(s.netLunging&&s.netLunge>0.6&&ndist<55){
       s.alive=false;s.dead=true;s.deadTimer=0;
       s.animId=requestAnimationFrame(gameLoop);return;
     }
