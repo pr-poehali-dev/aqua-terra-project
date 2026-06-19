@@ -187,32 +187,42 @@ function drawNet(ctx:CanvasRenderingContext2D, handX:number, _y:number, _a:numbe
 
   const R = 36; // радиус обруча (в 2 раза больше прежнего)
 
-  // Мешок сетки — красный, провисает
-  const bagDepth = R*0.9 + lunge * R*0.4;
+  // Мешок сетки — красный, заполняет круг + провисает вниз
+  const bagDepth = R * 0.85 + lunge * R * 0.35;
   ctx.save();
-  // Форма мешка
-  ctx.beginPath();
-  ctx.arc(0,0,R,0,Math.PI); // верхняя полуокружность как край
-  ctx.bezierCurveTo(-R, bagDepth*0.3, -R*0.4, bagDepth, 0, bagDepth);
-  ctx.bezierCurveTo(R*0.4, bagDepth, R, bagDepth*0.3, R, 0);
-  ctx.closePath();
-  ctx.fillStyle='rgba(120,10,10,0.55)';ctx.fill();
 
-  // Клип мешка для сетки
+  // Clip = внутренность обруча + мешок снизу
   ctx.beginPath();
-  ctx.arc(0,0,R,0,Math.PI);
-  ctx.bezierCurveTo(-R, bagDepth*0.3, -R*0.4, bagDepth, 0, bagDepth);
-  ctx.bezierCurveTo(R*0.4, bagDepth, R, bagDepth*0.3, R, 0);
+  ctx.arc(0, 0, R-2, 0, Math.PI*2);
+  ctx.moveTo(-R, bagDepth);
+  ctx.bezierCurveTo(-R, R*0.3, -R*0.4, bagDepth, 0, bagDepth);
+  ctx.bezierCurveTo(R*0.4, bagDepth, R, R*0.3, R, bagDepth);
   ctx.closePath();
   ctx.clip();
 
-  // Сетка — мелкие диагональные ромбы (как на фото)
-  ctx.strokeStyle='rgba(185,28,28,0.7)';ctx.lineWidth=0.9;
-  const cell=8;
-  for(let d=-R*2;d<R*2+bagDepth;d+=cell){
-    ctx.beginPath();ctx.moveTo(d,-R);ctx.lineTo(d+bagDepth+R,bagDepth+R);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(d+bagDepth+R,-R);ctx.lineTo(d,bagDepth+R);ctx.stroke();
+  // Фон мешка
+  ctx.fillStyle='rgba(127,0,0,0.45)';
+  ctx.fillRect(-R, -R, R*2, R + bagDepth + 10);
+
+  // Сотовая сетка — два набора диагональных линий (ромбы)
+  const cell = 9;
+  ctx.strokeStyle='rgba(220,38,38,0.85)';
+  ctx.lineWidth=1.1;
+  // ↘ диагонали
+  for(let d=-R*3;d<R*3+bagDepth;d+=cell){
+    ctx.beginPath();
+    ctx.moveTo(d, -R);
+    ctx.lineTo(d + R + bagDepth + 20, R + bagDepth + 20);
+    ctx.stroke();
   }
+  // ↙ диагонали
+  for(let d=-R*3;d<R*3+bagDepth;d+=cell){
+    ctx.beginPath();
+    ctx.moveTo(d, -R);
+    ctx.lineTo(d - R - bagDepth - 20, R + bagDepth + 20);
+    ctx.stroke();
+  }
+
   ctx.restore();
 
   // Обруч — металлический круг
