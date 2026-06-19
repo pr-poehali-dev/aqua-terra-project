@@ -83,7 +83,6 @@ const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb
 const NAV = [
   { id: 'home', label: 'Главная' },
   { id: 'services', label: 'Услуги и цены' },
-  { id: 'shop', label: 'Магазин' },
   { id: 'portfolio', label: 'Портфолио' },
   { id: 'articles', label: 'Статьи' },
   { id: 'faq', label: 'FAQ' },
@@ -878,8 +877,8 @@ const Index = () => {
         </section>
       )}
 
-      {/* Shop */}
-      {siteSettings.section_shop !== 'false' && (<section id="shop" className="pb-24 bg-background relative overflow-hidden">
+      {/* Shop — убран с главной, доступен на /shop */}
+      {siteSettings.section_shop === 'NEVER' && (<section id="shop" className="pb-24 bg-background relative overflow-hidden">
         <DecoIcons items={[
           { emoji: '🐠', top: '5%',    left: '1%',   size: 32, dur: 9,  delay: 1, swim: true },
           { emoji: '🦎', top: '8%',    right: '2%',  size: 30, dur: 7,  delay: 0 },
