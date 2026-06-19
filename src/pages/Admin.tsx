@@ -160,13 +160,15 @@ export default function Admin() {
     ring1_factor: number; ring1_label: string;
     ring2_factor: number; ring2_label: string;
     ring3_factor: number; ring3_label: string;
-    points: { lat: number; lon: number; address: string; r1_km: number; r2_km: number; r3_km: number }[];
+    r1_km: number; r2_km: number; r3_km: number;
+    points: { lat: number; lon: number; address: string }[];
     active: boolean;
   }
   const DEFAULT_PRICE_ZONES: PriceZoneConfig = {
     ring1_factor: 1.0, ring1_label: 'Рядом',
     ring2_factor: 1.5, ring2_label: 'Недалеко',
     ring3_factor: 2.0, ring3_label: 'Далеко',
+    r1_km: 10, r2_km: 25, r3_km: 50,
     points: [], active: true,
   };
   const [priceZones, setPriceZones] = useState<PriceZoneConfig>(DEFAULT_PRICE_ZONES);

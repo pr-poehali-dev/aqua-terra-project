@@ -10,11 +10,12 @@ interface ServiceZone {
   zone_type: 'circle' | 'polygon'; coordinates: [number, number][];
   center_lat: number | null; center_lon: number | null; radius_km: number | null; active: boolean;
 }
-interface WorkPoint { lat: number; lon: number; address: string; r1_km: number; r2_km: number; r3_km: number; }
+interface WorkPoint { lat: number; lon: number; address: string; }
 interface PriceConfig {
   ring1_factor: number; ring1_label: string;
   ring2_factor: number; ring2_label: string;
   ring3_factor: number; ring3_label: string;
+  r1_km: number; r2_km: number; r3_km: number;
   points: WorkPoint[];
   active: boolean;
 }
@@ -141,8 +142,8 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
           };
 
           // Считаем пиксели всех точек и радиусы
+          const maxR = (pc.r3_km ?? 50) * 1000;
           const pts = pc.points.map(pt => {
-            const maxR = pt.r3_km * 1000;
             const centerPx = toPage([pt.lat, pt.lon]);
             const edgeCoord = window.ymaps.coordSystem.geo.solveDirectProblem(
               [pt.lat, pt.lon], [0, 1], maxR

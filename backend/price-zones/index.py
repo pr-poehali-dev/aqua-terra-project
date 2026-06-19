@@ -1,10 +1,10 @@
 """
-Ценовые зоны: 3 кольца с индивидуальными радиусами на точку.
+Ценовые зоны: 3 кольца с глобальными радиусами.
 GET  / — получить (публичный)
 POST / — сохранить (admin)
 
-Структура work_points: [{lat, lon, address, r1_km, r2_km, r3_km}]
-Глобальные factor и label для каждого кольца.
+Структура work_points: [{lat, lon, address}]
+Глобальные r1_km, r2_km, r3_km, factor и label для каждого кольца.
 """
 import json, os, psycopg2
 
@@ -45,7 +45,8 @@ def handler(event: dict, context) -> dict:
                 SELECT ring1_factor, ring1_label,
                        ring2_factor, ring2_label,
                        ring3_factor, ring3_label,
-                       work_points, active
+                       work_points, active,
+                       r1_km, r2_km, r3_km
                 FROM {SCHEMA}.price_zones ORDER BY id LIMIT 1
             """)
             row = cur.fetchone()
@@ -57,6 +58,9 @@ def handler(event: dict, context) -> dict:
                 'ring3_factor': row[4], 'ring3_label': row[5],
                 'points': row[6] or [],
                 'active': row[7],
+                'r1_km': float(row[8] or 10),
+                'r2_km': float(row[9] or 25),
+                'r3_km': float(row[10] or 50),
             })
 
         if not check_admin(event):
@@ -73,6 +77,7 @@ def handler(event: dict, context) -> dict:
                 body.get('ring3_factor', 2.0), body.get('ring3_label', 'Далеко'),
                 json.dumps(body.get('points', []), ensure_ascii=False),
                 body.get('active', True),
+                body.get('r1_km', 10), body.get('r2_km', 25), body.get('r3_km', 50),
             )
 
             if row:
@@ -81,15 +86,18 @@ def handler(event: dict, context) -> dict:
                       ring1_factor=%s, ring1_label=%s,
                       ring2_factor=%s, ring2_label=%s,
                       ring3_factor=%s, ring3_label=%s,
-                      work_points=%s::jsonb, active=%s, updated_at=NOW()
+                      work_points=%s::jsonb, active=%s,
+                      r1_km=%s, r2_km=%s, r3_km=%s,
+                      updated_at=NOW()
                     WHERE id=%s
                 """, (*vals, row[0]))
             else:
                 cur.execute(f"""
                     INSERT INTO {SCHEMA}.price_zones
                       (ring1_factor, ring1_label, ring2_factor, ring2_label,
-                       ring3_factor, ring3_label, work_points, active)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s)
+                       ring3_factor, ring3_label, work_points, active,
+                       r1_km, r2_km, r3_km)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s)
                 """, vals)
 
             conn.commit()

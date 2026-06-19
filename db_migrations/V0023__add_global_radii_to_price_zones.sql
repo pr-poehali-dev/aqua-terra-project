@@ -1,0 +1,4 @@
+ALTER TABLE t_p51549197_aqua_terra_project.price_zones
+  ADD COLUMN IF NOT EXISTS r1_km numeric DEFAULT 10,
+  ADD COLUMN IF NOT EXISTS r2_km numeric DEFAULT 25,
+  ADD COLUMN IF NOT EXISTS r3_km numeric DEFAULT 50;

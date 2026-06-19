@@ -6,13 +6,13 @@ import Icon from '@/components/ui/icon';
 
 export interface WorkPoint {
   lat: number; lon: number; address: string;
-  r1_km: number; r2_km: number; r3_km: number;
 }
 
 export interface PriceZoneConfig {
   ring1_factor: number; ring1_label: string;
   ring2_factor: number; ring2_label: string;
   ring3_factor: number; ring3_label: string;
+  r1_km: number; r2_km: number; r3_km: number;
   points: WorkPoint[];
   active: boolean;
 }
@@ -26,6 +26,11 @@ interface Props {
 }
 
 const DEFAULT_RADII = { r1_km: 10, r2_km: 25, r3_km: 50 };
+const RING_FIELDS = [
+  { field: 'r1_km' as const, dot: 'bg-green-500', label: 'Зелёная' },
+  { field: 'r2_km' as const, dot: 'bg-yellow-500', label: 'Жёлтая' },
+  { field: 'r3_km' as const, dot: 'bg-red-500', label: 'Красная' },
+];
 
 export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSave }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -79,8 +84,8 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       return [gp[0] - mapGlobalCenter[0] + W/2, gp[1] - mapGlobalCenter[1] + H/2];
     };
 
+    const maxR = config.r3_km * 1000;
     const pts = config.points.map(pt => {
-      const maxR = pt.r3_km * 1000;
       const [cx, cy] = toPage([pt.lat, pt.lon]);
       const edgeCoord = (window as any).ymaps.coordSystem.geo.solveDirectProblem([pt.lat, pt.lon], [0, 1], maxR).endPoint;
       const [ex, ey] = toPage(edgeCoord);
@@ -146,7 +151,7 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
     const handler = (e: any) => {
       if (!clickMode) return;
       const [lat, lon] = e.get('coords');
-      const pt: WorkPoint = { lat, lon, address: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, ...DEFAULT_RADII };
+      const pt: WorkPoint = { lat, lon, address: `${lat.toFixed(4)}, ${lon.toFixed(4)}` };
       const cur = configRef.current;
       onChange({ ...cur, points: [...cur.points, pt] });
       setClickMode(false);
@@ -164,7 +169,7 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
       if (!obj) return;
       const [lat, lon] = obj.geometry.getCoordinates();
       const address = obj.getAddressLine();
-      const pt: WorkPoint = { lat, lon, address, ...DEFAULT_RADII };
+      const pt: WorkPoint = { lat, lon, address };
       const cur = configRef.current;
       onChange({ ...cur, points: [...cur.points, pt] });
       setAddressInput('');
@@ -235,53 +240,36 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
 
         <div className="space-y-2">
           {config.points.map((pt, i) => (
-            <div key={i} className="rounded-xl border border-border bg-muted/20 overflow-hidden">
-              {/* Строка точки */}
-              <div
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-muted/40 transition-colors"
-                onClick={() => setExpandedPoint(expandedPoint === i ? null : i)}
-              >
-                <Icon name="MapPin" size={13} className="shrink-0 text-muted-foreground" />
-                <span className="flex-1 text-xs text-foreground truncate">{pt.address}</span>
-                <div className="flex gap-1 shrink-0">
-                  <span className="text-[10px] text-green-600 font-mono">{pt.r1_km}km</span>
-                  <span className="text-[10px] text-yellow-600 font-mono">{pt.r2_km}km</span>
-                  <span className="text-[10px] text-red-600 font-mono">{pt.r3_km}km</span>
-                </div>
-                <Icon name={expandedPoint === i ? 'ChevronUp' : 'ChevronDown'} size={13} className="text-muted-foreground shrink-0" />
-                <button onClick={e => { e.stopPropagation(); removePoint(i); }} className="text-muted-foreground hover:text-destructive transition-colors ml-0.5">
-                  <Icon name="X" size={13} />
-                </button>
+            <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/20">
+              <Icon name="MapPin" size={13} className="shrink-0 text-muted-foreground" />
+              <span className="flex-1 text-xs text-foreground truncate">{pt.address}</span>
+              <button onClick={() => removePoint(i)} className="text-muted-foreground hover:text-destructive transition-colors">
+                <Icon name="X" size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Радиусы зон (глобальные) */}
+      <div>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Радиусы зон</p>
+        <div className="grid grid-cols-3 gap-2">
+          {RING_FIELDS.map(({ field, dot, label }) => (
+            <div key={field}>
+              <div className="flex items-center gap-1 mb-1">
+                <span className={`w-2 h-2 rounded-full ${dot}`} />
+                <span className="text-[10px] text-muted-foreground">{label}</span>
               </div>
-              {/* Радиусы */}
-              {expandedPoint === i && (
-                <div className="px-3 pb-3 pt-1 border-t border-border/50">
-                  <p className="text-xs text-muted-foreground mb-2">Радиусы колец для этой точки</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { field: 'r1_km' as const, dot: 'bg-green-500', label: 'Зелёная' },
-                      { field: 'r2_km' as const, dot: 'bg-yellow-500', label: 'Жёлтая' },
-                      { field: 'r3_km' as const, dot: 'bg-red-500', label: 'Красная' },
-                    ].map(({ field, dot, label }) => (
-                      <div key={field}>
-                        <div className="flex items-center gap-1 mb-1">
-                          <span className={`w-2 h-2 rounded-full ${dot}`} />
-                          <span className="text-[10px] text-muted-foreground">{label}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number" step="5" min="1"
-                            className="w-full h-7 px-2 rounded-lg border border-input bg-background text-xs text-center"
-                            value={pt[field]}
-                            onChange={e => updatePoint(i, field, parseFloat(e.target.value) || 1)}
-                          />
-                          <span className="text-xs text-muted-foreground shrink-0">км</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center gap-1">
+                <input
+                  type="number" step="5" min="1"
+                  className="w-full h-8 px-2 rounded-lg border border-input bg-background text-xs text-center"
+                  value={config[field] ?? DEFAULT_RADII[field]}
+                  onChange={e => updateRing(field, parseFloat(e.target.value) || 1)}
+                />
+                <span className="text-xs text-muted-foreground shrink-0">км</span>
+              </div>
             </div>
           ))}
         </div>
