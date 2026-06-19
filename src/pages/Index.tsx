@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
 import { useTheme } from '@/hooks/use-theme';
 import ServiceZoneMap from '@/components/ServiceZoneMap';
+import FishGame from '@/components/FishGame';
 
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
@@ -1295,7 +1296,7 @@ const Index = () => {
       </section>
 
       {/* Quiz */}
-      <section id="quiz" className="py-24 container px-4 md:px-6">
+      {siteSettings.quiz_enabled !== 'false' && (<section id="quiz" className="py-24 container px-4 md:px-6">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <Badge variant="secondary" className="mb-4">Тест</Badge>
@@ -1367,6 +1368,20 @@ const Index = () => {
               </div>
             )}
           </Card>
+        </div>
+      </section>)}
+
+      {/* Fish Game */}
+      <section className="py-20 bg-gradient-to-b from-[#0c4a6e]/10 to-transparent">
+        <div className="container px-4 md:px-6">
+          <div className="max-w-2xl mx-auto text-center mb-8">
+            <Badge variant="secondary" className="mb-4">Акция</Badge>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary mb-3">Накорми рыбку — получи скидку</h2>
+            <p className="text-muted-foreground">Набери {25} очков в игре, подпишись на наш Telegram и получи промокод на скидку</p>
+          </div>
+          <div className="flex justify-center">
+            <FishGame tgChannel={siteSettings.contacts_telegram || 'aquascale'} scoreToWin={25} />
+          </div>
         </div>
       </section>
 

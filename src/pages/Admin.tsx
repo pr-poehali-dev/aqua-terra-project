@@ -1509,7 +1509,28 @@ export default function Admin() {
               )}
             </Card>
 
-            {/* Quiz */}
+            {/* Quiz toggle */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2"><Icon name="ListChecks" size={18} />Квиз</h3>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <span className="text-sm text-muted-foreground">{siteSettings.quiz_enabled === 'false' ? 'Выключен' : 'Включён'}</span>
+                  <div
+                    className={`w-11 h-6 rounded-full transition-colors ${siteSettings.quiz_enabled === 'false' ? 'bg-muted' : 'bg-primary'}`}
+                    onClick={async () => {
+                      const next = siteSettings.quiz_enabled === 'false' ? 'true' : 'false';
+                      setSiteSettings(p => ({ ...p, quiz_enabled: next }));
+                      await fetch(`${SETTINGS_URL}?section=settings`, { method: 'POST', headers, body: JSON.stringify({ quiz_enabled: next }) });
+                      toast({ title: next === 'true' ? 'Квиз включён' : 'Квиз выключен' });
+                    }}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full shadow m-0.5 transition-transform ${siteSettings.quiz_enabled === 'false' ? '' : 'translate-x-5'}`} />
+                  </div>
+                </label>
+              </div>
+            </Card>
+
+            {/* Quiz questions */}
             <Card className="p-6">
               <h3 className="font-display text-lg font-bold text-primary mb-4 flex items-center gap-2"><Icon name="ListChecks" size={18} />Квиз — вопросы и ответы</h3>
               <div className="space-y-4">
