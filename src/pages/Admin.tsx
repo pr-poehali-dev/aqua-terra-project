@@ -6,6 +6,7 @@ import Icon from '@/components/ui/icon';
 import Logo from '@/components/Logo';
 import RichEditor from '@/components/RichEditor';
 import PriceZoneEditor from '@/components/PriceZoneEditor';
+import SvcRow from '@/components/admin/SvcRow';
 import { useToast } from '@/hooks/use-toast';
 
 const CATALOG_URL = 'https://functions.poehali.dev/5792c301-10d8-4ade-8987-58fa81f89be1';
@@ -29,9 +30,14 @@ interface Product {
   tag: string; icon: string; photo_url: string | null; in_stock: boolean; description: string;
   section_id?: number | null; category_id?: number | null;
 }
+interface ServiceCategory {
+  id: number; name: string; slug: string; icon: string;
+  sort_order: number; active: boolean; parent_id: number | null;
+}
 interface Service {
-  id: number; icon: string; title: string; description: string;
+  id: number; icon: string; title: string; subtitle?: string; description: string;
   price_from: number; price_unit: string; tags: string[]; sort_order: number; active: boolean;
+  category_id?: number | null;
 }
 interface PortfolioItem {
   id: number; title: string; tag: string; description: string;
@@ -43,7 +49,7 @@ const PRODUCT_CATS = [{ id: 'animals', label: 'Животные' }, { id: 'food'
 const ICONS = ['Fish', 'Turtle', 'Bug', 'Wheat', 'Package', 'Lightbulb', 'Settings', 'Sprout', 'Waves', 'Wrench', 'Truck', 'Star'];
 const EMPTY_PRODUCT: Omit<Product, 'id'> = { name: '', price: 0, category: '', tag: '', icon: 'Package', photo_url: null, in_stock: true, description: '', section_id: null, category_id: null };
 const EMPTY_ARTICLE: Omit<Article, 'id' | 'slug' | 'created_at'> = { title: '', excerpt: '', content: '', category: 'Аквариумы', cover_url: null, published: false };
-const EMPTY_SERVICE: Omit<Service, 'id'> = { icon: 'Wrench', title: '', description: '', price_from: 0, price_unit: 'за работу', tags: [], sort_order: 99, active: true };
+const EMPTY_SERVICE: Omit<Service, 'id'> = { icon: 'Wrench', title: '', subtitle: '', description: '', price_from: 0, price_unit: 'за работу', tags: [], sort_order: 99, active: true, category_id: null };
 const EMPTY_PORTFOLIO: Omit<PortfolioItem, 'id'> = { title: '', tag: '', description: '', icon: 'Fish', photo_url: null, sort_order: 99, active: true };
 
 interface PromoCode {
@@ -97,6 +103,8 @@ export default function Admin() {
   const [svcList, setSvcList] = useState<Service[]>([]);
   const [editingSvc, setEditingSvc] = useState<Partial<Service> | null>(null);
   const [savingSvc, setSavingSvc] = useState(false);
+  const [svcCats, setSvcCats] = useState<ServiceCategory[]>([]);
+  const [editingCat, setEditingCat] = useState<Partial<ServiceCategory> | null>(null);
 
   // Portfolio
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
@@ -186,7 +194,7 @@ export default function Admin() {
 
   const login = async () => {
     setLoading(true);
-    const [ra, rp, rs, rport, rstat, rleads, rpromo, rcat, rset] = await Promise.all([
+    const [ra, rp, rs, rport, rstat, rleads, rpromo, rcat, rset, rsvccat] = await Promise.all([
       fetch(ARTICLES_ADMIN, { headers }),
       fetch(PRODUCTS_ADMIN, { headers }),
       fetch(`${SERVICES_ADMIN}?admin=1`, { headers }),
@@ -196,11 +204,13 @@ export default function Admin() {
       fetch(PROMO_URL, { headers }),
       fetch(CATALOG_URL),
       fetch(SETTINGS_URL),
+      fetch(`${SERVICES_ADMIN}?resource=categories`, { headers }),
     ]);
     if (ra.status === 401) { toast({ title: 'Неверный пароль', variant: 'destructive' }); setLoading(false); return; }
     setArticles(await ra.json());
     setProducts(await rp.json());
     setSvcList(await rs.json());
+    setSvcCats(await rsvccat.json());
     setPortfolio(await rport.json());
     setStats(await rstat.json());
     setLeads(await rleads.json());
@@ -262,6 +272,7 @@ export default function Admin() {
   const loadArticles = () => fetch(ARTICLES_ADMIN, { headers }).then(r => r.json()).then(setArticles);
   const loadProducts = () => fetch(PRODUCTS_ADMIN, { headers }).then(r => r.json()).then(setProducts);
   const loadServices = () => fetch(`${SERVICES_ADMIN}?admin=1`, { headers }).then(r => r.json()).then(setSvcList);
+  const loadSvcCats = () => fetch(`${SERVICES_ADMIN}?resource=categories`, { headers }).then(r => r.json()).then(setSvcCats);
   const loadPortfolio = () => fetch(`${PORTFOLIO_ADMIN}?admin=1`, { headers }).then(r => r.json()).then(setPortfolio);
   const loadPromos = () => fetch(PROMO_URL, { headers }).then(r => r.json()).then(setPromos);
 
@@ -326,6 +337,23 @@ export default function Admin() {
       setUploadingPortPhoto(false);
     };
     reader.readAsDataURL(file);
+  };
+
+  // --- Service Categories ---
+  const slugify = (s: string) => s.toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-').replace(/^-|-$/g, '') || ('cat-' + Date.now());
+  const saveSvcCat = async () => {
+    if (!editingCat || !editingCat.name) return;
+    const isNew = !editingCat.id;
+    const url = isNew ? `${SERVICES_ADMIN}?resource=categories` : `${SERVICES_ADMIN}?resource=categories&id=${editingCat.id}`;
+    const payload = { ...editingCat, slug: editingCat.slug || slugify(editingCat.name) };
+    const res = await fetch(url, { method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(payload) });
+    if (res.ok) { toast({ title: isNew ? 'Категория добавлена!' : 'Сохранено!' }); setEditingCat(null); loadSvcCats(); }
+    else toast({ title: 'Ошибка', variant: 'destructive' });
+  };
+  const removeSvcCat = async (id: number) => {
+    if (!confirm('Скрыть категорию? Услуги внутри останутся.')) return;
+    await fetch(`${SERVICES_ADMIN}?resource=categories&id=${id}`, { method: 'DELETE', headers });
+    loadSvcCats();
   };
 
   // --- Services ---
@@ -847,9 +875,28 @@ export default function Admin() {
               <h2 className="font-display text-2xl font-bold text-primary">{editingSvc.id ? 'Редактировать услугу' : 'Новая услуга'}</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Категория</label>
+                  <select value={editingSvc.category_id ?? ''} onChange={(e) => setEditingSvc({ ...editingSvc, category_id: e.target.value ? Number(e.target.value) : null })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option value="">— Без категории —</option>
+                    {svcCats.filter(c => c.parent_id === null).map(top => (
+                      <optgroup key={top.id} label={top.name}>
+                        {svcCats.filter(t => t.parent_id === top.id).map(sub => (
+                          <option key={sub.id} value={sub.id}>{top.name} → {sub.name}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Название *</label>
                   <input value={editingSvc.title || ''} onChange={(e) => setEditingSvc({ ...editingSvc, title: e.target.value })}
-                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Например: Оформление аквариума" />
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Например: Акваскейп" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Подзаголовок (стиль/тип)</label>
+                  <input value={editingSvc.subtitle || ''} onChange={(e) => setEditingSvc({ ...editingSvc, subtitle: e.target.value })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Голландский, псевдоморе, риф…" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Описание</label>
@@ -881,7 +928,7 @@ export default function Admin() {
                 <div className="col-span-2">
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Метки (через запятую)</label>
                   <input value={Array.isArray(editingSvc.tags) ? editingSvc.tags.join(', ') : editingSvc.tags || ''} onChange={(e) => setEditingSvc({ ...editingSvc, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Пресный, Морской" />
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Премиум, Эконом…" />
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -893,34 +940,120 @@ export default function Admin() {
                 <Button variant="outline" onClick={() => setEditingSvc(null)}>Отмена</Button>
               </div>
             </Card>
+          ) : editingCat ? (
+            <Card className="p-6 max-w-xl mx-auto space-y-4">
+              <h2 className="font-display text-2xl font-bold text-primary">{editingCat.id ? 'Редактировать категорию' : 'Новая категория'}</h2>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">Тип</label>
+                <select value={editingCat.parent_id ?? ''} onChange={(e) => setEditingCat({ ...editingCat, parent_id: e.target.value ? Number(e.target.value) : null })}
+                  className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="">Категория верхнего уровня</option>
+                  {svcCats.filter(c => c.parent_id === null && c.id !== editingCat.id).map(top => (
+                    <option key={top.id} value={top.id}>Подкатегория от: {top.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">Название *</label>
+                <input value={editingCat.name || ''} onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })}
+                  className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Оформление / Пресный аквариум" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Иконка</label>
+                  <select value={editingCat.icon || 'Layers'} onChange={(e) => setEditingCat({ ...editingCat, icon: e.target.value })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
+                    {['Layers','Waves','Droplets','Leaf','Bug','TreePine','Fish','Sprout','Wrench','Truck','Star','Lightbulb','Package'].map(i => <option key={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Порядок</label>
+                  <input type="number" value={editingCat.sort_order ?? 99} onChange={(e) => setEditingCat({ ...editingCat, sort_order: parseInt(e.target.value) || 99 })}
+                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="catActive" checked={editingCat.active !== false} onChange={(e) => setEditingCat({ ...editingCat, active: e.target.checked })} className="w-4 h-4 accent-primary" />
+                <label htmlFor="catActive" className="text-sm font-medium">Показывать на сайте</label>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button onClick={saveSvcCat}>Сохранить</Button>
+                <Button variant="outline" onClick={() => setEditingCat(null)}>Отмена</Button>
+              </div>
+            </Card>
           ) : (
-            <div className="space-y-3 max-w-4xl mx-auto">
-              {svcList.length === 0 && <p className="text-center text-muted-foreground py-16">Услуг пока нет.</p>}
-              {svcList.map((s) => (
-                <Card key={s.id} className="p-5 flex items-center gap-4">
-                  <span className="grid place-items-center w-12 h-12 rounded-xl bg-primary/10 text-primary shrink-0">
-                    <Icon name={s.icon} size={22} />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="font-semibold text-primary truncate">{s.title}</h3>
-                      <Badge variant={s.active ? 'default' : 'secondary'} className="text-xs shrink-0">{s.active ? 'Активна' : 'Скрыта'}</Badge>
+            <div className="space-y-6 max-w-4xl mx-auto">
+              {/* Панель управления */}
+              <div className="flex flex-wrap gap-3 justify-end">
+                <Button variant="outline" onClick={() => setEditingCat({ name: '', icon: 'Layers', sort_order: 99, active: true, parent_id: null })}>
+                  <Icon name="FolderPlus" size={16} className="mr-2" />Категория
+                </Button>
+                <Button onClick={() => setEditingSvc({ ...EMPTY_SERVICE })}>
+                  <Icon name="Plus" size={16} className="mr-2" />Новая услуга
+                </Button>
+              </div>
+
+              {/* Структура категорий */}
+              <Card className="p-5">
+                <h3 className="font-semibold text-primary flex items-center gap-2 mb-4"><Icon name="Layers" size={18} />Категории и типы</h3>
+                <div className="space-y-3">
+                  {svcCats.filter(c => c.parent_id === null).map(top => (
+                    <div key={top.id} className="rounded-xl border border-border p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name={top.icon} size={16} className="text-primary" />
+                        <span className="font-semibold text-sm">{top.name}</span>
+                        {!top.active && <Badge variant="secondary" className="text-xs">скрыта</Badge>}
+                        <span className="text-xs text-muted-foreground">({svcList.filter(s => { const cat = svcCats.find(c => c.id === s.category_id); return cat && (cat.id === top.id || cat.parent_id === top.id); }).length} услуг)</span>
+                        <button onClick={() => setEditingCat(top)} className="ml-auto text-muted-foreground hover:text-primary"><Icon name="Pencil" size={13} /></button>
+                        <button onClick={() => removeSvcCat(top.id)} className="text-muted-foreground hover:text-destructive"><Icon name="Trash2" size={13} /></button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pl-6">
+                        {svcCats.filter(t => t.parent_id === top.id).map(sub => (
+                          <button key={sub.id} onClick={() => setEditingCat(sub)}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border ${sub.active ? 'border-border bg-muted/40' : 'border-border/40 opacity-50'} hover:border-primary`}>
+                            <Icon name={sub.icon} size={11} />{sub.name}
+                          </button>
+                        ))}
+                        {svcCats.filter(t => t.parent_id === top.id).length === 0 && <span className="text-xs text-muted-foreground">нет типов</span>}
+                      </div>
                     </div>
-                    <p className="text-secondary font-bold text-sm">от {s.price_from.toLocaleString('ru')} ₽ <span className="text-muted-foreground font-normal">{s.price_unit}</span></p>
+                  ))}
+                  {svcCats.filter(c => c.parent_id === null).length === 0 && <p className="text-sm text-muted-foreground">Категорий пока нет</p>}
+                </div>
+              </Card>
+
+              {/* Список услуг сгруппированный по категориям */}
+              {svcCats.filter(c => c.parent_id === null).map(top => {
+                const subIds = svcCats.filter(t => t.parent_id === top.id).map(t => t.id);
+                const inCat = svcList.filter(s => s.category_id === top.id || (s.category_id != null && subIds.includes(s.category_id)));
+                if (inCat.length === 0) return null;
+                return (
+                  <div key={top.id}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name={top.icon} size={16} className="text-primary" />
+                      <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{top.name}</h4>
+                    </div>
+                    <div className="space-y-2">
+                      {inCat.map(s => <SvcRow key={s.id} s={s} subName={svcCats.find(c => c.id === s.category_id)?.name} onToggle={toggleSvcActive} onEdit={setEditingSvc} onRemove={removeSvc} />)}
+                    </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Button size="icon" variant="ghost" title={s.active ? 'Скрыть' : 'Показать'} onClick={() => toggleSvcActive(s)}>
-                      <Icon name={s.active ? 'EyeOff' : 'Eye'} size={16} />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => setEditingSvc(s)}>
-                      <Icon name="Pencil" size={16} />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeSvc(s.id)}>
-                      <Icon name="Trash2" size={16} />
-                    </Button>
+                );
+              })}
+
+              {/* Услуги без категории */}
+              {svcList.filter(s => !s.category_id).length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon name="HelpCircle" size={16} className="text-muted-foreground" />
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Без категории</h4>
                   </div>
-                </Card>
-              ))}
+                  <div className="space-y-2">
+                    {svcList.filter(s => !s.category_id).map(s => <SvcRow key={s.id} s={s} onToggle={toggleSvcActive} onEdit={setEditingSvc} onRemove={removeSvc} />)}
+                  </div>
+                </div>
+              )}
+
+              {svcList.length === 0 && <p className="text-center text-muted-foreground py-8">Услуг пока нет — добавьте первую!</p>}
             </div>
           )
         )}

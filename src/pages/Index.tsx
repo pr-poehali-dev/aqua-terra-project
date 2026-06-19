@@ -8,6 +8,7 @@ import DecoIcons from '@/components/DecoIcons';
 import StatCounter from '@/components/StatCounter';
 import Plankton from '@/components/Plankton';
 import MagneticCard from '@/components/MagneticCard';
+import ServiceCard from '@/components/ServiceCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,15 +34,27 @@ interface PortfolioItem {
   icon: string; photo_url: string | null; sort_order: number; active: boolean;
 }
 
+interface ServiceCategory {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  sort_order: number;
+  active: boolean;
+  parent_id: number | null;
+}
 interface Service {
   id: number;
   icon: string;
   title: string;
+  subtitle?: string;
   description: string;
   price_from: number;
   price_unit: string;
   tags: string[];
   active: boolean;
+  category_id?: number | null;
+  category?: { id: number; name: string; slug: string; icon: string; parent_id: number | null } | null;
 }
 
 interface Product {
@@ -69,8 +82,7 @@ const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb
 
 const NAV = [
   { id: 'home', label: 'Главная' },
-  { id: 'services', label: 'Услуги' },
-  { id: 'prices', label: 'Цены' },
+  { id: 'services', label: 'Услуги и цены' },
   { id: 'shop', label: 'Магазин' },
   { id: 'portfolio', label: 'Портфолио' },
   { id: 'articles', label: 'Статьи' },
@@ -279,13 +291,16 @@ const Index = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoaded, setServicesLoaded] = useState(false);
+  const [svcCategories, setSvcCategories] = useState<ServiceCategory[]>([]);
+  const [activeCatId, setActiveCatId] = useState<number | null>(null);
+  const [expandedSvc, setExpandedSvc] = useState<number | null>(null);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [lightboxItem, setLightboxItem] = useState<PortfolioItem | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState(0);
   const [scrollY, setScrollY] = useState(0);
   const [activeSection, setActiveSection] = useState(0);
 
-  const SECTION_IDS = ['home', 'services', 'prices', 'shop', 'portfolio', 'articles', 'faq', 'contacts'];
+  const SECTION_IDS = ['home', 'services', 'shop', 'portfolio', 'articles', 'faq', 'contacts'];
 
   const goSection = (dir: 1 | -1) => {
     if (dir === -1 && activeSection === 0) {
@@ -393,6 +408,12 @@ const Index = () => {
     }).catch(() => {});
     fetch(PORTFOLIO_URL).then((r) => r.json()).then(setPortfolioItems).catch(() => {});
     fetch(SERVICES_URL).then((r) => r.json()).then((d) => { setServices(d); setServicesLoaded(true); }).catch(() => setServicesLoaded(true));
+    fetch(`${SERVICES_URL}?resource=categories`).then((r) => r.json()).then((cats: ServiceCategory[]) => {
+      const active = cats.filter((c) => c.active);
+      setSvcCategories(active);
+      const firstTop = active.find((c) => c.parent_id === null);
+      if (firstTop) setActiveCatId(firstTop.id);
+    }).catch(() => {});
     fetch(SETTINGS_URL).then(r => r.json()).then(d => {
       if (d.settings) setSiteSettings(d.settings);
       if (d.faq?.length) setFaqData(d.faq.map((f: {q: string; a: string}) => ({ q: f.q, a: f.a })));
@@ -717,81 +738,126 @@ const Index = () => {
         </div>
       </section>)}
 
-      {/* Services */}
-      {siteSettings.section_services !== 'false' && (<><section id="services" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
-        <DecoIcons items={[
-          { emoji: '🐠', top: '8%',    left: '2%',  size: 36, dur: 7,  delay: 0,   swim: true },
-          { emoji: '🦎', top: '12%',   right: '3%', size: 34, dur: 9,  delay: 1.5 },
-          { emoji: '🐢', bottom: '10%',left: '1%',  size: 32, dur: 8,  delay: 3 },
-          { emoji: '🌿', bottom: '5%', right: '2%', size: 30, dur: 11, delay: 0.5 },
-        ]} />
-        <div className="container relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <Badge variant="secondary" className="mb-4 section-reveal">Услуги</Badge>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary section-reveal" style={{animationDelay:'0.1s'}}>Что мы делаем</h2>
-            <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>От идеи до готовой экосистемы — берём на себя весь процесс.</p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
-              <MagneticCard key={s.title} strength={8}>
-                <div className="glass-card rounded-2xl p-7 transition-all duration-300 hover:shadow-xl h-full">
-                  <span className="grid place-items-center w-14 h-14 rounded-xl bg-secondary/15 text-secondary mb-5">
-                    <Icon name={s.icon} size={28} />
-                  </span>
-                  <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{s.description}</p>
-                </div>
-              </MagneticCard>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section id="prices" className="relative bg-muted/50 overflow-hidden">
-        <DecoIcons items={[
-          { emoji: '🦎', top: '10%',   right: '2%',  size: 32, dur: 9,  delay: 0.5 },
-          { emoji: '🐠', top: '18%',   left: '1%',   size: 28, dur: 7,  delay: 2,  swim: true },
-          { emoji: '🦋', bottom: '12%',left: '2%',   size: 26, dur: 11, delay: 1 },
-          { emoji: '🐍', bottom: '8%', right: '3%',  size: 30, dur: 8,  delay: 3 },
-        ]} />
-        <WaveDivider fill="hsl(var(--muted) / 0.5)" flip className="mt-0" />
-        <div className="container px-4 md:px-6 py-16 relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <Badge variant="secondary" className="mb-4">Цены</Badge>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Стоимость услуг</h2>
-            <p className="mt-4 text-muted-foreground">Итоговая цена зависит от объёма и сложности — уточним на консультации.</p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(servicesLoaded ? services : SERVICES_FALLBACK).map((s) => (
-              <div key={s.id ?? s.title} className="glass-card rounded-2xl p-7 flex flex-col hover-scale transition-all duration-300 hover:shadow-xl">
-                <span className="grid place-items-center w-14 h-14 rounded-xl bg-primary/10 text-primary mb-5">
-                  <Icon name={s.icon} size={28} />
-                </span>
-                <h3 className="font-display text-2xl font-semibold text-primary mb-2">{s.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">{s.description}</p>
-                <div className="flex flex-wrap gap-2 mb-5">
-                  {(s.tags || []).map((t: string) => (
-                    <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
-                  ))}
-                </div>
-                <div className="flex items-end justify-between border-t border-border pt-5">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">от</p>
-                    <p className="font-display text-3xl font-bold text-primary leading-none">
-                      {(s.price_from ?? 0).toLocaleString('ru')} <span className="text-base font-sans font-normal">₽</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">{s.price_unit}</p>
+      {/* Услуги и цены (объединённый блок) */}
+      {siteSettings.section_services !== 'false' && (
+        <section id="services" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
+          <DecoIcons items={[
+            { emoji: '🐠', top: '8%',    left: '2%',  size: 36, dur: 7,  delay: 0, swim: true },
+            { emoji: '🦎', top: '12%',   right: '3%', size: 34, dur: 9,  delay: 1.5 },
+            { emoji: '🐢', bottom: '10%',left: '1%',  size: 32, dur: 8,  delay: 3 },
+            { emoji: '🌿', bottom: '5%', right: '2%', size: 30, dur: 11, delay: 0.5 },
+          ]} />
+          <div className="container relative z-10">
+            <div className="text-center max-w-2xl mx-auto mb-10 section-reveal">
+              <Badge variant="secondary" className="mb-4">Услуги и цены</Badge>
+              <h2 className="font-display text-4xl md:text-5xl font-bold text-primary">Что мы делаем</h2>
+              <p className="mt-4 text-muted-foreground">Выберите категорию — внутри увидите типы работ и цены.</p>
+            </div>
+
+            {(() => {
+              const topCats = svcCategories.filter((c) => c.parent_id === null);
+              const allServices = servicesLoaded ? services : (SERVICES_FALLBACK as Service[]);
+
+              // Типы (подкатегории) выбранной верхней категории
+              const typeCats = svcCategories.filter((c) => c.parent_id === activeCatId);
+
+              // Услуги, попадающие в выбранную категорию (напрямую или через тип)
+              const typeIds = typeCats.map((t) => t.id);
+              const servicesInCat = allServices.filter((s) =>
+                s.category_id === activeCatId || (s.category_id != null && typeIds.includes(s.category_id))
+              );
+
+              if (topCats.length === 0) {
+                // Фолбэк без категорий — плоский список
+                return (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allServices.map((s) => (
+                      <ServiceCard key={s.id ?? s.title} s={s} onOrder={() => scrollTo('contacts')} />
+                    ))}
                   </div>
-                  <Button size="sm" onClick={() => scrollTo('contacts')}>Заказать</Button>
-                </div>
-              </div>
-            ))}
+                );
+              }
+
+              return (
+                <>
+                  {/* Табы категорий */}
+                  <div className="flex flex-wrap justify-center gap-2 mb-10">
+                    {topCats.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => { setActiveCatId(cat.id); setExpandedSvc(null); }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
+                          activeCatId === cat.id
+                            ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                            : 'bg-background/60 text-muted-foreground border-border hover:border-primary hover:text-primary backdrop-blur-sm'
+                        }`}
+                      >
+                        <Icon name={cat.icon} size={15} />
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Группировка по типам */}
+                  {typeCats.length > 0 ? (
+                    <div className="space-y-10">
+                      {typeCats.map((type) => {
+                        const typeServices = servicesInCat.filter((s) => s.category_id === type.id);
+                        if (typeServices.length === 0) return null;
+                        return (
+                          <div key={type.id}>
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="grid place-items-center w-9 h-9 rounded-lg bg-secondary/15 text-secondary">
+                                <Icon name={type.icon} size={18} />
+                              </span>
+                              <h3 className="font-display text-xl font-bold text-primary">{type.name}</h3>
+                            </div>
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {typeServices.map((s) => (
+                                <ServiceCard
+                                  key={s.id}
+                                  s={s}
+                                  expanded={expandedSvc === s.id}
+                                  onToggle={() => setExpandedSvc(expandedSvc === s.id ? null : s.id)}
+                                  onOrder={() => scrollTo('contacts')}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {/* Услуги прямо в категории без типа */}
+                      {servicesInCat.filter((s) => s.category_id === activeCatId).length > 0 && (
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {servicesInCat.filter((s) => s.category_id === activeCatId).map((s) => (
+                            <ServiceCard key={s.id} s={s} onOrder={() => scrollTo('contacts')} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {servicesInCat.map((s) => (
+                        <ServiceCard key={s.id} s={s} onOrder={() => scrollTo('contacts')} />
+                      ))}
+                      {servicesInCat.length === 0 && (
+                        <div className="col-span-full text-center py-12 text-muted-foreground">
+                          В этой категории пока нет услуг
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
+            <p className="text-center text-sm text-muted-foreground mt-12">
+              Цены ориентировочные. Точный расчёт — после обсуждения вашего проекта.
+            </p>
           </div>
-          <p className="text-center text-sm text-muted-foreground mt-10">
-            Цены указаны ориентировочно. Точный расчёт — после обсуждения вашего проекта.
-          </p>
-        </div>
-        <WaveDivider fill="hsl(var(--background))" />
-      </section></>)}
+          <WaveDivider fill="hsl(var(--background))" />
+        </section>
+      )}
 
       {/* Shop */}
       {siteSettings.section_shop !== 'false' && (<section id="shop" className="pb-24 bg-background relative overflow-hidden">
