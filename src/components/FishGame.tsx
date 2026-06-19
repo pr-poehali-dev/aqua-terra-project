@@ -105,38 +105,35 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     if (spd > 0.5) s.fishAngle = Math.atan2(s.fishVy, s.fishVx);
     s.wag += s.wagDir * 0.14 * (0.5 + spd * 0.25); if (Math.abs(s.wag) > 1) s.wagDir *= -1;
 
-    // Сачок — pivot следит за рыбкой по X и Y
-    const sweepStart = -Math.PI * 0.55;
-    const sweepEnd = Math.PI * 0.15;
-    const sweepAngle = sweepStart + s.netLunge * (sweepEnd - sweepStart);
-    const pivotX = s.netX + 40;
+    // Сачок — pivot фиксирован за правым краем, двигается только по Y
+    const pivotX = W + 30;
     const pivotY = s.netY;
-    const tipX = pivotX + Math.cos(sweepAngle) * 170;
-    const tipY = pivotY + Math.sin(sweepAngle) * 170;
+    const sweepStart = -Math.PI;
+    const sweepEnd   = -Math.PI * 0.6;
+    const sweepAngle = sweepStart + s.netLunge * (sweepEnd - sweepStart);
+    const tipX = pivotX + Math.cos(sweepAngle) * 155;
+    const tipY = pivotY + Math.sin(sweepAngle) * 155;
     const ndist = Math.sqrt((s.fishX - tipX) ** 2 + (s.fishY - tipY) ** 2);
 
     if (s.netPauseTimer > 0) {
       s.netPauseTimer -= dt;
       s.netLunge = Math.max(0, s.netLunge - dt * 0.005);
-      s.netX += (s.fishX - 80 - s.netX) * 0.025;
-      s.netY += (s.fishY - s.netY) * 0.025;
+      s.netY += (s.fishY - s.netY) * 0.022;
     } else if (s.netLunging) {
       s.netLunge = Math.min(1, s.netLunge + dt * 0.005);
-      s.netX += (s.fishX - 80 - s.netX) * 0.06;
-      s.netY += (s.fishY - s.netY) * 0.06;
-      if (s.netLunge >= 1) { s.netLunging = false; s.netPauseTimer = 1400; }
+      s.netY += (s.fishY - s.netY) * 0.07;
+      if (s.netLunge >= 1) { s.netLunging = false; s.netPauseTimer = 1200; }
     } else {
       s.netLungeTimer -= dt;
       s.netLunge *= 0.88;
-      s.netX += (s.fishX - 80 - s.netX) * 0.03;
-      s.netY += (s.fishY - s.netY) * 0.03;
+      s.netY += (s.fishY - s.netY) * 0.032;
       if (s.netLungeTimer <= 0) {
         s.netLunging = true;
-        s.netLungeTimer = 2500 + Math.random() * 2500;
+        s.netLungeTimer = 2200 + Math.random() * 2200;
       }
     }
 
-    if (s.netLunging && s.netLunge > 0.65 && ndist < 68) {
+    if (s.netLunging && s.netLunge > 0.65 && ndist < 62) {
       s.alive = false; s.dead = true; s.deadTimer = 0;
       s.animId = requestAnimationFrame(gameLoop); return;
     }
