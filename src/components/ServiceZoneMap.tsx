@@ -114,25 +114,19 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
         pc.points.forEach(pt => {
           const maxR = pt.r3_km * 1000;
 
-          // Рисуем от большего к меньшему — GRADIENT_STEPS слоёв
-          for (let step = GRADIENT_STEPS; step >= 0; step--) {
-            const t = step / GRADIENT_STEPS; // 1 = край (красный), 0 = центр (зелёный)
+          // Рисуем от большего к меньшему — каждый круг заливкой, создаём градиент слоями
+          for (let step = GRADIENT_STEPS; step >= 1; step--) {
+            const t = step / GRADIENT_STEPS;
             const radius = maxR * t;
-            if (radius < 100) continue;
-
             const color = gradientColor(t);
-            // Непрозрачность: у центра плотнее, к краям тоньше
-            const opacity = 0.18 - t * 0.08;
-
             const circle = new window.ymaps.Circle(
               [[pt.lat, pt.lon], radius],
               {},
               {
-                fillColor: color + '00', // заливка прозрачная — только обводка
-                strokeColor: color,
-                strokeWidth: maxR / GRADIENT_STEPS / 1000 * 80 + 2, // толщина пропорциональна шагу
-                strokeOpacity: opacity,
-                fillOpacity: 0,
+                fillColor: color,
+                fillOpacity: 0.07,
+                strokeWidth: 0,
+                strokeColor: 'transparent',
                 cursor: 'default',
                 interactivityModel: 'default#transparent',
               }
