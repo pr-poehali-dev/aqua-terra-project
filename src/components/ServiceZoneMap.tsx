@@ -190,8 +190,8 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
                 g = Math.round(179 + (68-179)*f);
                 b = Math.round(8 + (50-8)*f);
               }
-              // Яркий центр, быстро спадает к краю
-              const a = Math.round(Math.pow(1 - t, 1.8) * 0.65 * 255);
+              // Равномерная яркость по всем зонам, спад только у самого края
+              const a = Math.round((t < 0.85 ? 0.52 : (1 - t) / 0.15 * 0.52) * 255);
               const i = (y * W + x) * 4;
               d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=a;
             }

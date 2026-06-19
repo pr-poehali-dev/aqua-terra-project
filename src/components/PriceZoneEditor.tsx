@@ -125,7 +125,7 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
           const f = (t - t2) / (1 - t2);
           r = Math.round(234 + (239-234)*f); g = Math.round(179 + (68-179)*f); b = Math.round(8 + (50-8)*f);
         }
-        const a = Math.round(Math.pow(1 - t, 1.8) * 0.65 * 255);
+        const a = Math.round((t < 0.85 ? 0.52 : (1 - t) / 0.15 * 0.52) * 255);
         const i = (y * W + x) * 4;
         data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
       }
