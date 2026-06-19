@@ -110,7 +110,7 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
           g = Math.round(180 + (50-180)*t2);
           b = Math.round(0 + (50-0)*t2);
         }
-        const a = Math.round(Math.pow(1 - minT, 0.7) * 0.75 * 255);
+        const a = Math.round(Math.pow(1 - minT, 0.7) * 0.38 * 255);
         const i = (y*W + x)*4;
         data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
       }

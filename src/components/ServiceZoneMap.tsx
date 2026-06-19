@@ -181,7 +181,7 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
                 b = Math.round(0 + (50-0)*t2);
               }
               // Край чётче: альфа резко падает только у самой границы
-              const a = Math.round(Math.pow(1 - minT, 0.7) * 0.75 * 255);
+              const a = Math.round(Math.pow(1 - minT, 0.7) * 0.38 * 255);
               const i = (y*W + x)*4;
               data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
             }
