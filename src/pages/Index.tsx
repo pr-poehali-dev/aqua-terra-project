@@ -602,8 +602,8 @@ const Index = () => {
           </div>
         </div>
         {menuOpen && (
-          <div className="md:hidden fixed inset-0 top-14 z-40 bg-background flex flex-col border-t border-border">
-            <nav className="flex flex-col px-6 pt-4 pb-6 gap-0 flex-1 overflow-y-auto">
+          <div className="md:hidden fixed left-0 right-0 top-14 bottom-0 z-[55] flex flex-col border-t border-border" style={{ backgroundColor: 'hsl(var(--background))' }}>
+            <nav className="flex flex-col px-6 pt-4 pb-2 gap-0 flex-1 overflow-y-auto">
               {NAV.map((n, i) => (
                 <button
                   key={n.id}
@@ -616,7 +616,7 @@ const Index = () => {
                 </button>
               ))}
             </nav>
-            <div className="px-6 pb-6 pt-4 space-y-3 border-t border-border">
+            <div className="px-6 pb-8 pt-4 space-y-3 border-t border-border shrink-0">
               <a href="tel:+79055337226" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors text-sm">
                 <Icon name="Phone" size={16} /> +7 905 533 7226
               </a>
