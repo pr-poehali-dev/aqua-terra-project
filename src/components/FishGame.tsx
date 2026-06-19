@@ -355,7 +355,7 @@ export default function FishGame({ tgChannel, scoreToWin = SCORE_TO_WIN, promoCo
 
       {/* Idle */}
       {phase === 'idle' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-[#082f49]/92 text-white text-center p-6">
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl text-white text-center p-6" style={{background:'linear-gradient(160deg,#0c4a6e 0%,#082f49 100%)'}}>
           <div className="text-5xl mb-3">🐟</div>
           <h3 className="text-2xl font-bold mb-2">Накорми рыбку!</h3>
           <p className="text-white/70 text-sm mb-1">Веди мышью — рыбка плывёт следом</p>
@@ -372,7 +372,8 @@ export default function FishGame({ tgChannel, scoreToWin = SCORE_TO_WIN, promoCo
 
       {/* Won */}
       {phase === 'won' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-[#0c4a6e]/95 text-white text-center p-6">
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl text-white text-center p-6" style={{background:'linear-gradient(160deg,#0c4a6e 0%,#082f49 100%)'}}>
+
           {!subscribed ? (<>
             <div className="text-5xl mb-3">🏆</div>
             <h3 className="text-2xl font-bold mb-1">Ты набрал {score} очков!</h3>
