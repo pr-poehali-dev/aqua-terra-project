@@ -1287,6 +1287,10 @@ const Index = () => {
             height="380px"
             className="rounded-none border-0"
           />
+          <div className="px-6 py-3 bg-muted/40 border-t border-border flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">📍 Не нашли свой район?</span>
+            <span className="text-sm text-foreground">Локации за пределами зон согласовываются индивидуально — просто напишите нам.</span>
+          </div>
         </div>
       </section>
 
