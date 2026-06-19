@@ -109,33 +109,62 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
 
       mapInstance.current = map;
 
-      // Рисуем градиентные кольца для каждой рабочей точки
+      // Рисуем градиентные зоны через Canvas-оверлей поверх тайлов (не перехватывает мышь)
       if (hasPoints) {
-        pc.points.forEach(pt => {
-          const maxR = pt.r3_km * 1000;
+        const drawZones = () => {
+          const projection = map.options.get('projection') || window.ymaps.projection.wgs84Mercator;
+          const mapEl = mapRef.current!;
+          const W = mapEl.offsetWidth;
+          const H = mapEl.offsetHeight;
 
-          // Рисуем от большего к меньшему — каждый круг заливкой, создаём градиент слоями
-          for (let step = GRADIENT_STEPS; step >= 1; step--) {
-            const t = step / GRADIENT_STEPS;
-            const radius = maxR * t;
-            const color = gradientColor(t);
-            const circle = new window.ymaps.Circle(
-              [[pt.lat, pt.lon], radius],
-              {},
-              {
-                fillColor: color,
-                fillOpacity: 0.07,
-                strokeWidth: 0,
-                strokeColor: 'transparent',
-                cursor: 'default',
-                interactivityModel: 'default#transparent',
-              }
+          // Удаляем старый canvas если есть
+          const old = mapEl.querySelector('canvas.zone-canvas');
+          if (old) old.remove();
+
+          const canvas = document.createElement('canvas');
+          canvas.className = 'zone-canvas';
+          canvas.width = W;
+          canvas.height = H;
+          canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:10;';
+          mapEl.appendChild(canvas);
+
+          const ctx = canvas.getContext('2d')!;
+
+          pc.points.forEach(pt => {
+            const maxR = pt.r3_km * 1000;
+
+            // Переводим центр точки в пиксели экрана
+            const centerPx = map.converter.globalToPage(
+              map.converter.coordsToGlobal([pt.lat, pt.lon], map.getZoom())
             );
-            map.geoObjects.add(circle);
-          }
+            const cx = centerPx[0];
+            const cy = centerPx[1];
 
+            // Считаем радиус в пикселях: берём точку на расстоянии maxR метров по горизонтали
+            const edgeCoord = window.ymaps.coordSystem.geo.solveDirectProblem(
+              [pt.lat, pt.lon], [0, 1], maxR
+            ).endPoint;
+            const edgePx = map.converter.globalToPage(
+              map.converter.coordsToGlobal(edgeCoord, map.getZoom())
+            );
+            const rPx = Math.sqrt((edgePx[0]-cx)**2 + (edgePx[1]-cy)**2);
 
-        });
+            // Радиальный градиент: зелёный в центре → жёлтый → красный на краю
+            const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rPx);
+            grad.addColorStop(0,   'rgba(34,197,94,0.35)');
+            grad.addColorStop(0.4, 'rgba(34,197,94,0.22)');
+            grad.addColorStop(0.7, 'rgba(234,179,8,0.18)');
+            grad.addColorStop(1,   'rgba(239,68,68,0.12)');
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+          });
+        };
+
+        drawZones();
+        map.events.add(['boundschange', 'sizechange'], drawZones);
       }
 
       // Полигон зоны выезда поверх (контур)
