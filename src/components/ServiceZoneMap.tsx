@@ -96,7 +96,12 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
       const map = new window.ymaps.Map(mapRef.current, {
         center, zoom: 9,
         controls: ['zoomControl', 'fullscreenControl'],
-      }, { suppressMapOpenBlock: true });
+      }, { suppressMapOpenBlock: true, scrollZoomBehavior: false });
+
+      // Зум колесом только после клика по карте
+      map.behaviors.disable('scrollZoom');
+      map.events.add('click', () => map.behaviors.enable('scrollZoom'));
+      map.events.add('mouseleave', () => map.behaviors.disable('scrollZoom'));
 
       mapInstance.current = map;
 

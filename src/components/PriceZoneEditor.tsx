@@ -98,6 +98,9 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
     const map = new ymaps.Map(mapRef.current, {
       center, zoom: 9, controls: ['zoomControl'],
     }, { suppressMapOpenBlock: true });
+    map.behaviors.disable('scrollZoom');
+    map.events.add('click', () => map.behaviors.enable('scrollZoom'));
+    map.events.add('mouseleave', () => map.behaviors.disable('scrollZoom'));
     mapInst.current = map;
     redraw();
     return () => { if (mapInst.current) { mapInst.current.destroy(); mapInst.current = null; } };
