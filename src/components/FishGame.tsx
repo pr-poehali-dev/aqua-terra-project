@@ -154,7 +154,7 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     }
 
     // Поймал: рыбка вошла в обруч сачка — всегда, независимо от фазы броска
-    const catchRadius = 30;
+    const catchRadius = 58;
     if (ndist < catchRadius) {
       s.alive = false; s.dead = true; s.deadTimer = 0;
       s.animId = requestAnimationFrame(gameLoop); return;

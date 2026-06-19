@@ -170,7 +170,7 @@ export function drawNet(
   // При броске сачок «черпает» — открыт в направлении движения рыбки
   ctx.rotate(armAngle + Math.PI / 2);
 
-  const R = 28;
+  const R = 56;
   const bagDepth = R * 0.9 + lunge * R * 0.5;
 
   // ── Мешок сетки ──
