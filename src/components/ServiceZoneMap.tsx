@@ -205,12 +205,12 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
   }
 
   return (
-    <div className={`relative rounded-2xl border border-border ${className}`} style={{ height }}>
-      <div ref={mapRef} className="w-full h-full rounded-2xl overflow-hidden" />
+    <div className={`relative rounded-2xl border border-border ${className}`} style={{ height, overflow: 'clip' }}>
+      <div ref={mapRef} className="w-full h-full" />
 
       {/* Легенда */}
       {priceConfig?.active && priceConfig.points.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-xl shadow-lg p-3 max-w-[190px]">
+        <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-xl shadow-lg p-3 max-w-[190px] pointer-events-none">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Зоны выезда</p>
           <div className="space-y-1.5">
             {[

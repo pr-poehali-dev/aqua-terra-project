@@ -1262,7 +1262,7 @@ const Index = () => {
         </div>
         </Card>
         {/* Карта зон обслуживания — вне Card чтобы overflow-hidden не блокировал контролы */}
-        <div className="border border-border border-t-0 rounded-b-2xl" style={{ overflow: 'clip' }}>
+        <div className="border border-border border-t-0 rounded-b-2xl">
           <div className="p-6 pb-2 bg-card">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
