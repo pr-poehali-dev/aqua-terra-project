@@ -55,6 +55,9 @@ function gradientColor(t: number): string {
 export default function ServiceZoneMap({ apiKey, height = '420px', className = '' }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
+  const mapBuilt = useRef(false);
+  const zonesRef = useRef<ServiceZone[]>([]);
+  const priceRef = useRef<PriceConfig | null>(null);
   const [zones, setZones] = useState<ServiceZone[]>([]);
   const [priceConfig, setPriceConfig] = useState<PriceConfig | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -62,8 +65,8 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
   const [hovered, setHovered] = useState<{ label: string; factor: number } | null>(null);
 
   useEffect(() => {
-    fetch(ZONES_URL).then(r => r.json()).then(setZones).catch(() => {});
-    fetch(PRICE_ZONES_URL).then(r => r.json()).then(d => { if (d) setPriceConfig(d); }).catch(() => {});
+    fetch(ZONES_URL).then(r => r.json()).then(d => { zonesRef.current = d; setZones(d); }).catch(() => {});
+    fetch(PRICE_ZONES_URL).then(r => r.json()).then(d => { if (d) { priceRef.current = d; setPriceConfig(d); } }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -80,17 +83,21 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
   }, [apiKey]);
 
   useEffect(() => {
-    if (!loaded || !mapRef.current) return;
+    if (!loaded || !mapRef.current || mapBuilt.current) return;
 
-    const hasPoints = priceConfig?.active && (priceConfig.points?.length ?? 0) > 0;
-    const hasPolygon = zones.some(z => z.active && z.zone_type === 'polygon' && z.coordinates?.length > 2);
+    const hasPoints = priceRef.current?.active && (priceRef.current.points?.length ?? 0) > 0;
+    const hasPolygon = zonesRef.current.some(z => z.active && z.zone_type === 'polygon' && z.coordinates?.length > 2);
     if (!hasPoints && !hasPolygon) return;
+
+    mapBuilt.current = true;
 
     window.ymaps.ready(() => {
       if (mapInstance.current) mapInstance.current.destroy();
 
-      const center = hasPoints && priceConfig!.points.length > 0
-        ? [priceConfig!.points[0].lat, priceConfig!.points[0].lon]
+      const pc = priceRef.current!;
+      const zs = zonesRef.current;
+      const center = hasPoints && pc.points.length > 0
+        ? [pc.points[0].lat, pc.points[0].lon]
         : [55.7328, 36.8517];
 
       const map = new window.ymaps.Map(mapRef.current, {
@@ -105,7 +112,7 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
 
       // Рисуем градиентные кольца для каждой рабочей точки
       if (hasPoints) {
-        priceConfig!.points.forEach(pt => {
+        pc.points.forEach(pt => {
           const maxR = pt.r3_km * 1000;
 
           // Рисуем от большего к меньшему — GRADIENT_STEPS слоёв
@@ -136,9 +143,9 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
 
           // Невидимый большой круг для hover-событий
           const ringDefs = [
-            { km: pt.r3_km, factor: priceConfig!.ring3_factor, label: priceConfig!.ring3_label },
-            { km: pt.r2_km, factor: priceConfig!.ring2_factor, label: priceConfig!.ring2_label },
-            { km: pt.r1_km, factor: priceConfig!.ring1_factor, label: priceConfig!.ring1_label },
+            { km: pt.r3_km, factor: pc.ring3_factor, label: pc.ring3_label },
+            { km: pt.r2_km, factor: pc.ring2_factor, label: pc.ring2_label },
+            { km: pt.r1_km, factor: pc.ring1_factor, label: pc.ring1_label },
           ];
           ringDefs.forEach(({ km, factor, label }) => {
             const hit = new window.ymaps.Circle(
@@ -160,7 +167,7 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
       }
 
       // Полигон зоны выезда поверх (контур)
-      zones.filter(z => z.active && z.zone_type === 'polygon' && z.coordinates?.length > 2).forEach(zone => {
+      zs.filter(z => z.active && z.zone_type === 'polygon' && z.coordinates?.length > 2).forEach(zone => {
         const coords = zone.coordinates.map(c => [c[0], c[1]]);
         const polygon = new window.ymaps.Polygon([coords], {}, {
           fillColor: '#ffffff00',
@@ -173,8 +180,9 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
       });
     });
 
-    return () => { if (mapInstance.current) { mapInstance.current.destroy(); mapInstance.current = null; } };
-  }, [loaded, zones, priceConfig]);
+    return () => { if (mapInstance.current) { mapInstance.current.destroy(); mapInstance.current = null; mapBuilt.current = false; } };
+   
+  }, [loaded, zones.length, priceConfig?.points?.length]);
 
   if (!apiKey) {
     return (
