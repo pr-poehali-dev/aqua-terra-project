@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
 import { useTheme } from '@/hooks/use-theme';
 import ServiceZoneMap from '@/components/ServiceZoneMap';
-import FishGame from '@/components/FishGame';
+import FishGame, { FishSVG } from '@/components/FishGame';
 
 const LEAD_URL = 'https://functions.poehali.dev/65042d39-89d6-40d3-9d30-42b0ccb9d003';
 const ARTICLES_URL = 'https://functions.poehali.dev/c111c540-337c-4680-8bd9-f05e940f8dbf';
@@ -657,7 +657,7 @@ const Index = () => {
           const quizOn = siteSettings.section_quiz !== 'false';
           if (!gameOn && !quizOn) return null;
           const isGame = gameOn;
-          const icon = isGame ? '🐟' : '🎯';
+          const icon = isGame ? null : '🎯';
           const title = isGame ? 'Сыграй и получи скидку!' : `Скидка ${siteSettings.game_promo_code ? '' : '10%'}`;
           const sub = isGame ? `Набери 25 очков — получи промокод` : 'Пройди тест и получи\nпромокод + розыгрыш';
           const label = isGame ? 'Играть' : 'Попробовать';
@@ -674,7 +674,7 @@ const Index = () => {
               <span className="absolute inset-0 rounded-2xl bg-secondary animate-pulse-ring opacity-20 hidden md:block" style={{ animationDelay: '0.5s' }} />
               {/* Десктоп */}
               <div className="hidden md:flex relative rounded-2xl px-5 py-4 shadow-2xl flex-col items-center gap-1 min-w-[160px] group-hover:scale-105 transition-transform duration-200 border border-secondary/40 backdrop-blur-md" style={{ background: 'linear-gradient(135deg, hsl(162 48% 14%) 0%, hsl(195 58% 18%) 100%)' }}>
-                <span className="text-2xl mb-0.5">{icon}</span>
+                {isGame ? <FishSVG size={32} className="mb-0.5" /> : <span className="text-2xl mb-0.5">{icon}</span>}
                 <span className="font-bold text-base leading-tight text-center text-white">{title}</span>
                 <span className="text-xs font-medium text-white/70 text-center leading-tight whitespace-pre-line">{sub}</span>
                 <span className="mt-1 flex items-center gap-1 text-xs font-bold bg-secondary/20 text-secondary rounded-full px-3 py-0.5">
@@ -684,7 +684,9 @@ const Index = () => {
               {/* Мобайл */}
               <div className="flex md:hidden items-center justify-between px-5 py-3 border-t border-secondary/30 backdrop-blur-md" style={{ background: 'linear-gradient(90deg, hsl(162 48% 10% / 0.95) 0%, hsl(195 58% 14% / 0.95) 100%)' }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-secondary/20 grid place-items-center shrink-0 text-xl">{icon}</div>
+                  <div className="w-8 h-8 rounded-lg bg-secondary/20 grid place-items-center shrink-0">
+                    {isGame ? <FishSVG size={22}/> : <span className="text-xl">{icon}</span>}
+                  </div>
                   <div className="text-left">
                     <p className="text-white font-semibold text-sm leading-tight">{title}</p>
                     <p className="text-white/60 text-xs">{isGame ? 'Сыграй и получи промокод' : 'Пройди тест — получи промокод'}</p>
