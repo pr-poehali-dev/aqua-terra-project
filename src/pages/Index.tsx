@@ -83,6 +83,7 @@ const HERO_IMG = 'https://cdn.poehali.dev/projects/a4014f0d-2686-48db-be64-812eb
 const NAV = [
   { id: 'home', label: 'Главная' },
   { id: 'services', label: 'Услуги и цены' },
+  { id: 'shop', label: 'Магазин', href: '/shop' },
   { id: 'portfolio', label: 'Портфолио' },
   { id: 'articles', label: 'Статьи' },
   { id: 'faq', label: 'FAQ' },
@@ -569,9 +570,9 @@ const Index = () => {
           </button>
           <nav className="hidden md:flex items-center gap-7">
             {NAV.map((n) => (
-              <button key={n.id} onClick={() => scrollTo(n.id)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                {n.label}
-              </button>
+              n.href
+                ? <button key={n.id} onClick={() => navigate(n.href!)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">{n.label}</button>
+                : <button key={n.id} onClick={() => scrollTo(n.id)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">{n.label}</button>
             ))}
           </nav>
           <div className="flex items-center gap-1.5 md:gap-2">
@@ -609,7 +610,7 @@ const Index = () => {
             {NAV.map((n, i) => (
               <button
                 key={n.id}
-                onClick={() => { scrollTo(n.id); setMenuOpen(false); }}
+                onClick={() => { if (n.href) { navigate(n.href); } else { scrollTo(n.id); } setMenuOpen(false); }}
                 className="flex items-center justify-between py-3.5 border-b border-border/50 text-left group"
                 style={{ animationDelay: `${i * 40}ms` }}
               >
