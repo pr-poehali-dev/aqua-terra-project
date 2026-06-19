@@ -74,12 +74,12 @@ export function drawFish(ctx: CanvasRenderingContext2D, x: number, y: number, an
   ctx.restore();
 }
 
-export function drawNet(ctx: CanvasRenderingContext2D, handX: number, _y: number, _a: number, lunge: number) {
-  const pivotX = handX + 50;
-  const pivotY = 10;
-  const armLen = 130;
-  const sweepStart = -Math.PI * 0.38;
-  const sweepEnd = Math.PI * 0.33;
+export function drawNet(ctx: CanvasRenderingContext2D, handX: number, handY: number, _a: number, lunge: number) {
+  const pivotX = handX + 40;
+  const pivotY = handY;
+  const armLen = 170;
+  const sweepStart = -Math.PI * 0.55;
+  const sweepEnd = Math.PI * 0.15;
   const sweepAngle = sweepStart + lunge * (sweepEnd - sweepStart);
 
   const netX = pivotX + Math.cos(sweepAngle) * armLen;
@@ -117,9 +117,9 @@ export function drawNet(ctx: CanvasRenderingContext2D, handX: number, _y: number
 
   // ── РУКА ──
   ctx.save(); ctx.translate(pivotX, pivotY);
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(55, -20);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(70, 0);
   ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 38; ctx.lineCap = 'round'; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(55, -20);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(70, 0);
   ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 30; ctx.stroke();
   ctx.beginPath(); ctx.ellipse(0, 0, 22, 14, 0.1, 0, Math.PI * 2);
   ctx.fillStyle = '#1d4ed8'; ctx.fill(); ctx.strokeStyle = '#1e40af'; ctx.lineWidth = 2; ctx.stroke();

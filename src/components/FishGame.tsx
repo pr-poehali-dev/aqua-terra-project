@@ -14,6 +14,7 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     targetX: W / 2, targetY: H / 2,
     fishAngle: 0, wag: 0, wagDir: 1,
     netX: W + 80, netY: H / 2, netAngle: 0,
+    // netY используется как Y-позиция pivot руки
     netLunge: 0,
     netLunging: false,
     netLungeTimer: 0,
@@ -49,8 +50,8 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     const s = stateRef.current;
     s.fishX = W / 2; s.fishY = H / 2; s.fishVx = 0; s.fishVy = 0;
     s.targetX = W / 2; s.targetY = H / 2; s.fishAngle = 0; s.wag = 0;
-    s.netX = W * 0.55; s.netY = 0; s.netAngle = 0;
-    s.netLunge = 0; s.netLunging = false; s.netLungeTimer = 3500; s.netPauseTimer = 0;
+    s.netX = W * 0.55; s.netY = H / 2; s.netAngle = 0;
+    s.netLunge = 0; s.netLunging = false; s.netLungeTimer = 2000; s.netPauseTimer = 0;
     if (!keepScore) { s.score = 0; setScore(0); }
     s.foods = []; s.alive = true; s.dead = false; s.deadTimer = 0;
     s.foodTimer = 0; s.lastTime = performance.now();
@@ -104,35 +105,38 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     if (spd > 0.5) s.fishAngle = Math.atan2(s.fishVy, s.fishVx);
     s.wag += s.wagDir * 0.14 * (0.5 + spd * 0.25); if (Math.abs(s.wag) > 1) s.wagDir *= -1;
 
-    // Сачок
-    const sweepStart = -Math.PI * 0.38;
-    const sweepEnd = Math.PI * 0.33;
+    // Сачок — pivot следит за рыбкой по X и Y
+    const sweepStart = -Math.PI * 0.55;
+    const sweepEnd = Math.PI * 0.15;
     const sweepAngle = sweepStart + s.netLunge * (sweepEnd - sweepStart);
-    const pivotX = s.netX + 50;
-    const pivotY = 10;
-    const tipX = pivotX + Math.cos(sweepAngle) * 130;
-    const tipY = pivotY + Math.sin(sweepAngle) * 130;
+    const pivotX = s.netX + 40;
+    const pivotY = s.netY;
+    const tipX = pivotX + Math.cos(sweepAngle) * 170;
+    const tipY = pivotY + Math.sin(sweepAngle) * 170;
     const ndist = Math.sqrt((s.fishX - tipX) ** 2 + (s.fishY - tipY) ** 2);
 
     if (s.netPauseTimer > 0) {
       s.netPauseTimer -= dt;
-      s.netLunge = Math.max(0, s.netLunge - dt * 0.003);
-      s.netX += (s.fishX - s.netX) * 0.01;
+      s.netLunge = Math.max(0, s.netLunge - dt * 0.005);
+      s.netX += (s.fishX - 80 - s.netX) * 0.025;
+      s.netY += (s.fishY - s.netY) * 0.025;
     } else if (s.netLunging) {
-      s.netLunge = Math.min(1, s.netLunge + dt * 0.0038);
-      s.netX += (s.fishX - s.netX) * 0.035;
-      if (s.netLunge >= 1) { s.netLunging = false; s.netPauseTimer = 2200; }
+      s.netLunge = Math.min(1, s.netLunge + dt * 0.005);
+      s.netX += (s.fishX - 80 - s.netX) * 0.06;
+      s.netY += (s.fishY - s.netY) * 0.06;
+      if (s.netLunge >= 1) { s.netLunging = false; s.netPauseTimer = 1400; }
     } else {
       s.netLungeTimer -= dt;
-      s.netLunge *= 0.9;
-      s.netX += (s.fishX - s.netX) * 0.012;
+      s.netLunge *= 0.88;
+      s.netX += (s.fishX - 80 - s.netX) * 0.03;
+      s.netY += (s.fishY - s.netY) * 0.03;
       if (s.netLungeTimer <= 0) {
         s.netLunging = true;
-        s.netLungeTimer = 4000 + Math.random() * 4000;
+        s.netLungeTimer = 2500 + Math.random() * 2500;
       }
     }
 
-    if (s.netLunging && s.netLunge > 0.7 && ndist < 52) {
+    if (s.netLunging && s.netLunge > 0.65 && ndist < 68) {
       s.alive = false; s.dead = true; s.deadTimer = 0;
       s.animId = requestAnimationFrame(gameLoop); return;
     }
