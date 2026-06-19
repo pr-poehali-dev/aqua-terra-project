@@ -85,7 +85,7 @@ const NAV = [
   { id: 'services', label: 'Услуги и цены' },
   { id: 'shop', label: 'Магазин', href: '/shop' },
   { id: 'portfolio', label: 'Портфолио' },
-  { id: 'articles', label: 'Статьи' },
+  { id: 'wiki', label: 'База знаний', href: '/wiki' },
   { id: 'faq', label: 'FAQ' },
   { id: 'contacts', label: 'Контакты' },
 ];
@@ -1179,68 +1179,7 @@ const Index = () => {
         </div>
       )}
 
-      {/* Articles */}
-      {siteSettings.section_articles !== 'false' && (<section id="articles" className="py-24 px-4 md:px-6 relative bg-scales overflow-hidden">
-        <DecoIcons items={[
-          { emoji: '🦎', top: '6%',    right: '3%',  size: 30, dur: 10, delay: 0 },
-          { emoji: '🐠', bottom: '8%', left: '2%',   size: 28, dur: 8,  delay: 1.5, swim: true },
-          { emoji: '🐢', top: '15%',   left: '1%',   size: 26, dur: 12, delay: 2.5 },
-          { emoji: '🪸', bottom: '5%', right: '4%',  size: 24, dur: 9,  delay: 3 },
-        ]} />
-        <div className="container relative z-10">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <Badge variant="secondary" className="mb-4 section-reveal">Статьи</Badge>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-primary section-reveal" style={{animationDelay:'0.1s'}}>Полезные материалы</h2>
-            <p className="mt-4 text-muted-foreground section-reveal" style={{animationDelay:'0.2s'}}>Советы по уходу, обустройству и содержанию живых систем.</p>
-          </div>
-          {articles.length === 0 ? (
-            <p className="text-center text-muted-foreground">Статьи скоро появятся.</p>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {articles.map((a) => (
-                <div key={a.id} className="glass-card rounded-2xl overflow-hidden hover-scale group cursor-pointer" onClick={() => openArticle(a.slug)}>
-                  <div className="aspect-[16/9] gradient-deep grid place-items-center text-white/40">
-                    {a.cover_url
-                      ? <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
-                      : <Icon name="BookOpen" size={48} />}
-                  </div>
-                  <div className="p-5">
-                    <Badge variant="outline" className="text-xs mb-3">{a.category}</Badge>
-                    <h3 className="font-display text-xl font-semibold text-primary mb-2 leading-snug">{a.title}</h3>
-                    <p className="text-muted-foreground text-sm line-clamp-2">{a.excerpt}</p>
-                    <span className="inline-flex items-center gap-1 text-secondary text-sm font-medium mt-4">
-                      Читать <Icon name="ArrowRight" size={14} />
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>)}
-
-      {/* Article modal */}
-      {selectedArticle && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4 md:p-10" onClick={() => setSelectedArticle(null)}>
-          <Card className="w-full max-w-3xl my-4" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 md:p-10">
-              <div className="flex items-start justify-between gap-4 mb-6">
-                <div>
-                  <Badge variant="outline" className="mb-3">{selectedArticle.category}</Badge>
-                  <h2 className="font-display text-3xl font-bold text-primary">{selectedArticle.title}</h2>
-                </div>
-                <button onClick={() => setSelectedArticle(null)} className="shrink-0 p-2 rounded-lg hover:bg-muted transition-colors">
-                  <Icon name="X" size={22} />
-                </button>
-              </div>
-              <div
-                className="prose prose-sm max-w-none text-foreground leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: selectedArticle.content || '' }}
-              />
-            </div>
-          </Card>
-        </div>
-      )}
+      {/* Articles — перенесены на /wiki */}
 
       {siteSettings.section_faq !== 'false' && (<section id="faq" className="relative bg-muted/50">
         <WaveDivider fill="hsl(var(--muted) / 0.5)" flip />
