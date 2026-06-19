@@ -1272,7 +1272,6 @@ const Index = () => {
               {[
                 { color: 'bg-green-500',  hint: 'работаем постоянно' },
                 { color: 'bg-yellow-500', hint: 'чуть дороже' },
-                { color: 'bg-orange-500', hint: 'дороже' },
                 { color: 'bg-red-500',    hint: 'далеко' },
               ].map((z, i) => (
                 <span key={i} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
