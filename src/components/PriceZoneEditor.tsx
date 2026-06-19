@@ -79,6 +79,7 @@ export default function PriceZoneEditor({ config, apiKey, saving, onChange, onSa
             strokeColor: 'transparent',
             strokeWidth: 0,
             fillOpacity: 0.32,
+            interactivityModel: 'default#transparent',
           }
         );
         mapInst.current.geoObjects.add(circle);
