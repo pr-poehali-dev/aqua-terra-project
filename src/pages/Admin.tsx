@@ -29,11 +29,9 @@ interface Product {
   tag: string; icon: string; photo_url: string | null; in_stock: boolean; description: string;
   section_id?: number | null; category_id?: number | null;
 }
-interface ServiceCategory { id: number; name: string; slug: string; icon: string; sort_order: number; active: boolean; }
 interface Service {
   id: number; icon: string; title: string; description: string;
   price_from: number; price_unit: string; tags: string[]; sort_order: number; active: boolean;
-  category_id?: number | null;
 }
 interface PortfolioItem {
   id: number; title: string; tag: string; description: string;
@@ -45,7 +43,7 @@ const PRODUCT_CATS = [{ id: 'animals', label: 'Животные' }, { id: 'food'
 const ICONS = ['Fish', 'Turtle', 'Bug', 'Wheat', 'Package', 'Lightbulb', 'Settings', 'Sprout', 'Waves', 'Wrench', 'Truck', 'Star'];
 const EMPTY_PRODUCT: Omit<Product, 'id'> = { name: '', price: 0, category: '', tag: '', icon: 'Package', photo_url: null, in_stock: true, description: '', section_id: null, category_id: null };
 const EMPTY_ARTICLE: Omit<Article, 'id' | 'slug' | 'created_at'> = { title: '', excerpt: '', content: '', category: 'Аквариумы', cover_url: null, published: false };
-const EMPTY_SERVICE: Omit<Service, 'id'> = { icon: 'Wrench', title: '', description: '', price_from: 0, price_unit: 'за работу', tags: [], sort_order: 99, active: true, category_id: null };
+const EMPTY_SERVICE: Omit<Service, 'id'> = { icon: 'Wrench', title: '', description: '', price_from: 0, price_unit: 'за работу', tags: [], sort_order: 99, active: true };
 const EMPTY_PORTFOLIO: Omit<PortfolioItem, 'id'> = { title: '', tag: '', description: '', icon: 'Fish', photo_url: null, sort_order: 99, active: true };
 
 interface PromoCode {
@@ -99,8 +97,6 @@ export default function Admin() {
   const [svcList, setSvcList] = useState<Service[]>([]);
   const [editingSvc, setEditingSvc] = useState<Partial<Service> | null>(null);
   const [savingSvc, setSavingSvc] = useState(false);
-  const [svcCategories, setSvcCategories] = useState<ServiceCategory[]>([]);
-  const [editingCat, setEditingCat] = useState<Partial<ServiceCategory> | null>(null);
 
   // Portfolio
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
@@ -190,7 +186,7 @@ export default function Admin() {
 
   const login = async () => {
     setLoading(true);
-    const [ra, rp, rs, rport, rstat, rleads, rpromo, rcat, rset, rcats] = await Promise.all([
+    const [ra, rp, rs, rport, rstat, rleads, rpromo, rcat, rset] = await Promise.all([
       fetch(ARTICLES_ADMIN, { headers }),
       fetch(PRODUCTS_ADMIN, { headers }),
       fetch(`${SERVICES_ADMIN}?admin=1`, { headers }),
@@ -200,7 +196,6 @@ export default function Admin() {
       fetch(PROMO_URL, { headers }),
       fetch(CATALOG_URL),
       fetch(SETTINGS_URL),
-      fetch(`${SERVICES_ADMIN}?resource=categories`),
     ]);
     if (ra.status === 401) { toast({ title: 'Неверный пароль', variant: 'destructive' }); setLoading(false); return; }
     setArticles(await ra.json());
@@ -211,7 +206,6 @@ export default function Admin() {
     setLeads(await rleads.json());
     setPromos(await rpromo.json());
     setCatalogSections(await rcat.json());
-    setSvcCategories(await rcats.json());
     const sd = await rset.json();
     setSiteSettings(sd.settings || {});
     setFaqItems(sd.faq || []);
@@ -268,7 +262,6 @@ export default function Admin() {
   const loadArticles = () => fetch(ARTICLES_ADMIN, { headers }).then(r => r.json()).then(setArticles);
   const loadProducts = () => fetch(PRODUCTS_ADMIN, { headers }).then(r => r.json()).then(setProducts);
   const loadServices = () => fetch(`${SERVICES_ADMIN}?admin=1`, { headers }).then(r => r.json()).then(setSvcList);
-  const loadSvcCategories = () => fetch(`${SERVICES_ADMIN}?resource=categories`, { headers }).then(r => r.json()).then(setSvcCategories);
   const loadPortfolio = () => fetch(`${PORTFOLIO_ADMIN}?admin=1`, { headers }).then(r => r.json()).then(setPortfolio);
   const loadPromos = () => fetch(PROMO_URL, { headers }).then(r => r.json()).then(setPromos);
 
@@ -333,16 +326,6 @@ export default function Admin() {
       setUploadingPortPhoto(false);
     };
     reader.readAsDataURL(file);
-  };
-
-  // --- Service Categories ---
-  const saveSvcCategory = async () => {
-    if (!editingCat) return;
-    const isNew = !editingCat.id;
-    const url = isNew ? `${SERVICES_ADMIN}?resource=categories` : `${SERVICES_ADMIN}?resource=categories&id=${editingCat.id}`;
-    const res = await fetch(url, { method: isNew ? 'POST' : 'PUT', headers, body: JSON.stringify(editingCat) });
-    if (res.ok) { toast({ title: isNew ? 'Категория добавлена!' : 'Сохранено!' }); setEditingCat(null); loadSvcCategories(); }
-    else toast({ title: 'Ошибка', variant: 'destructive' });
   };
 
   // --- Services ---
@@ -883,14 +866,6 @@ export default function Admin() {
                   <input value={editingSvc.price_unit || ''} onChange={(e) => setEditingSvc({ ...editingSvc, price_unit: e.target.value })}
                     className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring" placeholder="за работу, за визит…" />
                 </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium text-muted-foreground mb-1 block">Категория</label>
-                  <select value={editingSvc.category_id ?? ''} onChange={(e) => setEditingSvc({ ...editingSvc, category_id: e.target.value ? Number(e.target.value) : null })}
-                    className="w-full h-11 px-4 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option value="">— Без категории —</option>
-                    {svcCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Иконка</label>
                   <select value={editingSvc.icon || 'Wrench'} onChange={(e) => setEditingSvc({ ...editingSvc, icon: e.target.value })}
@@ -919,140 +894,33 @@ export default function Admin() {
               </div>
             </Card>
           ) : (
-            <div className="space-y-6 max-w-4xl mx-auto">
-              {/* Кнопка новой услуги */}
-              <div className="flex justify-end">
-                <Button onClick={() => setEditingSvc({ ...EMPTY_SERVICE })}>
-                  <Icon name="Plus" size={16} className="mr-2" />Новая услуга
-                </Button>
-              </div>
-
-              {/* Управление категориями */}
-              <Card className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-primary flex items-center gap-2">
-                    <Icon name="Layers" size={18} />Категории
-                  </h3>
-                  <Button size="sm" variant="outline" onClick={() => setEditingCat({ name: '', slug: '', icon: 'Layers', sort_order: 99, active: true })}>
-                    <Icon name="Plus" size={14} className="mr-1" />Добавить
-                  </Button>
-                </div>
-
-                {editingCat && (
-                  <div className="bg-muted/40 rounded-xl p-4 mb-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Название</label>
-                        <input value={editingCat.name || ''} onChange={e => setEditingCat({...editingCat, name: e.target.value})}
-                          className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm" placeholder="Морской аквариум" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Slug (латиница)</label>
-                        <input value={editingCat.slug || ''} onChange={e => setEditingCat({...editingCat, slug: e.target.value})}
-                          className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm" placeholder="marine" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Иконка</label>
-                        <select value={editingCat.icon || 'Layers'} onChange={e => setEditingCat({...editingCat, icon: e.target.value})}
-                          className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm">
-                          {['Waves','Droplets','Leaf','Bug','TreePine','Fish','Layers','Sprout','Turtle','Flower2'].map(i => <option key={i}>{i}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">Порядок</label>
-                        <input type="number" value={editingCat.sort_order ?? 99} onChange={e => setEditingCat({...editingCat, sort_order: parseInt(e.target.value)||99})}
-                          className="w-full h-9 px-3 rounded-lg border border-input bg-background text-sm" />
-                      </div>
+            <div className="space-y-3 max-w-4xl mx-auto">
+              {svcList.length === 0 && <p className="text-center text-muted-foreground py-16">Услуг пока нет.</p>}
+              {svcList.map((s) => (
+                <Card key={s.id} className="p-5 flex items-center gap-4">
+                  <span className="grid place-items-center w-12 h-12 rounded-xl bg-primary/10 text-primary shrink-0">
+                    <Icon name={s.icon} size={22} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="font-semibold text-primary truncate">{s.title}</h3>
+                      <Badge variant={s.active ? 'default' : 'secondary'} className="text-xs shrink-0">{s.active ? 'Активна' : 'Скрыта'}</Badge>
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={saveSvcCategory}>Сохранить</Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditingCat(null)}>Отмена</Button>
-                    </div>
+                    <p className="text-secondary font-bold text-sm">от {s.price_from.toLocaleString('ru')} ₽ <span className="text-muted-foreground font-normal">{s.price_unit}</span></p>
                   </div>
-                )}
-
-                <div className="flex flex-wrap gap-2">
-                  {svcCategories.map(cat => (
-                    <div key={cat.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm ${cat.active ? 'border-border bg-muted/30' : 'border-border/40 bg-muted/10 opacity-50'}`}>
-                      <Icon name={cat.icon} size={14} className="text-primary" />
-                      <span className="font-medium">{cat.name}</span>
-                      <span className="text-muted-foreground text-xs">({svcList.filter(s => s.category_id === cat.id).length})</span>
-                      <button onClick={() => setEditingCat(cat)} className="text-muted-foreground hover:text-primary ml-1">
-                        <Icon name="Pencil" size={12} />
-                      </button>
-                    </div>
-                  ))}
-                  {svcCategories.length === 0 && <p className="text-sm text-muted-foreground">Категорий пока нет</p>}
-                </div>
-              </Card>
-
-              {/* Список услуг сгруппированных по категориям */}
-              {svcCategories.map(cat => {
-                const catSvcs = svcList.filter(s => s.category_id === cat.id);
-                if (catSvcs.length === 0) return null;
-                return (
-                  <div key={cat.id}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon name={cat.icon} size={16} className="text-primary" />
-                      <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{cat.name}</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {catSvcs.map(s => (
-                        <Card key={s.id} className="p-4 flex items-center gap-4">
-                          <span className="grid place-items-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0">
-                            <Icon name={s.icon} size={20} />
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-primary truncate text-sm">{s.title}</h3>
-                              <Badge variant={s.active ? 'default' : 'secondary'} className="text-xs shrink-0">{s.active ? 'Активна' : 'Скрыта'}</Badge>
-                            </div>
-                            <p className="text-xs text-secondary font-bold">от {s.price_from.toLocaleString('ru')} ₽ <span className="text-muted-foreground font-normal">{s.price_unit}</span></p>
-                          </div>
-                          <div className="flex gap-1 shrink-0">
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => toggleSvcActive(s)}><Icon name={s.active ? 'EyeOff' : 'Eye'} size={15} /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingSvc(s)}><Icon name="Pencil" size={15} /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeSvc(s.id)}><Icon name="Trash2" size={15} /></Button>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button size="icon" variant="ghost" title={s.active ? 'Скрыть' : 'Показать'} onClick={() => toggleSvcActive(s)}>
+                      <Icon name={s.active ? 'EyeOff' : 'Eye'} size={16} />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => setEditingSvc(s)}>
+                      <Icon name="Pencil" size={16} />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeSvc(s.id)}>
+                      <Icon name="Trash2" size={16} />
+                    </Button>
                   </div>
-                );
-              })}
-
-              {/* Услуги без категории */}
-              {svcList.filter(s => !s.category_id).length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Icon name="HelpCircle" size={16} className="text-muted-foreground" />
-                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Без категории</h4>
-                  </div>
-                  <div className="space-y-2">
-                    {svcList.filter(s => !s.category_id).map(s => (
-                      <Card key={s.id} className="p-4 flex items-center gap-4">
-                        <span className="grid place-items-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0">
-                          <Icon name={s.icon} size={20} />
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-primary truncate text-sm">{s.title}</h3>
-                            <Badge variant={s.active ? 'default' : 'secondary'} className="text-xs">{s.active ? 'Активна' : 'Скрыта'}</Badge>
-                          </div>
-                          <p className="text-xs text-secondary font-bold">от {s.price_from.toLocaleString('ru')} ₽ <span className="text-muted-foreground font-normal">{s.price_unit}</span></p>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => toggleSvcActive(s)}><Icon name={s.active ? 'EyeOff' : 'Eye'} size={15} /></Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingSvc(s)}><Icon name="Pencil" size={15} /></Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeSvc(s.id)}><Icon name="Trash2" size={15} /></Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {svcList.length === 0 && <p className="text-center text-muted-foreground py-8">Услуг пока нет — добавьте первую!</p>}
+                </Card>
+              ))}
             </div>
           )
         )}
