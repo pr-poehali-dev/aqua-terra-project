@@ -129,45 +129,63 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
 
           const ctx = canvas.getContext('2d')!;
 
-          pc.points.forEach(pt => {
+          // Общие параметры проекции
+          const proj = map.options.get('projection');
+          const zoom = map.getZoom();
+          const mapGlobalCenter = proj.toGlobalPixels(map.getCenter(), zoom);
+          const halfW = W / 2;
+          const halfH = H / 2;
+          const toPage = (coord: number[]) => {
+            const gp = proj.toGlobalPixels(coord, zoom);
+            return [gp[0] - mapGlobalCenter[0] + halfW, gp[1] - mapGlobalCenter[1] + halfH];
+          };
+
+          // Считаем пиксели всех точек и радиусы
+          const pts = pc.points.map(pt => {
             const maxR = pt.r3_km * 1000;
-
-            // Переводим координаты в глобальные пиксели, затем вычитаем смещение карты
-            const proj = map.options.get('projection');
-            const zoom = map.getZoom();
-            const mapGlobalCenter = proj.toGlobalPixels(map.getCenter(), zoom);
-            const mapEl2 = mapRef.current!;
-            const halfW = mapEl2.offsetWidth / 2;
-            const halfH = mapEl2.offsetHeight / 2;
-
-            const toPage = (coord: number[]) => {
-              const gp = proj.toGlobalPixels(coord, zoom);
-              return [gp[0] - mapGlobalCenter[0] + halfW, gp[1] - mapGlobalCenter[1] + halfH];
-            };
-
             const centerPx = toPage([pt.lat, pt.lon]);
-            const cx = centerPx[0];
-            const cy = centerPx[1];
-
-            // Радиус в пикселях через точку на maxR метров восточнее
             const edgeCoord = window.ymaps.coordSystem.geo.solveDirectProblem(
               [pt.lat, pt.lon], [0, 1], maxR
             ).endPoint;
             const edgePx = toPage(edgeCoord);
+            const cx = centerPx[0], cy = centerPx[1];
             const rPx = Math.sqrt((edgePx[0]-cx)**2 + (edgePx[1]-cy)**2);
-
-            // Радиальный градиент: зелёный в центре → жёлтый → красный на краю
-            const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rPx);
-            grad.addColorStop(0,   'rgba(34,197,94,0.35)');
-            grad.addColorStop(0.4, 'rgba(34,197,94,0.22)');
-            grad.addColorStop(0.7, 'rgba(234,179,8,0.18)');
-            grad.addColorStop(1,   'rgba(239,68,68,0.12)');
-
-            ctx.beginPath();
-            ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
-            ctx.fillStyle = grad;
-            ctx.fill();
+            return { cx, cy, rPx };
           });
+
+          // Рисуем попиксельно через ImageData — для каждого пикселя берём минимальное
+          // нормализованное расстояние до любой из точек → единая слитая зона
+          const imgData = ctx.createImageData(W, H);
+          const data = imgData.data;
+          for (let y = 0; y < H; y++) {
+            for (let x = 0; x < W; x++) {
+              // t = 0 в центре точки, 1 на краю r3, >1 за зоной
+              let minT = Infinity;
+              for (const { cx, cy, rPx } of pts) {
+                const d = Math.sqrt((x-cx)**2 + (y-cy)**2);
+                const t = d / rPx;
+                if (t < minT) minT = t;
+              }
+              if (minT >= 1) continue;
+              // Цвет: зелёный(0) → жёлтый(0.5) → красный(1)
+              let r, g, b;
+              if (minT < 0.5) {
+                const t2 = minT / 0.5;
+                r = Math.round(34 + (234-34)*t2);
+                g = Math.round(197 + (179-197)*t2);
+                b = Math.round(94 + (8-94)*t2);
+              } else {
+                const t2 = (minT-0.5)/0.5;
+                r = Math.round(234 + (239-234)*t2);
+                g = Math.round(179 + (68-179)*t2);
+                b = Math.round(8 + (68-8)*t2);
+              }
+              const a = Math.round((1 - minT) * 0.55 * 255);
+              const i = (y*W + x)*4;
+              data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
         };
 
         drawZones();
