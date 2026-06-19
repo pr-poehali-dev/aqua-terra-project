@@ -132,16 +132,28 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
           pc.points.forEach(pt => {
             const maxR = pt.r3_km * 1000;
 
-            // Переводим центр точки в пиксели экрана
-            const centerPx = map.converter.geoToPage([pt.lat, pt.lon]);
+            // Переводим координаты в глобальные пиксели, затем вычитаем смещение карты
+            const proj = map.options.get('projection');
+            const zoom = map.getZoom();
+            const mapGlobalCenter = proj.toGlobalPixels(map.getCenter(), zoom);
+            const mapEl2 = mapRef.current!;
+            const halfW = mapEl2.offsetWidth / 2;
+            const halfH = mapEl2.offsetHeight / 2;
+
+            const toPage = (coord: number[]) => {
+              const gp = proj.toGlobalPixels(coord, zoom);
+              return [gp[0] - mapGlobalCenter[0] + halfW, gp[1] - mapGlobalCenter[1] + halfH];
+            };
+
+            const centerPx = toPage([pt.lat, pt.lon]);
             const cx = centerPx[0];
             const cy = centerPx[1];
 
-            // Считаем радиус в пикселях через соседнюю точку на maxR метров восточнее
+            // Радиус в пикселях через точку на maxR метров восточнее
             const edgeCoord = window.ymaps.coordSystem.geo.solveDirectProblem(
               [pt.lat, pt.lon], [0, 1], maxR
             ).endPoint;
-            const edgePx = map.converter.geoToPage(edgeCoord);
+            const edgePx = toPage(edgeCoord);
             const rPx = Math.sqrt((edgePx[0]-cx)**2 + (edgePx[1]-cy)**2);
 
             // Радиальный градиент: зелёный в центре → жёлтый → красный на краю
