@@ -6,7 +6,7 @@ const W = 600, H = 360, WIN = 25;
 
 interface Food { x:number;y:number;vx:number;vy:number;type:'flake'|'worm';id:number;angle:number;wobble:number; }
 interface Bubble { x:number;y:number;r:number;speed:number;op:number;wobble:number; }
-interface Weed { x:number;segments:number;color:string;phase:number;speed:number; }
+interface Weed { x:number;segments:number;totalH:number;color:string;phase:number;speed:number; }
 
 let _id = 0;
 function mkFood(foods:Food[]) {
@@ -209,7 +209,7 @@ function drawNet(ctx:CanvasRenderingContext2D,x:number,y:number,_angle:number,lu
 
 function drawWeeds(ctx:CanvasRenderingContext2D,weeds:Weed[],time:number) {
   weeds.forEach(w=>{
-    const segH=(H*0.28)/w.segments;
+    const segH=w.totalH/w.segments;
     ctx.save();ctx.translate(w.x,H);
     let px=0,py=0;
     for(let i=0;i<w.segments;i++){
@@ -303,10 +303,12 @@ export default function FishGame({tgChannel,scoreToWin=WIN,promoCode='AQUA10'}:P
     dead:false,deadTimer:0,
     animId:0,foodTimer:0,lastTime:0,
     bubbles:Array.from({length:18},()=>({x:Math.random()*W,y:Math.random()*H,r:1.5+Math.random()*3.5,speed:0.15+Math.random()*0.3,op:0.05+Math.random()*0.08,wobble:Math.random()*Math.PI*2})) as Bubble[],
-    weeds:Array.from({length:8},(_,i)=>({
-      x:30+i*(W-60)/7,segments:3+Math.floor(Math.random()*2),
-      color:`rgba(${20+Math.floor(Math.random()*30)},${100+Math.floor(Math.random()*70)},${30+Math.floor(Math.random()*30)},0.75)`,
-      phase:Math.random()*Math.PI*2,speed:0.4+Math.random()*0.4,
+    weeds:Array.from({length:10},(_,i)=>({
+      x:20+i*(W-40)/9,
+      segments:2+Math.floor(Math.random()*4),
+      totalH: H*(0.10 + Math.random()*0.50), // от 10% до 60% высоты экрана
+      color:`rgba(${20+Math.floor(Math.random()*30)},${90+Math.floor(Math.random()*80)},${25+Math.floor(Math.random()*35)},0.8)`,
+      phase:Math.random()*Math.PI*2,speed:0.3+Math.random()*0.5,
     })) as Weed[],
   });
   const [phase,setPhase]=useState<'idle'|'playing'|'won'>('idle');
