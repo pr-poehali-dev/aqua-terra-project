@@ -106,13 +106,13 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     s.wag += s.wagDir * 0.14 * (0.5 + spd * 0.25); if (Math.abs(s.wag) > 1) s.wagDir *= -1;
 
     // Сачок — pivot фиксирован за правым краем, двигается только по Y
-    const pivotX = W + 30;
+    const pivotX = W + 65;
     const pivotY = s.netY;
     const sweepStart = -Math.PI;
-    const sweepEnd   = -Math.PI * 0.6;
+    const sweepEnd   = -Math.PI * 0.58;
     const sweepAngle = sweepStart + s.netLunge * (sweepEnd - sweepStart);
-    const tipX = pivotX + Math.cos(sweepAngle) * 155;
-    const tipY = pivotY + Math.sin(sweepAngle) * 155;
+    const tipX = pivotX + Math.cos(sweepAngle) * 115;
+    const tipY = pivotY + Math.sin(sweepAngle) * 115;
     const ndist = Math.sqrt((s.fishX - tipX) ** 2 + (s.fishY - tipY) ** 2);
 
     if (s.netPauseTimer > 0) {
