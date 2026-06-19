@@ -40,28 +40,23 @@ export function drawFish(ctx: CanvasRenderingContext2D, x: number, y: number, an
   if (dead) { ctx.rotate(angle + deadT * 4); ctx.globalAlpha = Math.max(0, 1 - deadT * 1.5); }
   else ctx.rotate(angle);
   ctx.scale(scale, scale);
-  // Хвост
   ctx.beginPath(); ctx.moveTo(-20, 0);
   ctx.bezierCurveTo(-32, -13 + wag * 10, -42, -11 + wag * 15, -40, wag * 7);
   ctx.bezierCurveTo(-42, 11 + wag * 15, -32, 13 + wag * 10, -20, 0); ctx.closePath();
   const tg = ctx.createLinearGradient(-42, 0, -20, 0);
   tg.addColorStop(0, dead ? '#555' : '#0369a1'); tg.addColorStop(1, dead ? '#777' : '#0ea5e9');
   ctx.fillStyle = tg; ctx.fill();
-  // Тело
   ctx.beginPath(); ctx.ellipse(0, 0, 24, 12, 0, 0, Math.PI * 2);
   const bg = ctx.createLinearGradient(-24, -12, 24, 12);
   bg.addColorStop(0, dead ? '#6b7280' : '#38bdf8'); bg.addColorStop(0.4, dead ? '#4b5563' : '#0ea5e9'); bg.addColorStop(1, dead ? '#374151' : '#0369a1');
   ctx.fillStyle = bg; ctx.fill();
   ctx.beginPath(); ctx.ellipse(2, 4, 18, 7, 0.15, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fill();
-  // Плавники
   ctx.beginPath(); ctx.moveTo(-8, -12); ctx.bezierCurveTo(-4, -22, 9, -21, 14, -12); ctx.closePath();
   ctx.fillStyle = dead ? 'rgba(100,100,100,0.7)' : 'rgba(14,165,233,0.75)'; ctx.fill();
   ctx.beginPath(); ctx.moveTo(2, 10); ctx.bezierCurveTo(5, 18, 13, 20, 14, 10); ctx.closePath();
   ctx.fillStyle = dead ? 'rgba(100,100,100,0.6)' : 'rgba(56,189,248,0.6)'; ctx.fill();
-  // Чешуя
   for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.ellipse(-10 + i * 9, -1, 6, 4, -0.2, Math.PI, Math.PI * 2); ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 0.9; ctx.stroke(); }
   ctx.beginPath(); ctx.moveTo(-16, 0); ctx.bezierCurveTo(-4, -5, 8, -4, 20, 0); ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
-  // Глаз
   ctx.beginPath(); ctx.arc(15, -3, 5.5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
   ctx.beginPath(); ctx.arc(16, -3, 3.5, 0, Math.PI * 2);
   const eg = ctx.createRadialGradient(16, -3, 0, 16, -3, 3.5);
@@ -74,134 +69,153 @@ export function drawFish(ctx: CanvasRenderingContext2D, x: number, y: number, an
   ctx.restore();
 }
 
-export function drawNet(ctx: CanvasRenderingContext2D, _handX: number, handY: number, _a: number, lunge: number) {
-  // Pivot — правый верхний угол, рука держит сверху
-  // handY = X-позиция вдоль правого края (следит за рыбкой по X)
-  const pivotX = W - 10 + lunge * 0;  // у правого края
-  const pivotY = -18;                   // выше canvas — рука снаружи сверху
-  const armLen = 200;
+// netCenterX, netCenterY — текущая позиция центра обруча сачка
+// lunge 0..1 — степень броска
+export function drawNet(
+  ctx: CanvasRenderingContext2D,
+  netCenterX: number,
+  netCenterY: number,
+  _a: number,
+  lunge: number
+) {
+  // Pivot — за правым верхним углом canvas
+  const pivotX = W + 20;
+  const pivotY = -30;
 
-  // В покое ручка ~45° вниз-влево, при броске уходит круче вниз
-  const angleRest  = Math.PI * 0.72;  // ~130° — вниз-влево в покое
-  const angleLunge = Math.PI * 0.88;  // ~158° — почти вертикально при броске
-  const armAngle = angleRest + lunge * (angleLunge - angleRest);
+  // Конец ручки = центр обруча
+  const nx = netCenterX;
+  const ny = netCenterY;
 
-  // X-позиция pivot по горизонтали зависит от handY (передаётся netX из логики)
-  const px = handY;  // используем handY как X-координату (netX из gameLoop)
-  const py = pivotY;
+  // Угол ручки от pivot к сачку
+  const armAngle = Math.atan2(ny - pivotY, nx - pivotX);
+  const armLen = Math.sqrt((nx - pivotX) ** 2 + (ny - pivotY) ** 2);
 
-  const netX = px + Math.cos(armAngle) * armLen;
-  const netY = py + Math.sin(armAngle) * armLen;
-
-  // ── РУЧКА (clip по canvas) ──
+  // ── РУЧКА ──
   ctx.save();
-  ctx.beginPath(); ctx.rect(0, -30, W, H + 60); ctx.clip();
+  // Clip чтобы не рисовать за правым краем
+  ctx.beginPath(); ctx.rect(-10, -40, W + 15, H + 80); ctx.clip();
 
-  // Тень стержня
-  ctx.beginPath(); ctx.moveTo(px + 3, py + 4); ctx.lineTo(netX + 3, netY + 4);
-  ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.stroke();
+  // Тень
+  ctx.beginPath(); ctx.moveTo(pivotX + 3, pivotY + 4); ctx.lineTo(nx + 3, ny + 4);
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.stroke();
 
-  // Металлический стержень
-  const sg = ctx.createLinearGradient(px, py, netX, netY);
-  sg.addColorStop(0, '#cbd5e1'); sg.addColorStop(0.3, '#f1f5f9'); sg.addColorStop(0.7, '#94a3b8'); sg.addColorStop(1, '#475569');
-  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(netX, netY);
-  ctx.strokeStyle = sg; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.stroke();
+  // Стержень — металл
+  const sg = ctx.createLinearGradient(pivotX, pivotY, nx, ny);
+  sg.addColorStop(0, '#cbd5e1'); sg.addColorStop(0.35, '#f1f5f9'); sg.addColorStop(0.7, '#94a3b8'); sg.addColorStop(1, '#64748b');
+  ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(nx, ny);
+  ctx.strokeStyle = sg; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.stroke();
+
   // Блик
-  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(netX, netY);
-  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(nx, ny);
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2.5; ctx.stroke();
 
-  // Стыки-кольца
-  for (let i = 1; i < 4; i++) {
+  // Кольца-стыки
+  for (let i = 1; i <= 3; i++) {
     const t = i / 4;
-    const rx = px + (netX - px) * t, ry = py + (netY - py) * t;
+    const rx = pivotX + (nx - pivotX) * t, ry = pivotY + (ny - pivotY) * t;
     const perp = armAngle - Math.PI / 2;
     ctx.beginPath();
-    ctx.moveTo(rx + Math.cos(perp) * 5, ry + Math.sin(perp) * 5);
-    ctx.lineTo(rx - Math.cos(perp) * 5, ry - Math.sin(perp) * 5);
-    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.moveTo(rx + Math.cos(perp) * 6, ry + Math.sin(perp) * 6);
+    ctx.lineTo(rx - Math.cos(perp) * 6, ry - Math.sin(perp) * 6);
+    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.lineCap = 'butt'; ctx.stroke();
   }
 
-  // Рукоятка (верхние 25% — тёмная резина)
-  const gx = px + (netX - px) * 0.25, gy = py + (netY - py) * 0.25;
-  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(gx, gy);
-  ctx.strokeStyle = '#1c1917'; ctx.lineWidth = 11; ctx.lineCap = 'round'; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(gx, gy);
-  ctx.strokeStyle = '#292524'; ctx.lineWidth = 8; ctx.stroke();
+  // Рукоятка (первые 20% от pivot — тёмная резина)
+  const gripEnd = 0.2;
+  const gx = pivotX + (nx - pivotX) * gripEnd, gy = pivotY + (ny - pivotY) * gripEnd;
+  ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(gx, gy);
+  ctx.strokeStyle = '#1c1917'; ctx.lineWidth = 13; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(gx, gy);
+  ctx.strokeStyle = '#292524'; ctx.lineWidth = 9; ctx.stroke();
+  // Блик рукоятки
+  ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(gx, gy);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 3; ctx.stroke();
+
   ctx.restore();
 
-  // ── РУКА (сверху, держит рукоять) ──
-  ctx.save(); ctx.translate(px, py);
-  // Рука уходит вверх-вправо за край
-  const handAngle = -0.6; // немного вправо-вверх
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(handAngle) * 55, Math.sin(handAngle) * 55);
-  ctx.strokeStyle = '#fcd5a8'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(handAngle) * 55, Math.sin(handAngle) * 55);
-  ctx.strokeStyle = '#f5bc8a'; ctx.lineWidth = 14; ctx.stroke();
-  // Пальцы вокруг ручки
+  // ── РУКА (за правым верхним краем) ──
+  ctx.save(); ctx.translate(pivotX, pivotY);
+  // Рукав уходит вправо-вверх за край
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(45, -30);
+  ctx.strokeStyle = '#fcd5a8'; ctx.lineWidth = 22; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(45, -30);
+  ctx.strokeStyle = '#f5bc8a'; ctx.lineWidth = 16; ctx.stroke();
+  // Пальцы вокруг рукоятки
+  const gripAngle = armAngle;
   for (let f = 0; f < 4; f++) {
-    const fa = armAngle + Math.PI + (f - 1.5) * 0.22;
-    const fr = 10 + f * 1;
+    const fa = gripAngle + Math.PI + (f - 1.5) * 0.25;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(fa) * 6, Math.sin(fa) * 6);
+    ctx.moveTo(Math.cos(fa) * 5, Math.sin(fa) * 5);
     ctx.bezierCurveTo(
-      Math.cos(fa) * fr, Math.sin(fa) * fr,
-      Math.cos(fa + 0.3) * (fr + 4), Math.sin(fa + 0.3) * (fr + 4),
-      Math.cos(fa + 0.5) * 5, Math.sin(fa + 0.5) * 5
+      Math.cos(fa) * 14 + Math.cos(fa + 0.2) * 4, Math.sin(fa) * 14 + Math.sin(fa + 0.2) * 4,
+      Math.cos(fa + 0.5) * 14, Math.sin(fa + 0.5) * 14,
+      Math.cos(fa + 0.65) * 6, Math.sin(fa + 0.65) * 6
     );
-    ctx.strokeStyle = '#f5bc8a'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.stroke();
-    ctx.strokeStyle = '#e8a878'; ctx.lineWidth = 5; ctx.stroke();
+    ctx.strokeStyle = '#fcd5a8'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.strokeStyle = '#e8a878'; ctx.lineWidth = 6; ctx.stroke();
   }
   // Большой палец
+  const ta = gripAngle - 0.9;
   ctx.beginPath();
-  ctx.moveTo(4, -5); ctx.bezierCurveTo(14, -12, 18, -6, 12, 2);
-  ctx.strokeStyle = '#fcd5a8'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.moveTo(Math.cos(ta) * 5, Math.sin(ta) * 5);
+  ctx.bezierCurveTo(Math.cos(ta) * 16, Math.sin(ta) * 16, Math.cos(ta + 0.6) * 16, Math.sin(ta + 0.6) * 16, Math.cos(ta + 0.8) * 7, Math.sin(ta + 0.8) * 7);
+  ctx.strokeStyle = '#fcd5a8'; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.strokeStyle = '#e8a878'; ctx.lineWidth = 6; ctx.stroke();
   ctx.restore();
 
-  // ── САЧОК (полукруглый, открытый снизу — как на фото) ──
-  ctx.save(); ctx.translate(netX, netY);
-  // Сачок ориентирован открытым краем вниз (перпендикулярно ручке)
-  const faceAngle = armAngle + Math.PI / 2;
-  ctx.rotate(faceAngle);
+  // ── САЧОК (полукруг, открытый вперёд) ──
+  ctx.save(); ctx.translate(nx, ny);
 
-  const R = 26;
-  const bagD = R * 1.1 + lunge * R * 0.4; // глубина мешка растёт при броске
+  // Ориентация: открытый край смотрит в сторону движения (от pivot к сачку)
+  // При броске сачок «черпает» — открыт в направлении движения рыбки
+  ctx.rotate(armAngle + Math.PI / 2);
 
-  // Мешок сетки
+  const R = 28;
+  const bagDepth = R * 0.9 + lunge * R * 0.5;
+
+  // ── Мешок сетки ──
   ctx.save();
-  // Clip: полукруг (верхняя половина) + мешок вниз
+  // Clip: нижний полукруг + мешок
   ctx.beginPath();
-  ctx.arc(0, 0, R, 0, Math.PI); // нижний полукруг (открытый)
-  ctx.lineTo(R, bagD);
-  ctx.bezierCurveTo(R * 0.5, bagD + R * 0.3, -R * 0.5, bagD + R * 0.3, -R, bagD);
+  ctx.arc(0, 0, R, 0, Math.PI);       // нижний полукруг
+  ctx.lineTo(R, bagDepth);
+  ctx.bezierCurveTo(R * 0.5, bagDepth + R * 0.35, -R * 0.5, bagDepth + R * 0.35, -R, bagDepth);
   ctx.closePath();
   ctx.clip();
 
-  // Фон мешка
-  ctx.fillStyle = 'rgba(0, 80, 120, 0.55)';
-  ctx.fillRect(-R, 0, R * 2, bagD + R + 10);
+  // Фон мешка — тёмный с лёгкой прозрачностью
+  ctx.fillStyle = 'rgba(5, 50, 80, 0.6)';
+  ctx.fillRect(-R, 0, R * 2, bagDepth + R + 5);
 
-  // Сетка (диагональная)
-  const cell = 8;
-  ctx.strokeStyle = 'rgba(0, 140, 200, 0.75)'; ctx.lineWidth = 1;
-  for (let d = -R * 2; d < R * 2 + bagD; d += cell) {
-    ctx.beginPath(); ctx.moveTo(d, 0); ctx.lineTo(d + bagD + R, bagD + R); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(d, 0); ctx.lineTo(d - bagD - R, bagD + R); ctx.stroke();
+  // Сетка — ромбовидная
+  const cell = 9;
+  ctx.strokeStyle = 'rgba(20, 160, 200, 0.65)'; ctx.lineWidth = 1;
+  for (let d = -R * 2; d < R * 2 + bagDepth + 20; d += cell) {
+    ctx.beginPath(); ctx.moveTo(d, -5); ctx.lineTo(d + bagDepth + R + 20, bagDepth + R + 20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(d, -5); ctx.lineTo(d - bagDepth - R - 20, bagDepth + R + 20); ctx.stroke();
   }
   ctx.restore();
 
-  // Обруч (только нижний полукруг — открытый край)
+  // Обруч — нижний полукруг (открытый)
   ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI);
   const rg = ctx.createLinearGradient(-R, 0, R, 0);
-  rg.addColorStop(0, '#334155'); rg.addColorStop(0.5, '#94a3b8'); rg.addColorStop(1, '#334155');
-  ctx.strokeStyle = rg; ctx.lineWidth = 5; ctx.stroke();
+  rg.addColorStop(0, '#1e3a5f'); rg.addColorStop(0.5, '#475569'); rg.addColorStop(1, '#1e3a5f');
+  ctx.strokeStyle = rg; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
+  // Блик на обруче
+  ctx.beginPath(); ctx.arc(0, 0, R, Math.PI * 0.1, Math.PI * 0.5);
+  ctx.strokeStyle = 'rgba(148,163,184,0.5)'; ctx.lineWidth = 2; ctx.stroke();
 
-  // Верхняя перекладина (закрытый край, крепление к ручке)
+  // Перекладина (закрытый край — крепление к ручке)
   ctx.beginPath(); ctx.moveTo(-R, 0); ctx.lineTo(R, 0);
-  ctx.strokeStyle = '#475569'; ctx.lineWidth = 4; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-R, 0); ctx.lineTo(R, 0);
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+  const bg2 = ctx.createLinearGradient(-R, 0, R, 0);
+  bg2.addColorStop(0, '#334155'); bg2.addColorStop(0.5, '#64748b'); bg2.addColorStop(1, '#334155');
+  ctx.strokeStyle = bg2; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
 
   ctx.restore();
+
+  // ── Отладочная зона поимки (убрать для прода) ──
+  // ctx.save(); ctx.beginPath(); ctx.arc(nx, ny, R, 0, Math.PI*2);
+  // ctx.strokeStyle='rgba(255,0,0,0.3)'; ctx.lineWidth=1; ctx.stroke(); ctx.restore();
 }
 
 export function drawWeeds(ctx: CanvasRenderingContext2D, weeds: Weed[], time: number) {

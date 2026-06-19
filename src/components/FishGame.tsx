@@ -13,8 +13,8 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     fishX: W / 2, fishY: H / 2, fishVx: 0, fishVy: 0,
     targetX: W / 2, targetY: H / 2,
     fishAngle: 0, wag: 0, wagDir: 1,
-    netX: W * 0.55, netY: W / 2, netAngle: 0,
-    // netY используется как X-позиция pivot (рука сверху следит за X рыбки)
+    netX: W - 80, netY: H / 2, netAngle: 0,
+    // netX/netY — центр обруча сачка в canvas-координатах
     netLunge: 0,
     netLunging: false,
     netLungeTimer: 0,
@@ -50,7 +50,7 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     const s = stateRef.current;
     s.fishX = W / 2; s.fishY = H / 2; s.fishVx = 0; s.fishVy = 0;
     s.targetX = W / 2; s.targetY = H / 2; s.fishAngle = 0; s.wag = 0;
-    s.netX = W * 0.55; s.netY = W / 2; s.netAngle = 0;
+    s.netX = W - 80; s.netY = H / 2; s.netAngle = 0;
     s.netLunge = 0; s.netLunging = false; s.netLungeTimer = 2000; s.netPauseTimer = 0;
     if (!keepScore) { s.score = 0; setScore(0); }
     s.foods = []; s.alive = true; s.dead = false; s.deadTimer = 0;
@@ -105,41 +105,61 @@ export default function FishGame({ tgChannel, scoreToWin = WIN, promoCode = 'AQU
     if (spd > 0.5) s.fishAngle = Math.atan2(s.fishVy, s.fishVx);
     s.wag += s.wagDir * 0.14 * (0.5 + spd * 0.25); if (Math.abs(s.wag) > 1) s.wagDir *= -1;
 
-    // Сачок — pivot сверху, следит за X рыбки, бросок = погружение вниз
-    // netX = X-позиция pivot (у правого края по горизонтали, следит за рыбкой)
-    // netY используем как X pivot для drawNet (передаётся как handY)
-    const angleRest  = Math.PI * 0.72;
-    const angleLunge = Math.PI * 0.88;
-    const armAngle = angleRest + s.netLunge * (angleLunge - angleRest);
-    const pivotPY = -18;
-    const tipX = s.netY + Math.cos(armAngle) * 200;
-    const tipY = pivotPY + Math.sin(armAngle) * 200;
-    const ndist = Math.sqrt((s.fishX - tipX) ** 2 + (s.fishY - tipY) ** 2);
+    // Сачок — netX/netY это центр обруча в canvas-координатах
+    // В покое сачок «висит» в правой части экрана на уровне рыбки
+    // При броске резко движется к рыбке
+    const pivotX = W + 20, pivotY = -30;
+    const armLen = Math.sqrt((s.netX - pivotX) ** 2 + (s.netY - pivotY) ** 2);
+    const ndist = Math.sqrt((s.fishX - s.netX) ** 2 + (s.fishY - s.netY) ** 2);
+
+    // Целевая точка покоя: правее рыбки, на том же уровне по Y
+    const restX = Math.min(W - 60, s.fishX + 120);
+    const restY = s.fishY;
+    // Целевая точка броска: прямо на рыбку
+    const lungeTargetX = s.fishX;
+    const lungeTargetY = s.fishY;
 
     if (s.netPauseTimer > 0) {
       s.netPauseTimer -= dt;
-      s.netLunge = Math.max(0, s.netLunge - dt * 0.004);
-      // netY = X pivot — следит за X рыбки
-      s.netY += (s.fishX - s.netY) * 0.02;
+      s.netLunge = Math.max(0, s.netLunge - dt * 0.005);
+      // Плавно возвращаемся в покой
+      s.netX += (restX - s.netX) * 0.035;
+      s.netY += (restY - s.netY) * 0.035;
     } else if (s.netLunging) {
-      s.netLunge = Math.min(1, s.netLunge + dt * 0.0045);
-      s.netY += (s.fishX - s.netY) * 0.065;
-      if (s.netLunge >= 1) { s.netLunging = false; s.netPauseTimer = 1100; }
+      s.netLunge = Math.min(1, s.netLunge + dt * 0.006);
+      // Быстро летим к рыбке
+      s.netX += (lungeTargetX - s.netX) * 0.09;
+      s.netY += (lungeTargetY - s.netY) * 0.09;
+      if (s.netLunge >= 1) { s.netLunging = false; s.netPauseTimer = 1200; }
     } else {
       s.netLungeTimer -= dt;
-      s.netLunge *= 0.9;
-      s.netY += (s.fishX - s.netY) * 0.028;
+      s.netLunge *= 0.88;
+      // Лениво следим за рыбкой в покое
+      s.netX += (restX - s.netX) * 0.03;
+      s.netY += (restY - s.netY) * 0.03;
       if (s.netLungeTimer <= 0) {
         s.netLunging = true;
-        s.netLungeTimer = 2000 + Math.random() * 2000;
+        s.netLungeTimer = 2200 + Math.random() * 2000;
       }
     }
 
-    // Поймал: при броске сачок накрывает рыбку сверху
-    if (s.netLunging && s.netLunge > 0.6 && ndist < 55) {
+    // Ограничиваем чтобы ручка не стала слишком короткой/длинной
+    const minArm = 120, maxArm = 340;
+    const curLen = Math.sqrt((s.netX - pivotX) ** 2 + (s.netY - pivotY) ** 2);
+    if (curLen < minArm || curLen > maxArm) {
+      const clamp = Math.max(minArm, Math.min(maxArm, curLen));
+      const ang = Math.atan2(s.netY - pivotY, s.netX - pivotX);
+      s.netX = pivotX + Math.cos(ang) * clamp;
+      s.netY = pivotY + Math.sin(ang) * clamp;
+    }
+
+    // Поймал: рыбка внутри обруча (R=28) — при броске ИЛИ если сама заплыла
+    const catchRadius = 30;
+    if (ndist < catchRadius && (s.netLunging || s.netLunge > 0.3)) {
       s.alive = false; s.dead = true; s.deadTimer = 0;
       s.animId = requestAnimationFrame(gameLoop); return;
     }
+    void armLen;
 
     // Еда
     s.foods.forEach(f => { f.x += f.vx; f.y += f.vy; f.wobble += 0.12; f.angle += 0.015; });
