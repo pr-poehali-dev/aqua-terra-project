@@ -171,16 +171,17 @@ export default function ServiceZoneMap({ apiKey, height = '420px', className = '
               let r, g, b;
               if (minT < 0.5) {
                 const t2 = minT / 0.5;
-                r = Math.round(34 + (234-34)*t2);
-                g = Math.round(197 + (179-197)*t2);
-                b = Math.round(94 + (8-94)*t2);
+                r = Math.round(20 + (230-20)*t2);
+                g = Math.round(200 + (180-200)*t2);
+                b = Math.round(80 + (0-80)*t2);
               } else {
                 const t2 = (minT-0.5)/0.5;
-                r = Math.round(234 + (239-234)*t2);
-                g = Math.round(179 + (68-179)*t2);
-                b = Math.round(8 + (68-8)*t2);
+                r = Math.round(230 + (220-230)*t2);
+                g = Math.round(180 + (50-180)*t2);
+                b = Math.round(0 + (50-0)*t2);
               }
-              const a = Math.round((1 - minT) * 0.55 * 255);
+              // Край чётче: альфа резко падает только у самой границы
+              const a = Math.round(Math.pow(1 - minT, 0.7) * 0.75 * 255);
               const i = (y*W + x)*4;
               data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=a;
             }
